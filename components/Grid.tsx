@@ -4,9 +4,9 @@ import { X } from "lucide-react";
 import Block from "@/components/Block";
 import Modal from "@/components/Modal";
 import { TaskTemplate, defaultTaskTemplates } from "@/lib/taskTemplates";
+import type { Person } from "@/lib/people";
 
 type Employee = { id: string | number; name: string };
-type Person = { id: string; name: string };
 type GridTask = {
   id: string | number;
   type: string;
@@ -192,7 +192,7 @@ export default function Grid({
     const person =
       peopleById.get(String(emp.id)) ||
       peopleByName.get(String(emp.name || "").toLowerCase());
-    const sched = person?.schedule?.[dayKeyLabel as keyof typeof person.schedule];
+    const sched = person?.schedule?.[dayKeyLabel];
     if (!sched?.enabled) return "Off";
     return `${sched.start}-${sched.end}`;
   }
