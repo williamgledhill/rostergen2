@@ -1,0 +1,448 @@
+[
+  {
+    "id": "front",
+    "name": "Front Desk",
+    "description": "Welcome visitors at the front desk",
+    "category": "Guest services",
+    "color": "#ffe785",
+    "mustManned": true,
+    "autogenStart": "",
+    "autogenEnd": "",
+    "regularDays": [
+      "Mon",
+      "Fri",
+      "Tue",
+      "Sat",
+      "Wed",
+      "Sun",
+      "Thu"
+    ],
+    "regularTimes": [],
+    "minPerEmployeePerDay": 0,
+    "maxPerEmployeePerDay": 0,
+    "durationMinutes": 0,
+    "waitingMinutes": 0,
+    "packingMinutes": 0,
+    "limitPerDay": 0,
+    "regularDayWindows": {},
+    "enabled": true,
+    "regularTimesByDay": {},
+    "maxConsecutiveMinutes": 30
+  },
+  {
+    "id": "gallery",
+    "name": "Gallery",
+    "description": "Monitor gallery spaces and provide guidance to visitors.",
+    "category": "Guest services",
+    "color": "#BBF7D0",
+    "mustManned": false,
+    "autogenStart": "",
+    "autogenEnd": "",
+    "regularDays": [
+      "Mon",
+      "Fri",
+      "Tue",
+      "Sat",
+      "Wed",
+      "Sun",
+      "Thu"
+    ],
+    "regularTimes": [],
+    "minPerEmployeePerDay": 0,
+    "maxPerEmployeePerDay": 0,
+    "durationMinutes": 0,
+    "waitingMinutes": 0,
+    "packingMinutes": 0,
+    "limitPerDay": 0,
+    "regularDayWindows": {},
+    "enabled": true,
+    "regularTimesByDay": {},
+    "maxConsecutiveMinutes": 30
+  },
+  {
+    "id": "tour",
+    "name": "Public Tour",
+    "description": "Lead scheduled tours and answer questions about exhibits.",
+    "category": "Programming",
+    "color": "#BFDBFE",
+    "mustManned": true,
+    "autogenStart": "",
+    "autogenEnd": "",
+    "regularDays": [
+      "Mon",
+      "Fri",
+      "Tue",
+      "Sat",
+      "Wed",
+      "Sun",
+      "Thu"
+    ],
+    "regularTimes": [
+      "10:30",
+      "11:30",
+      "13:00",
+      "14:00"
+    ],
+    "minPerEmployeePerDay": 0,
+    "maxPerEmployeePerDay": 0,
+    "durationMinutes": 45,
+    "waitingMinutes": 15,
+    "packingMinutes": 0,
+    "limitPerDay": 0,
+    "regularDayWindows": {},
+    "enabled": true,
+    "regularTimesByDay": {},
+    "maxConsecutiveMinutes": 0
+  },
+  {
+    "id": "school-program",
+    "name": "School Tour",
+    "description": "Facilitate school group sessions and activities.",
+    "category": "Programming",
+    "color": "#BFDBFE",
+    "mustManned": true,
+    "autogenStart": "",
+    "autogenEnd": "",
+    "regularDays": [
+      "Mon",
+      "Tue",
+      "Wed",
+      "Thu",
+      "Fri"
+    ],
+    "regularTimes": [],
+    "minPerEmployeePerDay": 0,
+    "maxPerEmployeePerDay": 0,
+    "durationMinutes": 60,
+    "waitingMinutes": 15,
+    "packingMinutes": 0,
+    "limitPerDay": 0,
+    "regularDayWindows": {},
+    "enabled": false,
+    "regularTimesByDay": {},
+    "maxConsecutiveMinutes": 0
+  },
+  {
+    "id": "break",
+    "name": "Lunch",
+    "description": "Scheduled break time for staff coverage planning.",
+    "category": "Support",
+    "color": "#E9D5FF",
+    "mustManned": false,
+    "autogenStart": "11:30",
+    "autogenEnd": "14:30",
+    "regularDays": [
+      "Mon",
+      "Fri",
+      "Tue",
+      "Sat",
+      "Sun",
+      "Wed",
+      "Thu"
+    ],
+    "regularTimes": [],
+    "minPerEmployeePerDay": 1,
+    "maxPerEmployeePerDay": 1,
+    "durationMinutes": 30,
+    "waitingMinutes": 0,
+    "packingMinutes": 0,
+    "limitPerDay": 0,
+    "regularDayWindows": {
+      "Mon": {
+        "start": "12:00",
+        "end": "14:00"
+      },
+      "Tue": {
+        "start": "12:00",
+        "end": "14:00"
+      },
+      "Wed": {
+        "start": "12:00",
+        "end": "14:00"
+      },
+      "Thu": {
+        "start": "12:00",
+        "end": "14:00"
+      },
+      "Fri": {
+        "start": "12:00",
+        "end": "14:00"
+      },
+      "Sat": {
+        "start": "12:00",
+        "end": "14:00"
+      },
+      "Sun": {
+        "start": "12:00",
+        "end": "14:00"
+      }
+    },
+    "enabled": true,
+    "regularTimesByDay": {},
+    "maxConsecutiveMinutes": 0
+  },
+  {
+    "id": "tidy",
+    "name": "Tidy Gallery",
+    "description": "End-of-day tidy and reset of spaces.",
+    "category": "Support",
+    "color": "#FED7AA",
+    "mustManned": true,
+    "autogenStart": "",
+    "autogenEnd": "",
+    "regularDays": [],
+    "regularTimes": [],
+    "minPerEmployeePerDay": 0,
+    "maxPerEmployeePerDay": 0,
+    "durationMinutes": 15,
+    "waitingMinutes": 0,
+    "packingMinutes": 0,
+    "limitPerDay": 1,
+    "regularDayWindows": {
+      "Mon": {
+        "start": "16:45",
+        "end": "17:15"
+      },
+      "Tue": {
+        "start": "16:45",
+        "end": "17:15"
+      },
+      "Wed": {
+        "start": "16:45",
+        "end": "17:15"
+      },
+      "Thu": {
+        "start": "16:45",
+        "end": "17:15"
+      },
+      "Fri": {
+        "start": "16:45",
+        "end": "17:15"
+      },
+      "Sat": {
+        "start": "15:45",
+        "end": "16:15"
+      },
+      "Sun": {
+        "start": "15:45",
+        "end": "16:15"
+      }
+    },
+    "enabled": true,
+    "regularTimesByDay": {
+      "Mon": [
+        "16:45"
+      ],
+      "Tue": [
+        "16:45"
+      ],
+      "Wed": [
+        "16:45"
+      ],
+      "Thu": [
+        "16:45"
+      ],
+      "Fri": [
+        "16:45"
+      ],
+      "Sat": [
+        "15:45"
+      ],
+      "Sun": [
+        "15:45"
+      ]
+    },
+    "maxConsecutiveMinutes": 0
+  },
+  {
+    "id": "set-up-gallery",
+    "name": "Set up Gallery",
+    "description": "No description yet.",
+    "category": "Custom",
+    "color": "#ff0066",
+    "mustManned": true,
+    "autogenStart": "",
+    "autogenEnd": "",
+    "regularDays": [],
+    "regularTimes": [],
+    "regularDayWindows": {
+      "Mon": {
+        "start": "08:00",
+        "end": "08:30"
+      },
+      "Tue": {
+        "start": "08:00",
+        "end": "08:30"
+      },
+      "Wed": {
+        "start": "08:00",
+        "end": "08:30"
+      },
+      "Thu": {
+        "start": "08:00",
+        "end": "08:30"
+      },
+      "Fri": {
+        "start": "08:00",
+        "end": "08:30"
+      },
+      "Sat": {
+        "start": "09:45",
+        "end": "10:00"
+      },
+      "Sun": {
+        "start": "09:45",
+        "end": "10:00"
+      }
+    },
+    "minPerEmployeePerDay": 0,
+    "maxPerEmployeePerDay": 0,
+    "durationMinutes": 15,
+    "waitingMinutes": 0,
+    "packingMinutes": 0,
+    "limitPerDay": 1,
+    "enabled": true,
+    "regularTimesByDay": {
+      "Mon": [
+        "08:00"
+      ],
+      "Tue": [
+        "08:00"
+      ],
+      "Wed": [
+        "08:00"
+      ],
+      "Thu": [
+        "08:00"
+      ],
+      "Fri": [
+        "08:00"
+      ],
+      "Sat": [
+        "09:45"
+      ],
+      "Sun": [
+        "09:45"
+      ]
+    },
+    "maxConsecutiveMinutes": 0
+  },
+  {
+    "id": "morning-break",
+    "name": "Morning Break",
+    "description": "No description yet.",
+    "category": "Custom",
+    "color": "#ff4da3",
+    "mustManned": false,
+    "autogenStart": "",
+    "autogenEnd": "",
+    "regularDays": [
+      "Mon",
+      "Tue",
+      "Wed",
+      "Thu",
+      "Fri",
+      "Sat",
+      "Sun"
+    ],
+    "regularTimes": [],
+    "regularTimesByDay": {},
+    "regularDayWindows": {
+      "Mon": {
+        "start": "09:30",
+        "end": "11:15"
+      },
+      "Tue": {
+        "start": "09:30",
+        "end": "11:15"
+      },
+      "Wed": {
+        "start": "09:30",
+        "end": "11:15"
+      },
+      "Thu": {
+        "start": "09:30",
+        "end": "11:15"
+      },
+      "Fri": {
+        "start": "09:30",
+        "end": "11:15"
+      },
+      "Sat": {
+        "start": "09:30",
+        "end": "11:15"
+      },
+      "Sun": {
+        "start": "09:30",
+        "end": "11:15"
+      }
+    },
+    "minPerEmployeePerDay": 1,
+    "maxPerEmployeePerDay": 1,
+    "durationMinutes": 15,
+    "maxConsecutiveMinutes": 0,
+    "waitingMinutes": 0,
+    "packingMinutes": 0,
+    "limitPerDay": 0,
+    "enabled": true
+  },
+  {
+    "id": "afternoon-break",
+    "name": "Afternoon Break",
+    "description": "No description yet.",
+    "category": "Custom",
+    "color": "#ff2465",
+    "mustManned": false,
+    "autogenStart": "",
+    "autogenEnd": "",
+    "regularDays": [
+      "Mon",
+      "Tue",
+      "Wed",
+      "Thu",
+      "Fri",
+      "Sat",
+      "Sun"
+    ],
+    "regularTimes": [],
+    "regularTimesByDay": {},
+    "regularDayWindows": {
+      "Mon": {
+        "start": "14:00",
+        "end": "16:00"
+      },
+      "Tue": {
+        "start": "14:00",
+        "end": "16:00"
+      },
+      "Wed": {
+        "start": "14:00",
+        "end": "16:00"
+      },
+      "Thu": {
+        "start": "14:00",
+        "end": "16:00"
+      },
+      "Fri": {
+        "start": "14:00",
+        "end": "16:00"
+      },
+      "Sat": {
+        "start": "13:45",
+        "end": "15:00"
+      },
+      "Sun": {
+        "start": "13:45",
+        "end": "15:00"
+      }
+    },
+    "minPerEmployeePerDay": 1,
+    "maxPerEmployeePerDay": 1,
+    "durationMinutes": 15,
+    "maxConsecutiveMinutes": 0,
+    "waitingMinutes": 0,
+    "packingMinutes": 0,
+    "limitPerDay": 0,
+    "enabled": true
+  }
+]

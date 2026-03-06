@@ -1,0 +1,26 @@
+{
+  "accounts": [
+    {
+      "id": "mint",
+      "name": "Mint",
+      "company": "roster.app",
+      "editors": [
+        {
+          "id": "admin",
+          "name": "Mint Admin",
+          "isAdmin": true
+        },
+        {
+          "id": "editor-1",
+          "name": "Mint Editor 1",
+          "isAdmin": false
+        },
+        {
+          "id": "editor-2",
+          "name": "Mint Editor 2",
+          "isAdmin": false
+        }
+      ]
+    }
+  ]
+}

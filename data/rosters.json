@@ -1,0 +1,5502 @@
+[
+  {
+    "id": "2026-01-01",
+    "title": "Thursday 1 January 2026",
+    "start": "2025-12-31T13:00:00.000Z",
+    "end": "2025-12-31T13:00:00.000Z",
+    "status": "Draft",
+    "updated": "Jan 1, 2026",
+    "tours": 3,
+    "people": 11
+  },
+  {
+    "id": "2026-01-02",
+    "title": "Friday 2 January 2026",
+    "start": "2026-01-01T13:00:00.000Z",
+    "end": "2026-01-01T13:00:00.000Z",
+    "status": "Draft",
+    "updated": "Jan 2, 2026",
+    "tours": 4,
+    "people": 12
+  },
+  {
+    "id": "2026-01-03",
+    "title": "Saturday 3 January 2026",
+    "start": "2026-01-02T13:00:00.000Z",
+    "end": "2026-01-02T13:00:00.000Z",
+    "status": "Draft",
+    "updated": "Jan 3, 2026",
+    "tours": 5,
+    "people": 13
+  },
+  {
+    "id": "2026-01-04",
+    "title": "Sunday 4 January 2026",
+    "start": "2026-01-03T13:00:00.000Z",
+    "end": "2026-01-03T13:00:00.000Z",
+    "status": "Draft",
+    "updated": "Jan 4, 2026",
+    "tours": 6,
+    "people": 6
+  },
+  {
+    "id": "2026-01-05",
+    "title": "Monday 5 January 2026",
+    "start": "2026-01-04T13:00:00.000Z",
+    "end": "2026-01-04T13:00:00.000Z",
+    "status": "Draft",
+    "updated": "Jan 5, 2026",
+    "tours": 2,
+    "people": 7
+  },
+  {
+    "id": "2026-01-06",
+    "title": "Tuesday 6 January 2026",
+    "start": "2026-01-05T13:00:00.000Z",
+    "end": "2026-01-05T13:00:00.000Z",
+    "status": "Draft",
+    "updated": "Jan 6, 2026",
+    "tours": 3,
+    "people": 8
+  },
+  {
+    "id": "2026-01-07",
+    "title": "Wednesday 7 January 2026",
+    "start": "2026-01-06T13:00:00.000Z",
+    "end": "2026-01-06T13:00:00.000Z",
+    "status": "Draft",
+    "updated": "Jan 7, 2026",
+    "tours": 4,
+    "people": 9
+  },
+  {
+    "id": "2026-01-08",
+    "title": "Thursday 8 January 2026",
+    "start": "2026-01-07T13:00:00.000Z",
+    "end": "2026-01-07T13:00:00.000Z",
+    "status": "Draft",
+    "updated": "Jan 8, 2026",
+    "tours": 5,
+    "people": 10
+  },
+  {
+    "id": "2026-01-09",
+    "title": "Friday 9 January 2026",
+    "start": "2026-01-08T13:00:00.000Z",
+    "end": "2026-01-08T13:00:00.000Z",
+    "status": "Draft",
+    "updated": "Jan 9, 2026",
+    "tours": 6,
+    "people": 11
+  },
+  {
+    "id": "2026-01-10",
+    "title": "Saturday 10 January 2026",
+    "start": "2026-01-09T13:00:00.000Z",
+    "end": "2026-01-09T13:00:00.000Z",
+    "status": "Draft",
+    "updated": "Jan 10, 2026",
+    "tours": 2,
+    "people": 12
+  },
+  {
+    "id": "2026-01-11",
+    "title": "Sunday 11 January 2026",
+    "start": "2026-01-10T13:00:00.000Z",
+    "end": "2026-01-10T13:00:00.000Z",
+    "status": "Draft",
+    "updated": "Jan 11, 2026",
+    "tours": 3,
+    "people": 13
+  },
+  {
+    "id": "2026-01-12",
+    "title": "Monday 12 January 2026",
+    "start": "2026-01-11T13:00:00.000Z",
+    "end": "2026-01-11T13:00:00.000Z",
+    "status": "Draft",
+    "updated": "Jan 12, 2026",
+    "tours": 4,
+    "people": 6
+  },
+  {
+    "id": "2026-01-13",
+    "title": "Tuesday 13 January 2026",
+    "start": "2026-01-12T13:00:00.000Z",
+    "end": "2026-01-12T13:00:00.000Z",
+    "status": "Draft",
+    "updated": "Jan 13, 2026",
+    "tours": 5,
+    "people": 7
+  },
+  {
+    "id": "2026-01-14",
+    "title": "Wednesday 14 January 2026",
+    "start": "2026-01-13T13:00:00.000Z",
+    "end": "2026-01-13T13:00:00.000Z",
+    "status": "Draft",
+    "updated": "Jan 14, 2026",
+    "tours": 6,
+    "people": 8
+  },
+  {
+    "id": "2026-01-15",
+    "title": "Thursday 15 January 2026",
+    "start": "2026-01-14T13:00:00.000Z",
+    "end": "2026-01-14T13:00:00.000Z",
+    "status": "Draft",
+    "updated": "Jan 15, 2026",
+    "tours": 2,
+    "people": 9
+  },
+  {
+    "id": "2026-01-16",
+    "title": "Friday 16 January 2026",
+    "start": "2026-01-15T13:00:00.000Z",
+    "end": "2026-01-15T13:00:00.000Z",
+    "status": "Draft",
+    "updated": "Jan 16, 2026",
+    "tours": 3,
+    "people": 10
+  },
+  {
+    "id": "2026-01-17",
+    "title": "Saturday 17 January 2026",
+    "start": "2026-01-16T13:00:00.000Z",
+    "end": "2026-01-16T13:00:00.000Z",
+    "status": "Draft",
+    "updated": "Jan 17, 2026",
+    "tours": 4,
+    "people": 11
+  },
+  {
+    "id": "2026-01-18",
+    "title": "Sunday 18 January 2026",
+    "start": "2026-01-17T13:00:00.000Z",
+    "end": "2026-01-17T13:00:00.000Z",
+    "status": "Draft",
+    "updated": "Jan 18, 2026",
+    "tours": 5,
+    "people": 12
+  },
+  {
+    "id": "2026-01-19",
+    "title": "Monday 19 January 2026",
+    "start": "2026-01-18T13:00:00.000Z",
+    "end": "2026-01-18T13:00:00.000Z",
+    "status": "Published",
+    "updated": "Feb 11, 2026",
+    "tours": 4,
+    "people": 7,
+    "employees": [
+      {
+        "id": "1",
+        "name": "Claire"
+      },
+      {
+        "id": "3",
+        "name": "Anna"
+      },
+      {
+        "id": "1764577062968",
+        "name": "Leila"
+      },
+      {
+        "id": "1764577069066",
+        "name": "Rowan"
+      },
+      {
+        "id": "1764577072844",
+        "name": "Shirine"
+      },
+      {
+        "id": "1764577079373",
+        "name": "Lyndall"
+      },
+      {
+        "id": "1767334723306",
+        "name": "Ksenia"
+      }
+    ],
+    "tasks": [
+      {
+        "id": "4e3c72cd-0629-40f5-adcc-4a411e1f72e8",
+        "type": "front",
+        "label": "Front Desk",
+        "col": 2,
+        "startRow": 6,
+        "span": 2,
+        "color": "#ffe785",
+        "employeeId": 1
+      },
+      {
+        "id": "302c9619-b760-4b3d-b45e-3f8cc0210bef",
+        "type": "morning-break",
+        "label": "Morning Break",
+        "col": 2,
+        "startRow": 8,
+        "span": 1,
+        "color": "#ff4da3",
+        "employeeId": 1
+      },
+      {
+        "id": "ab97dd42-8971-45a1-abf6-3fdf688dd7c5",
+        "type": "gallery",
+        "label": "Gallery",
+        "col": 2,
+        "startRow": 9,
+        "span": 2,
+        "color": "#BBF7D0",
+        "employeeId": 1
+      },
+      {
+        "id": "87804016-bf8a-48c8-8319-c2e937d76157",
+        "type": "tour",
+        "label": "Public Tour",
+        "col": 2,
+        "startRow": 11,
+        "span": 4,
+        "color": "#BFDBFE",
+        "employeeId": 1
+      },
+      {
+        "id": "21366236-ced5-4226-b035-eb54b0f4ce07",
+        "type": "gallery",
+        "label": "Gallery",
+        "col": 2,
+        "startRow": 15,
+        "span": 1,
+        "color": "#BBF7D0",
+        "employeeId": 1
+      },
+      {
+        "id": "53bcda1b-19a9-4490-989f-3f550c1d057d",
+        "type": "front",
+        "label": "Front Desk",
+        "col": 2,
+        "startRow": 16,
+        "span": 2,
+        "color": "#ffe785",
+        "employeeId": 1
+      },
+      {
+        "id": "635e376b-feb9-4324-90d4-b1744fafb83f",
+        "type": "break",
+        "label": "Lunch",
+        "col": 2,
+        "startRow": 18,
+        "span": 2,
+        "color": "#E9D5FF",
+        "employeeId": 1
+      },
+      {
+        "id": "45d9a38a-3c2d-48d2-8b00-01c9b473347f",
+        "type": "gallery",
+        "label": "Gallery",
+        "col": 2,
+        "startRow": 20,
+        "span": 2,
+        "color": "#BBF7D0",
+        "employeeId": 1
+      },
+      {
+        "id": "bf9dde34-483b-4eef-b0e7-7d704e898492",
+        "type": "gallery",
+        "label": "Gallery",
+        "col": 2,
+        "startRow": 22,
+        "span": 2,
+        "color": "#BBF7D0",
+        "employeeId": 1
+      },
+      {
+        "id": "418d5c29-81f9-4ea3-9667-eb7b875605b2",
+        "type": "front",
+        "label": "Front Desk",
+        "col": 2,
+        "startRow": 24,
+        "span": 2,
+        "color": "#ffe785",
+        "employeeId": 1
+      },
+      {
+        "id": "f2093fec-2842-4646-a633-9371e6e140d9",
+        "type": "afternoon-break",
+        "label": "Afternoon Break",
+        "col": 2,
+        "startRow": 26,
+        "span": 1,
+        "color": "#ff2465",
+        "employeeId": 1
+      },
+      {
+        "id": "a5fb0f7b-03ab-4cc2-9361-7330a2cb557c",
+        "type": "front",
+        "label": "Front Desk",
+        "col": 2,
+        "startRow": 27,
+        "span": 2,
+        "color": "#ffe785",
+        "employeeId": 1
+      },
+      {
+        "id": "81702a92-fa51-49b5-b680-64d2ef8f2a19",
+        "type": "gallery",
+        "label": "Gallery",
+        "col": 2,
+        "startRow": 29,
+        "span": 2,
+        "color": "#BBF7D0",
+        "employeeId": 1
+      },
+      {
+        "id": "026ce813-c6bb-4bb8-bd5a-c84be08ee97c",
+        "type": "front",
+        "label": "Front Desk",
+        "col": 2,
+        "startRow": 31,
+        "span": 2,
+        "color": "#ffe785",
+        "employeeId": 1
+      },
+      {
+        "id": "18e4ee73-0730-460d-ba46-5a0f9a8d4885",
+        "type": "gallery",
+        "label": "Gallery",
+        "col": 2,
+        "startRow": 33,
+        "span": 2,
+        "color": "#BBF7D0",
+        "employeeId": 1
+      },
+      {
+        "id": "06d8cf07-d33d-42aa-be1a-839075f94ae0",
+        "type": "front",
+        "label": "Front Desk",
+        "col": 2,
+        "startRow": 35,
+        "span": 2,
+        "color": "#ffe785",
+        "employeeId": 1
+      },
+      {
+        "id": "cb2b237d-c7dd-4cd9-9924-73de412e3073",
+        "type": "tidy",
+        "label": "Tidy Gallery",
+        "col": 2,
+        "startRow": 37,
+        "span": 1,
+        "color": "#FED7AA",
+        "employeeId": 1
+      },
+      {
+        "id": "9a4f8dcf-bf3e-4b73-8d15-8bfd612e81e0",
+        "type": "set-up-gallery",
+        "label": "Set up Gallery",
+        "col": 3,
+        "startRow": 2,
+        "span": 1,
+        "color": "#ff0066",
+        "employeeId": 3
+      },
+      {
+        "id": "806e16ee-0ab3-4371-8a37-1d033950de54",
+        "type": "gallery",
+        "label": "Gallery",
+        "col": 3,
+        "startRow": 3,
+        "span": 1,
+        "color": "#BBF7D0",
+        "employeeId": 3
+      },
+      {
+        "id": "ad75db27-38b8-4c6f-806d-92139079621e",
+        "type": "front",
+        "label": "Front Desk",
+        "col": 3,
+        "startRow": 4,
+        "span": 2,
+        "color": "#ffe785",
+        "employeeId": 3
+      },
+      {
+        "id": "616a8d67-8109-4fc2-8b2f-23da4895d430",
+        "type": "gallery",
+        "label": "Gallery",
+        "col": 3,
+        "startRow": 6,
+        "span": 2,
+        "color": "#BBF7D0",
+        "employeeId": 3
+      },
+      {
+        "id": "9cbc1b18-2b09-4f5a-99fd-32c13cbe882d",
+        "type": "front",
+        "label": "Front Desk",
+        "col": 3,
+        "startRow": 8,
+        "span": 1,
+        "color": "#ffe785",
+        "employeeId": 3
+      },
+      {
+        "id": "9cd6ee48-2ca8-4ceb-9e3f-8918065e3469",
+        "type": "morning-break",
+        "label": "Morning Break",
+        "col": 3,
+        "startRow": 9,
+        "span": 1,
+        "color": "#ff4da3",
+        "employeeId": 3
+      },
+      {
+        "id": "3e6bd526-993f-48c4-8dca-43afdbd2308b",
+        "type": "gallery",
+        "label": "Gallery",
+        "col": 3,
+        "startRow": 10,
+        "span": 2,
+        "color": "#BBF7D0",
+        "employeeId": 3
+      },
+      {
+        "id": "08ce4238-ca69-4217-96de-38f55522e891",
+        "type": "front",
+        "label": "Front Desk",
+        "col": 3,
+        "startRow": 12,
+        "span": 2,
+        "color": "#ffe785",
+        "employeeId": 3
+      },
+      {
+        "id": "e80efc07-4399-4a94-b8ba-9622efdd6fc4",
+        "type": "gallery",
+        "label": "Gallery",
+        "col": 3,
+        "startRow": 14,
+        "span": 1,
+        "color": "#BBF7D0",
+        "employeeId": 3
+      },
+      {
+        "id": "12112184-38f6-4709-9530-85efdce8e23b",
+        "type": "tour",
+        "label": "Public Tour",
+        "col": 3,
+        "startRow": 15,
+        "span": 4,
+        "color": "#BFDBFE",
+        "employeeId": 3
+      },
+      {
+        "id": "8771f74c-1934-4443-8091-c9cde88b5e2f",
+        "type": "break",
+        "label": "Lunch",
+        "col": 3,
+        "startRow": 19,
+        "span": 2,
+        "color": "#E9D5FF",
+        "employeeId": 3
+      },
+      {
+        "id": "5a14d7a5-242d-4998-99d3-e77d0fd95f98",
+        "type": "gallery",
+        "label": "Gallery",
+        "col": 3,
+        "startRow": 21,
+        "span": 1,
+        "color": "#BBF7D0",
+        "employeeId": 3
+      },
+      {
+        "id": "c99fce25-6b2d-413e-b9f7-ef3740047275",
+        "type": "front",
+        "label": "Front Desk",
+        "col": 3,
+        "startRow": 22,
+        "span": 2,
+        "color": "#ffe785",
+        "employeeId": 3
+      },
+      {
+        "id": "bd346cd8-59f3-4173-bb67-6e7263acebfe",
+        "type": "gallery",
+        "label": "Gallery",
+        "col": 3,
+        "startRow": 24,
+        "span": 2,
+        "color": "#BBF7D0",
+        "employeeId": 3
+      },
+      {
+        "id": "91b800f7-499d-4386-b092-f90a2caae67c",
+        "type": "front",
+        "label": "Front Desk",
+        "col": 3,
+        "startRow": 26,
+        "span": 1,
+        "color": "#ffe785",
+        "employeeId": 3
+      },
+      {
+        "id": "b2b827dd-5089-43a1-a04c-4200dae55a2b",
+        "type": "afternoon-break",
+        "label": "Afternoon Break",
+        "col": 3,
+        "startRow": 27,
+        "span": 1,
+        "color": "#ff2465",
+        "employeeId": 3
+      },
+      {
+        "id": "aa196d32-cc84-4b15-b7fe-cec5d5d961ea",
+        "type": "gallery",
+        "label": "Gallery",
+        "col": 3,
+        "startRow": 28,
+        "span": 2,
+        "color": "#BBF7D0",
+        "employeeId": 3
+      },
+      {
+        "id": "ecf4df68-d194-429a-84db-60fa9af043a7",
+        "type": "front",
+        "label": "Front Desk",
+        "col": 3,
+        "startRow": 30,
+        "span": 2,
+        "color": "#ffe785",
+        "employeeId": 3
+      },
+      {
+        "id": "5ced7796-eda0-40e9-8ec3-ae953f4980d1",
+        "type": "front",
+        "label": "Front Desk",
+        "col": 3,
+        "startRow": 32,
+        "span": 2,
+        "color": "#ffe785",
+        "employeeId": 3
+      },
+      {
+        "id": "3190d784-783a-46c7-9047-3db1c8a9c006",
+        "type": "front",
+        "label": "Front Desk",
+        "col": 4,
+        "startRow": 2,
+        "span": 2,
+        "color": "#ffe785",
+        "employeeId": 1764577062968
+      },
+      {
+        "id": "78e99ade-1ecc-4e1b-b261-4dff40cbcc66",
+        "type": "gallery",
+        "label": "Gallery",
+        "col": 4,
+        "startRow": 4,
+        "span": 2,
+        "color": "#BBF7D0",
+        "employeeId": 1764577062968
+      },
+      {
+        "id": "5b867752-6ab5-45e7-8234-37fd3d4529d6",
+        "type": "front",
+        "label": "Front Desk",
+        "col": 4,
+        "startRow": 6,
+        "span": 2,
+        "color": "#ffe785",
+        "employeeId": 1764577062968
+      },
+      {
+        "id": "7d9d445d-607d-4146-b625-eb67f1155b81",
+        "type": "gallery",
+        "label": "Gallery",
+        "col": 4,
+        "startRow": 8,
+        "span": 2,
+        "color": "#BBF7D0",
+        "employeeId": 1764577062968
+      },
+      {
+        "id": "30e3aa1b-87a8-4e15-b145-0b01fd0802da",
+        "type": "morning-break",
+        "label": "Morning Break",
+        "col": 4,
+        "startRow": 10,
+        "span": 1,
+        "color": "#ff4da3",
+        "employeeId": 1764577062968
+      },
+      {
+        "id": "d5d8ecf7-ddb6-423a-9158-037cc2019179",
+        "type": "gallery",
+        "label": "Gallery",
+        "col": 4,
+        "startRow": 11,
+        "span": 2,
+        "color": "#BBF7D0",
+        "employeeId": 1764577062968
+      },
+      {
+        "id": "e24a50b3-bdfd-4346-b9e5-4e585aa73cf8",
+        "type": "front",
+        "label": "Front Desk",
+        "col": 4,
+        "startRow": 13,
+        "span": 2,
+        "color": "#ffe785",
+        "employeeId": 1764577062968
+      },
+      {
+        "id": "08790092-a3b1-44f0-b7c5-eeaf44329aa3",
+        "type": "gallery",
+        "label": "Gallery",
+        "col": 4,
+        "startRow": 15,
+        "span": 2,
+        "color": "#BBF7D0",
+        "employeeId": 1764577062968
+      },
+      {
+        "id": "0d09d8c6-f7a2-490f-85b7-c84725037b6c",
+        "type": "front",
+        "label": "Front Desk",
+        "col": 4,
+        "startRow": 17,
+        "span": 1,
+        "color": "#ffe785",
+        "employeeId": 1764577062968
+      },
+      {
+        "id": "45804e94-3f07-49c9-ac19-cf9e61423fe3",
+        "type": "break",
+        "label": "Lunch",
+        "col": 4,
+        "startRow": 18,
+        "span": 2,
+        "color": "#E9D5FF",
+        "employeeId": 1764577062968
+      },
+      {
+        "id": "8c3d868b-732b-4c51-b4b2-ab7ad05925c8",
+        "type": "gallery",
+        "label": "Gallery",
+        "col": 4,
+        "startRow": 20,
+        "span": 1,
+        "color": "#BBF7D0",
+        "employeeId": 1764577062968
+      },
+      {
+        "id": "30f7bac2-177b-4511-8e81-a597cc407560",
+        "type": "tour",
+        "label": "Public Tour",
+        "col": 4,
+        "startRow": 21,
+        "span": 4,
+        "color": "#BFDBFE",
+        "employeeId": 1764577062968
+      },
+      {
+        "id": "3966aaf7-c979-4943-a665-893fedffcf28",
+        "type": "gallery",
+        "label": "Gallery",
+        "col": 4,
+        "startRow": 25,
+        "span": 1,
+        "color": "#BBF7D0",
+        "employeeId": 1764577062968
+      },
+      {
+        "id": "413b4b6c-750a-4190-9349-1ebb11f675e3",
+        "type": "front",
+        "label": "Front Desk",
+        "col": 4,
+        "startRow": 26,
+        "span": 2,
+        "color": "#ffe785",
+        "employeeId": 1764577062968
+      },
+      {
+        "id": "1c2c92da-49db-43d1-86ea-6677fc5309b9",
+        "type": "afternoon-break",
+        "label": "Afternoon Break",
+        "col": 4,
+        "startRow": 28,
+        "span": 1,
+        "color": "#ff2465",
+        "employeeId": 1764577062968
+      },
+      {
+        "id": "37d3924b-10e7-44b4-963f-e7887f702c4f",
+        "type": "front",
+        "label": "Front Desk",
+        "col": 4,
+        "startRow": 29,
+        "span": 2,
+        "color": "#ffe785",
+        "employeeId": 1764577062968
+      },
+      {
+        "id": "b4b535c8-2b06-4437-95a1-b3cec9cc74c9",
+        "type": "gallery",
+        "label": "Gallery",
+        "col": 4,
+        "startRow": 31,
+        "span": 2,
+        "color": "#BBF7D0",
+        "employeeId": 1764577062968
+      },
+      {
+        "id": "3444f258-dc53-42e6-affa-c817ddc1af07",
+        "type": "front",
+        "label": "Front Desk",
+        "col": 4,
+        "startRow": 33,
+        "span": 1,
+        "color": "#ffe785",
+        "employeeId": 1764577062968
+      },
+      {
+        "id": "feb356dd-6660-42e9-82ff-aa4a44163ba9",
+        "type": "gallery",
+        "label": "Gallery",
+        "col": 5,
+        "startRow": 6,
+        "span": 2,
+        "color": "#BBF7D0",
+        "employeeId": 1764577069066
+      },
+      {
+        "id": "ccf59a90-f099-472d-a844-8d232c2cfd4d",
+        "type": "front",
+        "label": "Front Desk",
+        "col": 5,
+        "startRow": 8,
+        "span": 2,
+        "color": "#ffe785",
+        "employeeId": 1764577069066
+      },
+      {
+        "id": "29dc7806-f906-4031-8ece-d58a3f1c38e2",
+        "type": "gallery",
+        "label": "Gallery",
+        "col": 5,
+        "startRow": 10,
+        "span": 1,
+        "color": "#BBF7D0",
+        "employeeId": 1764577069066
+      },
+      {
+        "id": "d3f875d1-965f-4c1d-8064-a921a5a74b93",
+        "type": "morning-break",
+        "label": "Morning Break",
+        "col": 5,
+        "startRow": 11,
+        "span": 1,
+        "color": "#ff4da3",
+        "employeeId": 1764577069066
+      },
+      {
+        "id": "109391e8-366e-4fab-9b53-49ad931f31a0",
+        "type": "gallery",
+        "label": "Gallery",
+        "col": 5,
+        "startRow": 12,
+        "span": 2,
+        "color": "#BBF7D0",
+        "employeeId": 1764577069066
+      },
+      {
+        "id": "97b86eb6-470b-4660-9cd2-b1233fc2887e",
+        "type": "front",
+        "label": "Front Desk",
+        "col": 5,
+        "startRow": 14,
+        "span": 2,
+        "color": "#ffe785",
+        "employeeId": 1764577069066
+      },
+      {
+        "id": "c8d11ef1-f97d-4ffc-972d-b159f7ed03e5",
+        "type": "gallery",
+        "label": "Gallery",
+        "col": 5,
+        "startRow": 16,
+        "span": 2,
+        "color": "#BBF7D0",
+        "employeeId": 1764577069066
+      },
+      {
+        "id": "0c976532-44bf-4478-a158-9955c4975aad",
+        "type": "front",
+        "label": "Front Desk",
+        "col": 5,
+        "startRow": 18,
+        "span": 2,
+        "color": "#ffe785",
+        "employeeId": 1764577069066
+      },
+      {
+        "id": "91664354-1f03-40c3-af35-3f6d5e1cf4af",
+        "type": "gallery",
+        "label": "Gallery",
+        "col": 5,
+        "startRow": 20,
+        "span": 1,
+        "color": "#BBF7D0",
+        "employeeId": 1764577069066
+      },
+      {
+        "id": "c4427970-22d9-4e75-aa2f-fe025ae469f8",
+        "type": "break",
+        "label": "Lunch",
+        "col": 5,
+        "startRow": 21,
+        "span": 2,
+        "color": "#E9D5FF",
+        "employeeId": 1764577069066
+      },
+      {
+        "id": "851b201f-357b-403e-bf6e-88f09159e80e",
+        "type": "front",
+        "label": "Front Desk",
+        "col": 5,
+        "startRow": 23,
+        "span": 2,
+        "color": "#ffe785",
+        "employeeId": 1764577069066
+      },
+      {
+        "id": "4ab347f3-419f-462c-a6cc-1c71bc0c605f",
+        "type": "tour",
+        "label": "Public Tour",
+        "col": 5,
+        "startRow": 25,
+        "span": 4,
+        "color": "#BFDBFE",
+        "employeeId": 1764577069066
+      },
+      {
+        "id": "45a7c7f0-c28b-4993-8275-16a9d4241714",
+        "type": "afternoon-break",
+        "label": "Afternoon Break",
+        "col": 5,
+        "startRow": 29,
+        "span": 1,
+        "color": "#ff2465",
+        "employeeId": 1764577069066
+      },
+      {
+        "id": "6a06b60f-0129-48b0-a144-cf0030fc71c2",
+        "type": "gallery",
+        "label": "Gallery",
+        "col": 5,
+        "startRow": 30,
+        "span": 2,
+        "color": "#BBF7D0",
+        "employeeId": 1764577069066
+      },
+      {
+        "id": "b0e5b82a-2dd9-4a87-b51a-9fc76f93fc5f",
+        "type": "front",
+        "label": "Front Desk",
+        "col": 5,
+        "startRow": 32,
+        "span": 2,
+        "color": "#ffe785",
+        "employeeId": 1764577069066
+      },
+      {
+        "id": "ab839a8f-5c64-48ff-b096-5898f6f0d96e",
+        "type": "front",
+        "label": "Front Desk",
+        "col": 5,
+        "startRow": 34,
+        "span": 2,
+        "color": "#ffe785",
+        "employeeId": 1764577069066
+      },
+      {
+        "id": "394f3cc4-937a-47b5-9517-48d0b51d7129",
+        "type": "gallery",
+        "label": "Gallery",
+        "col": 5,
+        "startRow": 36,
+        "span": 2,
+        "color": "#BBF7D0",
+        "employeeId": 1764577069066
+      },
+      {
+        "id": "92f74e22-8e72-4f9e-8d05-2263e05311da",
+        "type": "gallery",
+        "label": "Gallery",
+        "col": 6,
+        "startRow": 2,
+        "span": 2,
+        "color": "#BBF7D0",
+        "employeeId": 1764577072844
+      },
+      {
+        "id": "5dfe5a87-5bc6-4a3c-89eb-d432c4de7182",
+        "type": "front",
+        "label": "Front Desk",
+        "col": 6,
+        "startRow": 4,
+        "span": 2,
+        "color": "#ffe785",
+        "employeeId": 1764577072844
+      },
+      {
+        "id": "5710f1a8-ed31-400f-8f2f-fc76fccca35d",
+        "type": "gallery",
+        "label": "Gallery",
+        "col": 6,
+        "startRow": 6,
+        "span": 2,
+        "color": "#BBF7D0",
+        "employeeId": 1764577072844
+      },
+      {
+        "id": "283087c0-7e64-4b30-8a5f-baac2a538d6a",
+        "type": "gallery",
+        "label": "Gallery",
+        "col": 6,
+        "startRow": 8,
+        "span": 2,
+        "color": "#BBF7D0",
+        "employeeId": 1764577072844
+      },
+      {
+        "id": "88df522f-3ff7-4680-a0ab-25fb28883be9",
+        "type": "front",
+        "label": "Front Desk",
+        "col": 6,
+        "startRow": 10,
+        "span": 2,
+        "color": "#ffe785",
+        "employeeId": 1764577072844
+      },
+      {
+        "id": "02a3b7e2-ced0-4331-b424-4f2577ca0923",
+        "type": "morning-break",
+        "label": "Morning Break",
+        "col": 6,
+        "startRow": 12,
+        "span": 1,
+        "color": "#ff4da3",
+        "employeeId": 1764577072844
+      },
+      {
+        "id": "2ca8ae16-f63c-4de6-92ad-72678b9d5714",
+        "type": "gallery",
+        "label": "Gallery",
+        "col": 6,
+        "startRow": 13,
+        "span": 2,
+        "color": "#BBF7D0",
+        "employeeId": 1764577072844
+      },
+      {
+        "id": "e298d792-6fe6-4230-9ed2-419f737aa787",
+        "type": "front",
+        "label": "Front Desk",
+        "col": 6,
+        "startRow": 15,
+        "span": 2,
+        "color": "#ffe785",
+        "employeeId": 1764577072844
+      },
+      {
+        "id": "12aada37-73b4-4367-b025-fd18d5e0c106",
+        "type": "gallery",
+        "label": "Gallery",
+        "col": 6,
+        "startRow": 17,
+        "span": 2,
+        "color": "#BBF7D0",
+        "employeeId": 1764577072844
+      },
+      {
+        "id": "5b21a9a3-a092-46a4-b0a7-33f2d0b566d7",
+        "type": "front",
+        "label": "Front Desk",
+        "col": 6,
+        "startRow": 19,
+        "span": 1,
+        "color": "#ffe785",
+        "employeeId": 1764577072844
+      },
+      {
+        "id": "08ecb1ca-379b-44d7-9e7b-68d437064b2c",
+        "type": "front",
+        "label": "Front Desk",
+        "col": 6,
+        "startRow": 20,
+        "span": 2,
+        "color": "#ffe785",
+        "employeeId": 1764577072844
+      },
+      {
+        "id": "46273029-bcda-486a-bdad-6a1aef09a29d",
+        "type": "break",
+        "label": "Lunch",
+        "col": 6,
+        "startRow": 22,
+        "span": 2,
+        "color": "#E9D5FF",
+        "employeeId": 1764577072844
+      },
+      {
+        "id": "5f511133-1ad8-41f6-8c52-cde7d40f9850",
+        "type": "gallery",
+        "label": "Gallery",
+        "col": 6,
+        "startRow": 24,
+        "span": 2,
+        "color": "#BBF7D0",
+        "employeeId": 1764577072844
+      },
+      {
+        "id": "72a31a96-64a1-4a29-abbd-7995787f5aec",
+        "type": "afternoon-break",
+        "label": "Afternoon Break",
+        "col": 6,
+        "startRow": 26,
+        "span": 1,
+        "color": "#ff2465",
+        "employeeId": 1764577072844
+      },
+      {
+        "id": "53d9cd97-8a9f-463d-a81e-dba489393c6a",
+        "type": "front",
+        "label": "Front Desk",
+        "col": 6,
+        "startRow": 27,
+        "span": 1,
+        "color": "#ffe785",
+        "employeeId": 1764577072844
+      },
+      {
+        "id": "9d2148de-a504-443c-981a-fdd3c4268003",
+        "type": "gallery",
+        "label": "Gallery",
+        "col": 7,
+        "startRow": 6,
+        "span": 2,
+        "color": "#BBF7D0",
+        "employeeId": 1764577079373
+      },
+      {
+        "id": "5203a4c7-5f30-47fe-b388-d25ad6c4d396",
+        "type": "front",
+        "label": "Front Desk",
+        "col": 7,
+        "startRow": 8,
+        "span": 2,
+        "color": "#ffe785",
+        "employeeId": 1764577079373
+      },
+      {
+        "id": "0675370d-2f26-4d54-93e7-50dea97db838",
+        "type": "gallery",
+        "label": "Gallery",
+        "col": 7,
+        "startRow": 10,
+        "span": 2,
+        "color": "#BBF7D0",
+        "employeeId": 1764577079373
+      },
+      {
+        "id": "d29268f8-9c0e-4e7c-9e76-a17f7e84f507",
+        "type": "front",
+        "label": "Front Desk",
+        "col": 7,
+        "startRow": 12,
+        "span": 1,
+        "color": "#ffe785",
+        "employeeId": 1764577079373
+      },
+      {
+        "id": "e267427f-a68a-42c8-8111-f0ea485bf1d8",
+        "type": "morning-break",
+        "label": "Morning Break",
+        "col": 7,
+        "startRow": 13,
+        "span": 1,
+        "color": "#ff4da3",
+        "employeeId": 1764577079373
+      },
+      {
+        "id": "0f188d5f-0c68-4281-a4b2-760f31b84fc6",
+        "type": "front",
+        "label": "Front Desk",
+        "col": 7,
+        "startRow": 14,
+        "span": 2,
+        "color": "#ffe785",
+        "employeeId": 1764577079373
+      },
+      {
+        "id": "3cf4b17f-f1e5-4e3a-9400-ca7783b3f28d",
+        "type": "gallery",
+        "label": "Gallery",
+        "col": 7,
+        "startRow": 16,
+        "span": 2,
+        "color": "#BBF7D0",
+        "employeeId": 1764577079373
+      },
+      {
+        "id": "4e350ce1-74ec-4a65-a1c2-2e782e0be1f4",
+        "type": "front",
+        "label": "Front Desk",
+        "col": 7,
+        "startRow": 18,
+        "span": 2,
+        "color": "#ffe785",
+        "employeeId": 1764577079373
+      },
+      {
+        "id": "dd573486-ce9e-4097-858b-7588c5018f62",
+        "type": "gallery",
+        "label": "Gallery",
+        "col": 7,
+        "startRow": 20,
+        "span": 2,
+        "color": "#BBF7D0",
+        "employeeId": 1764577079373
+      },
+      {
+        "id": "302677dd-8ad4-402d-86c8-b7595e1ed78d",
+        "type": "front",
+        "label": "Front Desk",
+        "col": 7,
+        "startRow": 22,
+        "span": 1,
+        "color": "#ffe785",
+        "employeeId": 1764577079373
+      },
+      {
+        "id": "b397a632-1f03-4b4c-b8e8-b2eb0b7c9a76",
+        "type": "break",
+        "label": "Lunch",
+        "col": 7,
+        "startRow": 23,
+        "span": 2,
+        "color": "#E9D5FF",
+        "employeeId": 1764577079373
+      },
+      {
+        "id": "9db5b0e0-e71d-491c-9516-8d9348e48b22",
+        "type": "gallery",
+        "label": "Gallery",
+        "col": 7,
+        "startRow": 25,
+        "span": 2,
+        "color": "#BBF7D0",
+        "employeeId": 1764577079373
+      },
+      {
+        "id": "156eca17-c09e-483e-8227-4c6cae8776c4",
+        "type": "gallery",
+        "label": "Gallery",
+        "col": 7,
+        "startRow": 27,
+        "span": 1,
+        "color": "#BBF7D0",
+        "employeeId": 1764577079373
+      },
+      {
+        "id": "57165a4a-e43b-47cc-8aa7-e12b20143c76",
+        "type": "front",
+        "label": "Front Desk",
+        "col": 7,
+        "startRow": 28,
+        "span": 2,
+        "color": "#ffe785",
+        "employeeId": 1764577079373
+      },
+      {
+        "id": "c0329d6f-5dcd-4f12-af5c-06d0532038f4",
+        "type": "gallery",
+        "label": "Gallery",
+        "col": 7,
+        "startRow": 30,
+        "span": 1,
+        "color": "#BBF7D0",
+        "employeeId": 1764577079373
+      },
+      {
+        "id": "8e202931-d1f2-451a-b9d0-12fcd0ca7198",
+        "type": "afternoon-break",
+        "label": "Afternoon Break",
+        "col": 7,
+        "startRow": 31,
+        "span": 1,
+        "color": "#ff2465",
+        "employeeId": 1764577079373
+      },
+      {
+        "id": "4b41dec0-c733-4062-955a-8c82927cde33",
+        "type": "gallery",
+        "label": "Gallery",
+        "col": 7,
+        "startRow": 32,
+        "span": 2,
+        "color": "#BBF7D0",
+        "employeeId": 1764577079373
+      },
+      {
+        "id": "bbad7e9d-e080-43e9-92d2-d1eda6015c08",
+        "type": "front",
+        "label": "Front Desk",
+        "col": 7,
+        "startRow": 34,
+        "span": 2,
+        "color": "#ffe785",
+        "employeeId": 1764577079373
+      },
+      {
+        "id": "7ba5b912-d698-42b4-923c-d23ca6decf11",
+        "type": "front",
+        "label": "Front Desk",
+        "col": 7,
+        "startRow": 36,
+        "span": 2,
+        "color": "#ffe785",
+        "employeeId": 1764577079373
+      },
+      {
+        "id": "b7029edf-7ac4-4832-befa-b35505f71846",
+        "type": "gallery",
+        "label": "Gallery",
+        "col": 8,
+        "startRow": 6,
+        "span": 2,
+        "color": "#BBF7D0",
+        "employeeId": 1767334723306
+      },
+      {
+        "id": "c32932e3-b1ed-4fe7-81e9-b960f3b68fce",
+        "type": "front",
+        "label": "Front Desk",
+        "col": 8,
+        "startRow": 8,
+        "span": 2,
+        "color": "#ffe785",
+        "employeeId": 1767334723306
+      },
+      {
+        "id": "b97b7c84-f66a-45d8-91de-e198e3cc08b6",
+        "type": "gallery",
+        "label": "Gallery",
+        "col": 8,
+        "startRow": 10,
+        "span": 2,
+        "color": "#BBF7D0",
+        "employeeId": 1767334723306
+      },
+      {
+        "id": "23a4527d-4c49-464a-99a1-e17e4bb8b9da",
+        "type": "front",
+        "label": "Front Desk",
+        "col": 8,
+        "startRow": 12,
+        "span": 2,
+        "color": "#ffe785",
+        "employeeId": 1767334723306
+      },
+      {
+        "id": "a3bc0973-c9c3-4319-ae2b-101b2e7d4089",
+        "type": "morning-break",
+        "label": "Morning Break",
+        "col": 8,
+        "startRow": 14,
+        "span": 1,
+        "color": "#ff4da3",
+        "employeeId": 1767334723306
+      },
+      {
+        "id": "8f95c93b-8d87-4b4f-a94a-419e67667b6d",
+        "type": "gallery",
+        "label": "Gallery",
+        "col": 8,
+        "startRow": 15,
+        "span": 2,
+        "color": "#BBF7D0",
+        "employeeId": 1767334723306
+      },
+      {
+        "id": "4895c6c0-964e-4d1f-902d-2b5f9097a393",
+        "type": "front",
+        "label": "Front Desk",
+        "col": 8,
+        "startRow": 17,
+        "span": 2,
+        "color": "#ffe785",
+        "employeeId": 1767334723306
+      },
+      {
+        "id": "e511ee81-1975-45d5-8eb5-bc6121f17560",
+        "type": "gallery",
+        "label": "Gallery",
+        "col": 8,
+        "startRow": 19,
+        "span": 2,
+        "color": "#BBF7D0",
+        "employeeId": 1767334723306
+      },
+      {
+        "id": "58b665cf-e8ed-488a-a07b-421aab0129f2",
+        "type": "front",
+        "label": "Front Desk",
+        "col": 8,
+        "startRow": 21,
+        "span": 2,
+        "color": "#ffe785",
+        "employeeId": 1767334723306
+      },
+      {
+        "id": "2e7888ea-ec10-40ed-82d1-c77b808c5aef",
+        "type": "gallery",
+        "label": "Gallery",
+        "col": 8,
+        "startRow": 23,
+        "span": 1,
+        "color": "#BBF7D0",
+        "employeeId": 1767334723306
+      },
+      {
+        "id": "567a944e-dc47-4d66-b16f-e43a5f0438b6",
+        "type": "break",
+        "label": "Lunch",
+        "col": 8,
+        "startRow": 24,
+        "span": 2,
+        "color": "#E9D5FF",
+        "employeeId": 1767334723306
+      },
+      {
+        "id": "dc56703f-d118-487f-86c7-d642bed5bdad",
+        "type": "front",
+        "label": "Front Desk",
+        "col": 8,
+        "startRow": 26,
+        "span": 2,
+        "color": "#ffe785",
+        "employeeId": 1767334723306
+      },
+      {
+        "id": "6096dddf-bc74-4815-ab11-8b3caff82624",
+        "type": "gallery",
+        "label": "Gallery",
+        "col": 8,
+        "startRow": 28,
+        "span": 2,
+        "color": "#BBF7D0",
+        "employeeId": 1767334723306
+      },
+      {
+        "id": "caa1698f-dcf2-4fda-adbe-6ebaf3a4d768",
+        "type": "front",
+        "label": "Front Desk",
+        "col": 8,
+        "startRow": 30,
+        "span": 2,
+        "color": "#ffe785",
+        "employeeId": 1767334723306
+      },
+      {
+        "id": "465952be-3704-4303-a58c-6971209dcd1b",
+        "type": "afternoon-break",
+        "label": "Afternoon Break",
+        "col": 8,
+        "startRow": 32,
+        "span": 1,
+        "color": "#ff2465",
+        "employeeId": 1767334723306
+      },
+      {
+        "id": "f8a1a4be-dca9-4066-977f-f79ce165132d",
+        "type": "front",
+        "label": "Front Desk",
+        "col": 8,
+        "startRow": 33,
+        "span": 2,
+        "color": "#ffe785",
+        "employeeId": 1767334723306
+      },
+      {
+        "id": "b1269a56-08ec-463f-9dde-c7f1d2d965cb",
+        "type": "gallery",
+        "label": "Gallery",
+        "col": 8,
+        "startRow": 35,
+        "span": 2,
+        "color": "#BBF7D0",
+        "employeeId": 1767334723306
+      },
+      {
+        "id": "70fa641d-0e0e-484b-bb16-347db04b3a80",
+        "type": "front",
+        "label": "Front Desk",
+        "col": 8,
+        "startRow": 37,
+        "span": 1,
+        "color": "#ffe785",
+        "employeeId": 1767334723306
+      }
+    ],
+    "hoursStart": "08:00",
+    "hoursEnd": "17:15"
+  },
+  {
+    "id": "2026-01-20",
+    "title": "Tuesday 20 January 2026",
+    "start": "2026-01-19T13:00:00.000Z",
+    "end": "2026-01-19T13:00:00.000Z",
+    "status": "Draft",
+    "updated": "Jan 20, 2026",
+    "tours": 2,
+    "people": 6
+  },
+  {
+    "id": "2026-01-21",
+    "title": "Wednesday 21 January 2026",
+    "start": "2026-01-20T13:00:00.000Z",
+    "end": "2026-01-20T13:00:00.000Z",
+    "status": "Draft",
+    "updated": "Jan 21, 2026",
+    "tours": 3,
+    "people": 7
+  },
+  {
+    "id": "2026-01-22",
+    "title": "Thursday 22 January 2026",
+    "start": "2026-01-21T13:00:00.000Z",
+    "end": "2026-01-21T13:00:00.000Z",
+    "status": "Draft",
+    "updated": "Jan 22, 2026",
+    "tours": 4,
+    "people": 8
+  },
+  {
+    "id": "2026-01-23",
+    "title": "Friday 23 January 2026",
+    "start": "2026-01-22T13:00:00.000Z",
+    "end": "2026-01-22T13:00:00.000Z",
+    "status": "Draft",
+    "updated": "Jan 23, 2026",
+    "tours": 5,
+    "people": 9
+  },
+  {
+    "id": "2026-01-24",
+    "title": "Saturday 24 January 2026",
+    "start": "2026-01-23T13:00:00.000Z",
+    "end": "2026-01-23T13:00:00.000Z",
+    "status": "Draft",
+    "updated": "Jan 24, 2026",
+    "tours": 6,
+    "people": 10
+  },
+  {
+    "id": "2026-01-25",
+    "title": "Sunday 25 January 2026",
+    "start": "2026-01-24T13:00:00.000Z",
+    "end": "2026-01-24T13:00:00.000Z",
+    "status": "Draft",
+    "updated": "Jan 25, 2026",
+    "tours": 2,
+    "people": 11
+  },
+  {
+    "id": "2026-01-26",
+    "title": "Monday 26 January 2026",
+    "start": "2026-01-25T13:00:00.000Z",
+    "end": "2026-01-25T13:00:00.000Z",
+    "status": "Draft",
+    "updated": "Jan 26, 2026",
+    "tours": 3,
+    "people": 12
+  },
+  {
+    "id": "2026-01-27",
+    "title": "Tuesday 27 January 2026",
+    "start": "2026-01-26T13:00:00.000Z",
+    "end": "2026-01-26T13:00:00.000Z",
+    "status": "Draft",
+    "updated": "Jan 27, 2026",
+    "tours": 4,
+    "people": 13
+  },
+  {
+    "id": "2026-01-28",
+    "title": "Wednesday 28 January 2026",
+    "start": "2026-01-27T13:00:00.000Z",
+    "end": "2026-01-27T13:00:00.000Z",
+    "status": "Draft",
+    "updated": "Jan 28, 2026",
+    "tours": 5,
+    "people": 6
+  },
+  {
+    "id": "2026-01-29",
+    "title": "Thursday 29 January 2026",
+    "start": "2026-01-28T13:00:00.000Z",
+    "end": "2026-01-28T13:00:00.000Z",
+    "status": "Draft",
+    "updated": "Jan 29, 2026",
+    "tours": 6,
+    "people": 7
+  },
+  {
+    "id": "2026-01-30",
+    "title": "Friday 30 January 2026",
+    "start": "2026-01-29T13:00:00.000Z",
+    "end": "2026-01-29T13:00:00.000Z",
+    "status": "Draft",
+    "updated": "Jan 30, 2026",
+    "tours": 2,
+    "people": 8
+  },
+  {
+    "id": "2026-01-31",
+    "title": "Saturday 31 January 2026",
+    "start": "2026-01-30T13:00:00.000Z",
+    "end": "2026-01-30T13:00:00.000Z",
+    "status": "Draft",
+    "updated": "Jan 31, 2026",
+    "tours": 3,
+    "people": 9
+  },
+  {
+    "id": "2026-02-01",
+    "title": "Sunday 1 February 2026",
+    "start": "2026-01-31T13:00:00.000Z",
+    "end": "2026-01-31T13:00:00.000Z",
+    "status": "Draft",
+    "updated": "Feb 11, 2026",
+    "tours": 3,
+    "people": 3,
+    "employees": [
+      {
+        "id": "1",
+        "name": "Claire"
+      },
+      {
+        "id": "3",
+        "name": "Anna"
+      },
+      {
+        "id": "1764576637465",
+        "name": "William"
+      }
+    ],
+    "tasks": [
+      {
+        "id": "f9a3684e-a46a-4c9f-825d-bb431c44bc9e",
+        "type": "set-up-gallery",
+        "label": "Set up Gallery",
+        "col": 2,
+        "startRow": 2,
+        "span": 1,
+        "color": "#ff0066",
+        "employeeId": 1
+      },
+      {
+        "id": "aff753ca-95ab-43d1-9367-7fb2c936fb21",
+        "type": "gallery",
+        "label": "Gallery",
+        "col": 2,
+        "startRow": 3,
+        "span": 1,
+        "color": "#BBF7D0",
+        "employeeId": 1
+      },
+      {
+        "id": "eea80c6a-3bc1-481d-b1fc-447b57030da1",
+        "type": "tour",
+        "label": "Public Tour",
+        "col": 2,
+        "startRow": 4,
+        "span": 4,
+        "color": "#BFDBFE",
+        "employeeId": 1
+      },
+      {
+        "id": "d7f155b0-1cb7-4efe-9384-9b31efcf80b4",
+        "type": "front",
+        "label": "Front Desk",
+        "col": 2,
+        "startRow": 8,
+        "span": 2,
+        "color": "#ffe785",
+        "employeeId": 1
+      },
+      {
+        "id": "04576633-499e-4366-81dd-1a02f66e56e2",
+        "type": "break",
+        "label": "Lunch",
+        "col": 2,
+        "startRow": 10,
+        "span": 2,
+        "color": "#E9D5FF",
+        "employeeId": 1
+      },
+      {
+        "id": "e2fa0ab3-ecec-4a6f-ac06-58ff6874c55f",
+        "type": "front",
+        "label": "Front Desk",
+        "col": 2,
+        "startRow": 12,
+        "span": 2,
+        "color": "#ffe785",
+        "employeeId": 1
+      },
+      {
+        "id": "cb247c0b-2c8d-46f9-acdc-57fae9c6cb23",
+        "type": "gallery",
+        "label": "Gallery",
+        "col": 2,
+        "startRow": 14,
+        "span": 2,
+        "color": "#BBF7D0",
+        "employeeId": 1
+      },
+      {
+        "id": "5f77375e-7c31-43ea-8ba9-5d4d2f3f835f",
+        "type": "gallery",
+        "label": "Gallery",
+        "col": 2,
+        "startRow": 16,
+        "span": 2,
+        "color": "#BBF7D0",
+        "employeeId": 1
+      },
+      {
+        "id": "0b6dbd84-8418-4d44-aef6-e797799d96d9",
+        "type": "gallery",
+        "label": "Gallery",
+        "col": 2,
+        "startRow": 18,
+        "span": 2,
+        "color": "#BBF7D0",
+        "employeeId": 1
+      },
+      {
+        "id": "84448f71-bcf3-4c3f-a6d9-ba72a509c281",
+        "type": "front",
+        "label": "Front Desk",
+        "col": 2,
+        "startRow": 20,
+        "span": 2,
+        "color": "#ffe785",
+        "employeeId": 1
+      },
+      {
+        "id": "3f5b2f9f-14fb-4448-b9b0-003a2551bb62",
+        "type": "front",
+        "label": "Front Desk",
+        "col": 2,
+        "startRow": 22,
+        "span": 2,
+        "color": "#ffe785",
+        "employeeId": 1
+      },
+      {
+        "id": "79e1e868-8f18-4c30-9974-3c5338bc6680",
+        "type": "gallery",
+        "label": "Gallery",
+        "col": 2,
+        "startRow": 24,
+        "span": 2,
+        "color": "#BBF7D0",
+        "employeeId": 1
+      },
+      {
+        "id": "272dbd37-019b-47bc-983d-e093b297e8b0",
+        "type": "front",
+        "label": "Front Desk",
+        "col": 3,
+        "startRow": 4,
+        "span": 2,
+        "color": "#ffe785",
+        "employeeId": 3
+      },
+      {
+        "id": "913aafa1-295a-4672-ae8c-297f8777c54b",
+        "type": "gallery",
+        "label": "Gallery",
+        "col": 3,
+        "startRow": 6,
+        "span": 2,
+        "color": "#BBF7D0",
+        "employeeId": 3
+      },
+      {
+        "id": "b6dd7100-4c33-4d0b-9b86-3931aa767f9a",
+        "type": "tour",
+        "label": "Public Tour",
+        "col": 3,
+        "startRow": 8,
+        "span": 4,
+        "color": "#BFDBFE",
+        "employeeId": 3
+      },
+      {
+        "id": "e2c9a0b5-7af7-492b-9261-e26caddf588e",
+        "type": "break",
+        "label": "Lunch",
+        "col": 3,
+        "startRow": 12,
+        "span": 2,
+        "color": "#E9D5FF",
+        "employeeId": 3
+      },
+      {
+        "id": "17b14029-fd6b-4f8b-8388-7f2ef0f15c97",
+        "type": "front",
+        "label": "Front Desk",
+        "col": 3,
+        "startRow": 14,
+        "span": 2,
+        "color": "#ffe785",
+        "employeeId": 3
+      },
+      {
+        "id": "25a23623-0fb9-4b21-896d-4ffccb29b82f",
+        "type": "gallery",
+        "label": "Gallery",
+        "col": 3,
+        "startRow": 16,
+        "span": 2,
+        "color": "#BBF7D0",
+        "employeeId": 3
+      },
+      {
+        "id": "cdd45245-8fc6-422d-bb3a-419049a2fc1f",
+        "type": "gallery",
+        "label": "Gallery",
+        "col": 3,
+        "startRow": 18,
+        "span": 2,
+        "color": "#BBF7D0",
+        "employeeId": 3
+      },
+      {
+        "id": "296e641a-2c0a-4d8f-894c-0a1c286c4a75",
+        "type": "gallery",
+        "label": "Gallery",
+        "col": 3,
+        "startRow": 20,
+        "span": 2,
+        "color": "#BBF7D0",
+        "employeeId": 3
+      },
+      {
+        "id": "5221ee5a-ed03-47ff-9bcf-0f361b4b5459",
+        "type": "front",
+        "label": "Front Desk",
+        "col": 3,
+        "startRow": 22,
+        "span": 2,
+        "color": "#ffe785",
+        "employeeId": 3
+      },
+      {
+        "id": "579edc17-6807-4927-9c4e-874cc9445023",
+        "type": "front",
+        "label": "Front Desk",
+        "col": 3,
+        "startRow": 24,
+        "span": 2,
+        "color": "#ffe785",
+        "employeeId": 3
+      },
+      {
+        "id": "bc02e5e2-6ece-4f4b-a100-10db67f3f338",
+        "type": "tidy",
+        "label": "Tidy Gallery",
+        "col": 3,
+        "startRow": 26,
+        "span": 1,
+        "color": "#FED7AA",
+        "employeeId": 3
+      },
+      {
+        "id": "6397fd16-8be0-4b0d-8b84-862f84fac1d1",
+        "type": "gallery",
+        "label": "Gallery",
+        "col": 3,
+        "startRow": 27,
+        "span": 1,
+        "color": "#BBF7D0",
+        "employeeId": 3
+      },
+      {
+        "id": "31c17c4d-808e-4c25-b7df-6a6f82924ca4",
+        "type": "gallery",
+        "label": "Gallery",
+        "col": 4,
+        "startRow": 3,
+        "span": 2,
+        "color": "#BBF7D0",
+        "employeeId": 1764576637465
+      },
+      {
+        "id": "d4f9df19-31fe-4800-95bb-a26a8ce405ab",
+        "type": "gallery",
+        "label": "Gallery",
+        "col": 4,
+        "startRow": 5,
+        "span": 1,
+        "color": "#BBF7D0",
+        "employeeId": 1764576637465
+      },
+      {
+        "id": "00147d14-c146-4dbc-b628-ae581e672655",
+        "type": "front",
+        "label": "Front Desk",
+        "col": 4,
+        "startRow": 6,
+        "span": 2,
+        "color": "#ffe785",
+        "employeeId": 1764576637465
+      },
+      {
+        "id": "7ee0ac6d-5f3d-42e8-8cc0-83dfb64dd0c2",
+        "type": "gallery",
+        "label": "Gallery",
+        "col": 4,
+        "startRow": 8,
+        "span": 1,
+        "color": "#BBF7D0",
+        "employeeId": 1764576637465
+      },
+      {
+        "id": "ceaf8196-96ba-4a76-ba30-17fe14662d3c",
+        "type": "break",
+        "label": "Lunch",
+        "col": 4,
+        "startRow": 9,
+        "span": 2,
+        "color": "#E9D5FF",
+        "employeeId": 1764576637465
+      },
+      {
+        "id": "0af431b4-11f5-412e-9aac-b815fed6e375",
+        "type": "front",
+        "label": "Front Desk",
+        "col": 4,
+        "startRow": 11,
+        "span": 2,
+        "color": "#ffe785",
+        "employeeId": 1764576637465
+      },
+      {
+        "id": "0d6590a1-851c-4474-8d75-27593391f4d0",
+        "type": "gallery",
+        "label": "Gallery",
+        "col": 4,
+        "startRow": 13,
+        "span": 1,
+        "color": "#BBF7D0",
+        "employeeId": 1764576637465
+      },
+      {
+        "id": "81fc3399-9a21-461d-9252-35c29bd5a3e2",
+        "type": "tour",
+        "label": "Public Tour",
+        "col": 4,
+        "startRow": 14,
+        "span": 4,
+        "color": "#BFDBFE",
+        "employeeId": 1764576637465
+      },
+      {
+        "id": "766754ba-5b02-46fb-89b1-e9768de828d6",
+        "type": "front",
+        "label": "Front Desk",
+        "col": 4,
+        "startRow": 18,
+        "span": 2,
+        "color": "#ffe785",
+        "employeeId": 1764576637465
+      },
+      {
+        "id": "23c24ab8-aafa-4c24-9133-279036e15f0c",
+        "type": "front",
+        "label": "Front Desk",
+        "col": 4,
+        "startRow": 20,
+        "span": 2,
+        "color": "#ffe785",
+        "employeeId": 1764576637465
+      },
+      {
+        "id": "3dc844aa-f131-4489-b8db-41c4fa1c3a30",
+        "type": "gallery",
+        "label": "Gallery",
+        "col": 4,
+        "startRow": 22,
+        "span": 2,
+        "color": "#BBF7D0",
+        "employeeId": 1764576637465
+      },
+      {
+        "id": "2589d722-fbe6-4be3-bc1e-4b572a1a7ab2",
+        "type": "front",
+        "label": "Front Desk",
+        "col": 4,
+        "startRow": 24,
+        "span": 2,
+        "color": "#ffe785",
+        "employeeId": 1764576637465
+      },
+      {
+        "id": "5263972c-7e37-4435-877d-f2da915226b9",
+        "type": "gallery",
+        "label": "Gallery",
+        "col": 4,
+        "startRow": 26,
+        "span": 1,
+        "color": "#BBF7D0",
+        "employeeId": 1764576637465
+      }
+    ],
+    "hoursStart": "09:45",
+    "hoursEnd": "16:15"
+  },
+  {
+    "id": "2026-02-02",
+    "title": "Monday 2 February 2026",
+    "start": "2026-02-01T13:00:00.000Z",
+    "end": "2026-02-01T13:00:00.000Z",
+    "status": "Draft",
+    "updated": "Feb 2, 2026",
+    "tours": 4,
+    "people": 8
+  },
+  {
+    "id": "2026-02-03",
+    "title": "Tuesday 3 February 2026",
+    "start": "2026-02-02T13:00:00.000Z",
+    "end": "2026-02-02T13:00:00.000Z",
+    "status": "Draft",
+    "updated": "Feb 3, 2026",
+    "tours": 5,
+    "people": 9
+  },
+  {
+    "id": "2026-02-04",
+    "title": "Wednesday 4 February 2026",
+    "start": "2026-02-03T13:00:00.000Z",
+    "end": "2026-02-03T13:00:00.000Z",
+    "status": "Draft",
+    "updated": "Feb 4, 2026",
+    "tours": 6,
+    "people": 10
+  },
+  {
+    "id": "2026-02-05",
+    "title": "Thursday 5 February 2026",
+    "start": "2026-02-04T13:00:00.000Z",
+    "end": "2026-02-04T13:00:00.000Z",
+    "status": "Draft",
+    "updated": "Feb 5, 2026",
+    "tours": 2,
+    "people": 11
+  },
+  {
+    "id": "2026-02-06",
+    "title": "Friday 6 February 2026",
+    "start": "2026-02-05T13:00:00.000Z",
+    "end": "2026-02-05T13:00:00.000Z",
+    "status": "Draft",
+    "updated": "Feb 6, 2026",
+    "tours": 3,
+    "people": 12
+  },
+  {
+    "id": "2026-02-07",
+    "title": "Saturday 7 February 2026",
+    "start": "2026-02-06T13:00:00.000Z",
+    "end": "2026-02-06T13:00:00.000Z",
+    "status": "Draft",
+    "updated": "Feb 7, 2026",
+    "tours": 4,
+    "people": 13
+  },
+  {
+    "id": "2026-02-08",
+    "title": "Sunday 8 February 2026",
+    "start": "2026-02-07T13:00:00.000Z",
+    "end": "2026-02-07T13:00:00.000Z",
+    "status": "Draft",
+    "updated": "Feb 8, 2026",
+    "tours": 5,
+    "people": 6
+  },
+  {
+    "id": "2026-02-09",
+    "title": "Monday 9 February 2026",
+    "start": "2026-02-08T13:00:00.000Z",
+    "end": "2026-02-08T13:00:00.000Z",
+    "status": "Draft",
+    "updated": "Feb 9, 2026",
+    "tours": 6,
+    "people": 7
+  },
+  {
+    "id": "2026-02-10",
+    "title": "Tuesday 10 February 2026",
+    "start": "2026-02-09T13:00:00.000Z",
+    "end": "2026-02-09T13:00:00.000Z",
+    "status": "Draft",
+    "updated": "Feb 10, 2026",
+    "tours": 2,
+    "people": 8
+  },
+  {
+    "id": "2026-02-11",
+    "title": "Wednesday 11 February 2026",
+    "start": "2026-02-10T13:00:00.000Z",
+    "end": "2026-02-10T13:00:00.000Z",
+    "status": "Draft",
+    "updated": "Feb 11, 2026",
+    "tours": 4,
+    "people": 7,
+    "employees": [
+      {
+        "id": "2",
+        "name": "Graeme"
+      },
+      {
+        "id": "3",
+        "name": "Anna"
+      },
+      {
+        "id": "1764576637465",
+        "name": "William"
+      },
+      {
+        "id": "1764577062968",
+        "name": "Leila"
+      },
+      {
+        "id": "1764577069066",
+        "name": "Rowan"
+      },
+      {
+        "id": "1764577072844",
+        "name": "Shirine"
+      },
+      {
+        "id": "1767334723306",
+        "name": "Ksenia"
+      }
+    ],
+    "tasks": [
+      {
+        "id": "32ee6524-4478-42e2-9a63-0597d150fdd4",
+        "type": "front",
+        "label": "Front Desk",
+        "col": 2,
+        "startRow": 4,
+        "span": 2,
+        "color": "#ffe785",
+        "employeeId": 2
+      },
+      {
+        "id": "6163c09d-bf79-4a14-9304-b170877db574",
+        "type": "gallery",
+        "label": "Gallery",
+        "col": 2,
+        "startRow": 6,
+        "span": 2,
+        "color": "#BBF7D0",
+        "employeeId": 2
+      },
+      {
+        "id": "d35bd426-99db-422b-8c3a-ae47fe45874c",
+        "type": "morning-break",
+        "label": "Morning Break",
+        "col": 2,
+        "startRow": 8,
+        "span": 1,
+        "color": "#ff4da3",
+        "employeeId": 2
+      },
+      {
+        "id": "c435e685-7ef0-4874-873d-49fc5f2f716a",
+        "type": "gallery",
+        "label": "Gallery",
+        "col": 2,
+        "startRow": 9,
+        "span": 2,
+        "color": "#BBF7D0",
+        "employeeId": 2
+      },
+      {
+        "id": "1c275105-0df7-4649-a4a4-c39ae0184a3c",
+        "type": "tour",
+        "label": "Public Tour",
+        "col": 2,
+        "startRow": 11,
+        "span": 4,
+        "color": "#BFDBFE",
+        "employeeId": 2
+      },
+      {
+        "id": "34c5af77-ab76-47b5-af6a-b1f6bdd92dbc",
+        "type": "gallery",
+        "label": "Gallery",
+        "col": 2,
+        "startRow": 15,
+        "span": 1,
+        "color": "#BBF7D0",
+        "employeeId": 2
+      },
+      {
+        "id": "04294e71-c0c5-4fd0-a61c-caa18917e2c7",
+        "type": "front",
+        "label": "Front Desk",
+        "col": 2,
+        "startRow": 16,
+        "span": 2,
+        "color": "#ffe785",
+        "employeeId": 2
+      },
+      {
+        "id": "322d5ec8-b9bd-49b1-8a17-579928ad6584",
+        "type": "break",
+        "label": "Lunch",
+        "col": 2,
+        "startRow": 18,
+        "span": 2,
+        "color": "#E9D5FF",
+        "employeeId": 2
+      },
+      {
+        "id": "16ed0501-3476-4de5-a330-1b10c5128778",
+        "type": "gallery",
+        "label": "Gallery",
+        "col": 2,
+        "startRow": 20,
+        "span": 2,
+        "color": "#BBF7D0",
+        "employeeId": 2
+      },
+      {
+        "id": "ca962d17-f159-4f76-a177-6ab7784dedc0",
+        "type": "front",
+        "label": "Front Desk",
+        "col": 2,
+        "startRow": 22,
+        "span": 2,
+        "color": "#ffe785",
+        "employeeId": 2
+      },
+      {
+        "id": "94af39ac-19f5-48a0-b16e-a77953aa1e2e",
+        "type": "front",
+        "label": "Front Desk",
+        "col": 2,
+        "startRow": 24,
+        "span": 2,
+        "color": "#ffe785",
+        "employeeId": 2
+      },
+      {
+        "id": "307d7c7d-3ca5-43a1-9c81-86ff2948f1ec",
+        "type": "afternoon-break",
+        "label": "Afternoon Break",
+        "col": 2,
+        "startRow": 26,
+        "span": 1,
+        "color": "#ff2465",
+        "employeeId": 2
+      },
+      {
+        "id": "67009099-fc24-4bd5-924c-dc294a7d0661",
+        "type": "gallery",
+        "label": "Gallery",
+        "col": 2,
+        "startRow": 27,
+        "span": 2,
+        "color": "#BBF7D0",
+        "employeeId": 2
+      },
+      {
+        "id": "7e176400-f0f8-4955-8690-af1bf6431ee2",
+        "type": "front",
+        "label": "Front Desk",
+        "col": 2,
+        "startRow": 29,
+        "span": 2,
+        "color": "#ffe785",
+        "employeeId": 2
+      },
+      {
+        "id": "b1376c0b-a77b-4e75-beab-0ecc654eccc5",
+        "type": "gallery",
+        "label": "Gallery",
+        "col": 2,
+        "startRow": 31,
+        "span": 2,
+        "color": "#BBF7D0",
+        "employeeId": 2
+      },
+      {
+        "id": "65298335-9edc-4f78-998e-acc6c367ec58",
+        "type": "front",
+        "label": "Front Desk",
+        "col": 2,
+        "startRow": 33,
+        "span": 2,
+        "color": "#ffe785",
+        "employeeId": 2
+      },
+      {
+        "id": "d99348fe-e38a-47a5-8f42-73785714a414",
+        "type": "gallery",
+        "label": "Gallery",
+        "col": 2,
+        "startRow": 35,
+        "span": 1,
+        "color": "#BBF7D0",
+        "employeeId": 2
+      },
+      {
+        "id": "febdc93e-26d4-48c0-a8aa-0b0b8151dd9a",
+        "type": "set-up-gallery",
+        "label": "Set up Gallery",
+        "col": 3,
+        "startRow": 2,
+        "span": 1,
+        "color": "#ff0066",
+        "employeeId": 3
+      },
+      {
+        "id": "e66e8c37-985d-4330-b2b5-0b4850556d7b",
+        "type": "gallery",
+        "label": "Gallery",
+        "col": 3,
+        "startRow": 3,
+        "span": 2,
+        "color": "#BBF7D0",
+        "employeeId": 3
+      },
+      {
+        "id": "bc6333da-d3f9-4b58-959c-0e0ed86cd26c",
+        "type": "gallery",
+        "label": "Gallery",
+        "col": 3,
+        "startRow": 5,
+        "span": 1,
+        "color": "#BBF7D0",
+        "employeeId": 3
+      },
+      {
+        "id": "b5f86f16-ae90-48f4-9baf-3300f10506ba",
+        "type": "front",
+        "label": "Front Desk",
+        "col": 3,
+        "startRow": 6,
+        "span": 2,
+        "color": "#ffe785",
+        "employeeId": 3
+      },
+      {
+        "id": "e2764e0a-a8d3-42b8-aaef-f5051e043c88",
+        "type": "gallery",
+        "label": "Gallery",
+        "col": 3,
+        "startRow": 8,
+        "span": 1,
+        "color": "#BBF7D0",
+        "employeeId": 3
+      },
+      {
+        "id": "9e8465ad-be07-4a60-88c2-1dc3235c4b1e",
+        "type": "morning-break",
+        "label": "Morning Break",
+        "col": 3,
+        "startRow": 9,
+        "span": 1,
+        "color": "#ff4da3",
+        "employeeId": 3
+      },
+      {
+        "id": "c477fbda-6928-499c-a4c4-d5b87abecc18",
+        "type": "gallery",
+        "label": "Gallery",
+        "col": 3,
+        "startRow": 10,
+        "span": 2,
+        "color": "#BBF7D0",
+        "employeeId": 3
+      },
+      {
+        "id": "914d1054-a7e9-48c1-9e88-f9edb47df977",
+        "type": "front",
+        "label": "Front Desk",
+        "col": 3,
+        "startRow": 12,
+        "span": 2,
+        "color": "#ffe785",
+        "employeeId": 3
+      },
+      {
+        "id": "91f19bcc-9664-4612-90d2-cddf580ec4bf",
+        "type": "gallery",
+        "label": "Gallery",
+        "col": 3,
+        "startRow": 14,
+        "span": 1,
+        "color": "#BBF7D0",
+        "employeeId": 3
+      },
+      {
+        "id": "af9ef392-61f6-40bc-92b4-4ed2c244a2b4",
+        "type": "tour",
+        "label": "Public Tour",
+        "col": 3,
+        "startRow": 15,
+        "span": 4,
+        "color": "#BFDBFE",
+        "employeeId": 3
+      },
+      {
+        "id": "8006f287-b4f7-416c-ae67-b643d96d6b65",
+        "type": "break",
+        "label": "Lunch",
+        "col": 3,
+        "startRow": 19,
+        "span": 2,
+        "color": "#E9D5FF",
+        "employeeId": 3
+      },
+      {
+        "id": "3a1db69d-2dc7-4ae5-bcc7-1cfdce8a1024",
+        "type": "gallery",
+        "label": "Gallery",
+        "col": 3,
+        "startRow": 21,
+        "span": 1,
+        "color": "#BBF7D0",
+        "employeeId": 3
+      },
+      {
+        "id": "802f2d13-a0b7-4c6e-8da4-8c1546d8443c",
+        "type": "front",
+        "label": "Front Desk",
+        "col": 3,
+        "startRow": 22,
+        "span": 2,
+        "color": "#ffe785",
+        "employeeId": 3
+      },
+      {
+        "id": "4273c6ed-3019-4b61-abf5-f66fa65debb4",
+        "type": "gallery",
+        "label": "Gallery",
+        "col": 3,
+        "startRow": 24,
+        "span": 2,
+        "color": "#BBF7D0",
+        "employeeId": 3
+      },
+      {
+        "id": "5709c56d-a94e-4e20-b85a-b068338176b9",
+        "type": "front",
+        "label": "Front Desk",
+        "col": 3,
+        "startRow": 26,
+        "span": 1,
+        "color": "#ffe785",
+        "employeeId": 3
+      },
+      {
+        "id": "4f761103-627c-4b11-9443-792a2018f60a",
+        "type": "afternoon-break",
+        "label": "Afternoon Break",
+        "col": 3,
+        "startRow": 27,
+        "span": 1,
+        "color": "#ff2465",
+        "employeeId": 3
+      },
+      {
+        "id": "88bec485-cb21-415e-84f7-3618dfa214e1",
+        "type": "gallery",
+        "label": "Gallery",
+        "col": 3,
+        "startRow": 28,
+        "span": 2,
+        "color": "#BBF7D0",
+        "employeeId": 3
+      },
+      {
+        "id": "f0807118-09be-491f-a100-4740732d31f1",
+        "type": "front",
+        "label": "Front Desk",
+        "col": 3,
+        "startRow": 30,
+        "span": 2,
+        "color": "#ffe785",
+        "employeeId": 3
+      },
+      {
+        "id": "1b6a249e-97cd-474c-ae19-d5f63ffb8810",
+        "type": "gallery",
+        "label": "Gallery",
+        "col": 3,
+        "startRow": 32,
+        "span": 2,
+        "color": "#BBF7D0",
+        "employeeId": 3
+      },
+      {
+        "id": "4d0d200b-1963-43c7-9499-c717878d4770",
+        "type": "gallery",
+        "label": "Gallery",
+        "col": 4,
+        "startRow": 6,
+        "span": 2,
+        "color": "#BBF7D0",
+        "employeeId": 1764576637465
+      },
+      {
+        "id": "1610a2ef-0bae-429f-a419-847a74a75daf",
+        "type": "front",
+        "label": "Front Desk",
+        "col": 4,
+        "startRow": 8,
+        "span": 2,
+        "color": "#ffe785",
+        "employeeId": 1764576637465
+      },
+      {
+        "id": "563b8d29-c945-431b-8a38-9939b73ad753",
+        "type": "morning-break",
+        "label": "Morning Break",
+        "col": 4,
+        "startRow": 10,
+        "span": 1,
+        "color": "#ff4da3",
+        "employeeId": 1764576637465
+      },
+      {
+        "id": "8073be61-e054-48fa-9162-f57e4b79a5ca",
+        "type": "gallery",
+        "label": "Gallery",
+        "col": 4,
+        "startRow": 11,
+        "span": 2,
+        "color": "#BBF7D0",
+        "employeeId": 1764576637465
+      },
+      {
+        "id": "e965ed49-4d11-4a47-b911-a04404415267",
+        "type": "front",
+        "label": "Front Desk",
+        "col": 4,
+        "startRow": 13,
+        "span": 2,
+        "color": "#ffe785",
+        "employeeId": 1764576637465
+      },
+      {
+        "id": "4859363d-abd0-459b-a776-989a8bca4d1a",
+        "type": "gallery",
+        "label": "Gallery",
+        "col": 4,
+        "startRow": 15,
+        "span": 2,
+        "color": "#BBF7D0",
+        "employeeId": 1764576637465
+      },
+      {
+        "id": "c06edb67-f27f-4631-b86a-dc03e81b07bf",
+        "type": "front",
+        "label": "Front Desk",
+        "col": 4,
+        "startRow": 17,
+        "span": 1,
+        "color": "#ffe785",
+        "employeeId": 1764576637465
+      },
+      {
+        "id": "6f4f2646-4513-4475-8675-8a20f65b87a8",
+        "type": "break",
+        "label": "Lunch",
+        "col": 4,
+        "startRow": 18,
+        "span": 2,
+        "color": "#E9D5FF",
+        "employeeId": 1764576637465
+      },
+      {
+        "id": "8b764f9b-682b-477d-ad01-bf9e7ad255a0",
+        "type": "gallery",
+        "label": "Gallery",
+        "col": 4,
+        "startRow": 20,
+        "span": 1,
+        "color": "#BBF7D0",
+        "employeeId": 1764576637465
+      },
+      {
+        "id": "d17238dc-1a99-4c54-a6f5-2d78472a6465",
+        "type": "tour",
+        "label": "Public Tour",
+        "col": 4,
+        "startRow": 21,
+        "span": 4,
+        "color": "#BFDBFE",
+        "employeeId": 1764576637465
+      },
+      {
+        "id": "6d978af5-135b-4e0c-9d0b-40c810c9be08",
+        "type": "gallery",
+        "label": "Gallery",
+        "col": 4,
+        "startRow": 25,
+        "span": 1,
+        "color": "#BBF7D0",
+        "employeeId": 1764576637465
+      },
+      {
+        "id": "4f2fd017-cdb6-49c6-96aa-d2e9cc790e28",
+        "type": "front",
+        "label": "Front Desk",
+        "col": 4,
+        "startRow": 26,
+        "span": 2,
+        "color": "#ffe785",
+        "employeeId": 1764576637465
+      },
+      {
+        "id": "fea4ede6-6714-42ea-a262-4e5108d9760c",
+        "type": "afternoon-break",
+        "label": "Afternoon Break",
+        "col": 4,
+        "startRow": 28,
+        "span": 1,
+        "color": "#ff2465",
+        "employeeId": 1764576637465
+      },
+      {
+        "id": "edb9dbae-694e-4de1-a0ea-c2715c1f953b",
+        "type": "gallery",
+        "label": "Gallery",
+        "col": 4,
+        "startRow": 29,
+        "span": 2,
+        "color": "#BBF7D0",
+        "employeeId": 1764576637465
+      },
+      {
+        "id": "3e235772-419e-400c-b9db-5688d2a35e13",
+        "type": "front",
+        "label": "Front Desk",
+        "col": 4,
+        "startRow": 31,
+        "span": 1,
+        "color": "#ffe785",
+        "employeeId": 1764576637465
+      },
+      {
+        "id": "bff7f894-7324-45ff-a649-9e74b9465b0a",
+        "type": "front",
+        "label": "Front Desk",
+        "col": 4,
+        "startRow": 32,
+        "span": 2,
+        "color": "#ffe785",
+        "employeeId": 1764576637465
+      },
+      {
+        "id": "2424afd9-370c-40a0-94d1-645b21bd883b",
+        "type": "gallery",
+        "label": "Gallery",
+        "col": 4,
+        "startRow": 34,
+        "span": 2,
+        "color": "#BBF7D0",
+        "employeeId": 1764576637465
+      },
+      {
+        "id": "d2b73d35-83c3-492b-ba63-8f0766657fb1",
+        "type": "front",
+        "label": "Front Desk",
+        "col": 4,
+        "startRow": 36,
+        "span": 1,
+        "color": "#ffe785",
+        "employeeId": 1764576637465
+      },
+      {
+        "id": "97aeb5fd-5ed5-4d33-881e-ecca7031a0a8",
+        "type": "tidy",
+        "label": "Tidy Gallery",
+        "col": 4,
+        "startRow": 37,
+        "span": 1,
+        "color": "#FED7AA",
+        "employeeId": 1764576637465
+      },
+      {
+        "id": "518c0840-7958-4e91-9a76-420fbcdfce9e",
+        "type": "front",
+        "label": "Front Desk",
+        "col": 5,
+        "startRow": 2,
+        "span": 2,
+        "color": "#ffe785",
+        "employeeId": 1764577062968
+      },
+      {
+        "id": "b94e57f8-870d-431b-ae5b-b72f17bdd6ba",
+        "type": "gallery",
+        "label": "Gallery",
+        "col": 5,
+        "startRow": 4,
+        "span": 2,
+        "color": "#BBF7D0",
+        "employeeId": 1764577062968
+      },
+      {
+        "id": "32b52d37-9d1c-4632-b7c6-bed525f07bcf",
+        "type": "front",
+        "label": "Front Desk",
+        "col": 5,
+        "startRow": 6,
+        "span": 2,
+        "color": "#ffe785",
+        "employeeId": 1764577062968
+      },
+      {
+        "id": "264f8d3f-a32f-4bea-95a5-3f6ee699f494",
+        "type": "gallery",
+        "label": "Gallery",
+        "col": 5,
+        "startRow": 8,
+        "span": 2,
+        "color": "#BBF7D0",
+        "employeeId": 1764577062968
+      },
+      {
+        "id": "f6f16f66-0233-4046-a7b3-609e5c83c949",
+        "type": "front",
+        "label": "Front Desk",
+        "col": 5,
+        "startRow": 10,
+        "span": 1,
+        "color": "#ffe785",
+        "employeeId": 1764577062968
+      },
+      {
+        "id": "16434ff9-9e61-43a5-987b-d1a4f147c326",
+        "type": "morning-break",
+        "label": "Morning Break",
+        "col": 5,
+        "startRow": 11,
+        "span": 1,
+        "color": "#ff4da3",
+        "employeeId": 1764577062968
+      },
+      {
+        "id": "43f5358c-05f3-40bb-aaca-3c6ff86cfc1f",
+        "type": "gallery",
+        "label": "Gallery",
+        "col": 5,
+        "startRow": 12,
+        "span": 2,
+        "color": "#BBF7D0",
+        "employeeId": 1764577062968
+      },
+      {
+        "id": "2d26d38a-dd87-48c8-9c02-4725879d3cc4",
+        "type": "front",
+        "label": "Front Desk",
+        "col": 5,
+        "startRow": 14,
+        "span": 2,
+        "color": "#ffe785",
+        "employeeId": 1764577062968
+      },
+      {
+        "id": "c62aaef3-c2c7-450f-9984-822df72314d7",
+        "type": "gallery",
+        "label": "Gallery",
+        "col": 5,
+        "startRow": 16,
+        "span": 2,
+        "color": "#BBF7D0",
+        "employeeId": 1764577062968
+      },
+      {
+        "id": "1cb21396-9a26-486d-8bd2-e3f8629d5f33",
+        "type": "front",
+        "label": "Front Desk",
+        "col": 5,
+        "startRow": 18,
+        "span": 2,
+        "color": "#ffe785",
+        "employeeId": 1764577062968
+      },
+      {
+        "id": "a6a639d6-8583-4c86-88f9-11882d7b9ef9",
+        "type": "gallery",
+        "label": "Gallery",
+        "col": 5,
+        "startRow": 20,
+        "span": 1,
+        "color": "#BBF7D0",
+        "employeeId": 1764577062968
+      },
+      {
+        "id": "d6a186e4-9789-4cda-92c2-b95eded5ada6",
+        "type": "break",
+        "label": "Lunch",
+        "col": 5,
+        "startRow": 21,
+        "span": 2,
+        "color": "#E9D5FF",
+        "employeeId": 1764577062968
+      },
+      {
+        "id": "737ff574-20e4-4df9-9d36-972a17643110",
+        "type": "gallery",
+        "label": "Gallery",
+        "col": 5,
+        "startRow": 23,
+        "span": 2,
+        "color": "#BBF7D0",
+        "employeeId": 1764577062968
+      },
+      {
+        "id": "7382d9e0-0f8d-4956-b21e-9758e8d99713",
+        "type": "tour",
+        "label": "Public Tour",
+        "col": 5,
+        "startRow": 25,
+        "span": 4,
+        "color": "#BFDBFE",
+        "employeeId": 1764577062968
+      },
+      {
+        "id": "08711e28-fdf2-4d89-91d4-bbe123f35a56",
+        "type": "afternoon-break",
+        "label": "Afternoon Break",
+        "col": 5,
+        "startRow": 29,
+        "span": 1,
+        "color": "#ff2465",
+        "employeeId": 1764577062968
+      },
+      {
+        "id": "eabccb49-371c-4722-a2fd-40668369afce",
+        "type": "front",
+        "label": "Front Desk",
+        "col": 5,
+        "startRow": 30,
+        "span": 2,
+        "color": "#ffe785",
+        "employeeId": 1764577062968
+      },
+      {
+        "id": "0ff3bebe-7d70-4f08-8b2d-5b63a262d25f",
+        "type": "gallery",
+        "label": "Gallery",
+        "col": 5,
+        "startRow": 32,
+        "span": 2,
+        "color": "#BBF7D0",
+        "employeeId": 1764577062968
+      },
+      {
+        "id": "8de77526-36dd-4b39-8b64-b9dc5003d0e0",
+        "type": "gallery",
+        "label": "Gallery",
+        "col": 6,
+        "startRow": 6,
+        "span": 2,
+        "color": "#BBF7D0",
+        "employeeId": 1764577069066
+      },
+      {
+        "id": "1b9e70cd-8a1d-4537-99db-3a6d126b67ce",
+        "type": "gallery",
+        "label": "Gallery",
+        "col": 6,
+        "startRow": 8,
+        "span": 2,
+        "color": "#BBF7D0",
+        "employeeId": 1764577069066
+      },
+      {
+        "id": "cfa51c3c-2886-4f2f-8a58-ddacdc9aac5a",
+        "type": "front",
+        "label": "Front Desk",
+        "col": 6,
+        "startRow": 10,
+        "span": 2,
+        "color": "#ffe785",
+        "employeeId": 1764577069066
+      },
+      {
+        "id": "85dabf4c-e327-4b8c-81ca-0258f1fed4b5",
+        "type": "morning-break",
+        "label": "Morning Break",
+        "col": 6,
+        "startRow": 12,
+        "span": 1,
+        "color": "#ff4da3",
+        "employeeId": 1764577069066
+      },
+      {
+        "id": "b2b471f6-479e-43a1-ab39-693a1efdef8c",
+        "type": "gallery",
+        "label": "Gallery",
+        "col": 6,
+        "startRow": 13,
+        "span": 2,
+        "color": "#BBF7D0",
+        "employeeId": 1764577069066
+      },
+      {
+        "id": "9b7e47e4-27ab-4859-bbf2-5d5da3b6291a",
+        "type": "front",
+        "label": "Front Desk",
+        "col": 6,
+        "startRow": 15,
+        "span": 2,
+        "color": "#ffe785",
+        "employeeId": 1764577069066
+      },
+      {
+        "id": "1d10aa1b-2d4d-462a-a17b-38cc6189f703",
+        "type": "gallery",
+        "label": "Gallery",
+        "col": 6,
+        "startRow": 17,
+        "span": 2,
+        "color": "#BBF7D0",
+        "employeeId": 1764577069066
+      },
+      {
+        "id": "b86ddac6-8eef-40dd-b694-ed8c3a8fdd93",
+        "type": "front",
+        "label": "Front Desk",
+        "col": 6,
+        "startRow": 19,
+        "span": 1,
+        "color": "#ffe785",
+        "employeeId": 1764577069066
+      },
+      {
+        "id": "e8e1db03-2fdd-430a-b5bd-11e2104c2dec",
+        "type": "front",
+        "label": "Front Desk",
+        "col": 6,
+        "startRow": 20,
+        "span": 2,
+        "color": "#ffe785",
+        "employeeId": 1764577069066
+      },
+      {
+        "id": "98f98cd0-0968-456c-bee3-5dbbc7b14bb0",
+        "type": "break",
+        "label": "Lunch",
+        "col": 6,
+        "startRow": 22,
+        "span": 2,
+        "color": "#E9D5FF",
+        "employeeId": 1764577069066
+      },
+      {
+        "id": "851f5683-f936-4a76-8d81-d83dc1bad900",
+        "type": "gallery",
+        "label": "Gallery",
+        "col": 6,
+        "startRow": 24,
+        "span": 2,
+        "color": "#BBF7D0",
+        "employeeId": 1764577069066
+      },
+      {
+        "id": "bf7b0315-4ac5-499f-91c8-375ab06469c4",
+        "type": "front",
+        "label": "Front Desk",
+        "col": 6,
+        "startRow": 26,
+        "span": 2,
+        "color": "#ffe785",
+        "employeeId": 1764577069066
+      },
+      {
+        "id": "20600997-26b1-4eef-a443-3379f0a68bc7",
+        "type": "gallery",
+        "label": "Gallery",
+        "col": 6,
+        "startRow": 28,
+        "span": 2,
+        "color": "#BBF7D0",
+        "employeeId": 1764577069066
+      },
+      {
+        "id": "f9797c1c-84c8-4120-8799-14d8171d7514",
+        "type": "afternoon-break",
+        "label": "Afternoon Break",
+        "col": 6,
+        "startRow": 30,
+        "span": 1,
+        "color": "#ff2465",
+        "employeeId": 1764577069066
+      },
+      {
+        "id": "4362c2ed-2185-42ce-b03b-32e939303ce5",
+        "type": "front",
+        "label": "Front Desk",
+        "col": 6,
+        "startRow": 31,
+        "span": 2,
+        "color": "#ffe785",
+        "employeeId": 1764577069066
+      },
+      {
+        "id": "e3252668-76c1-49d3-8747-8ac49d64ef81",
+        "type": "gallery",
+        "label": "Gallery",
+        "col": 6,
+        "startRow": 33,
+        "span": 1,
+        "color": "#BBF7D0",
+        "employeeId": 1764577069066
+      },
+      {
+        "id": "595c51f6-a8c9-49c6-a98d-c71c4d6b40e3",
+        "type": "front",
+        "label": "Front Desk",
+        "col": 6,
+        "startRow": 34,
+        "span": 2,
+        "color": "#ffe785",
+        "employeeId": 1764577069066
+      },
+      {
+        "id": "91d29ba2-9b58-4d1d-a917-14ca0809f197",
+        "type": "gallery",
+        "label": "Gallery",
+        "col": 6,
+        "startRow": 36,
+        "span": 2,
+        "color": "#BBF7D0",
+        "employeeId": 1764577069066
+      },
+      {
+        "id": "4bee96d2-2712-4119-bdcc-982b9c2e962c",
+        "type": "gallery",
+        "label": "Gallery",
+        "col": 7,
+        "startRow": 2,
+        "span": 2,
+        "color": "#BBF7D0",
+        "employeeId": 1764577072844
+      },
+      {
+        "id": "af8b9eea-448d-4d01-a0da-565b7652cc87",
+        "type": "front",
+        "label": "Front Desk",
+        "col": 7,
+        "startRow": 4,
+        "span": 2,
+        "color": "#ffe785",
+        "employeeId": 1764577072844
+      },
+      {
+        "id": "284b066a-c458-485e-af67-fa6e75c8b475",
+        "type": "gallery",
+        "label": "Gallery",
+        "col": 7,
+        "startRow": 6,
+        "span": 2,
+        "color": "#BBF7D0",
+        "employeeId": 1764577072844
+      },
+      {
+        "id": "617a83a6-9b5b-454f-b2f1-cb151b72efdf",
+        "type": "front",
+        "label": "Front Desk",
+        "col": 7,
+        "startRow": 8,
+        "span": 2,
+        "color": "#ffe785",
+        "employeeId": 1764577072844
+      },
+      {
+        "id": "a1cdcf0e-949f-44e9-8cfb-cab63c951a76",
+        "type": "gallery",
+        "label": "Gallery",
+        "col": 7,
+        "startRow": 10,
+        "span": 2,
+        "color": "#BBF7D0",
+        "employeeId": 1764577072844
+      },
+      {
+        "id": "9aa162fa-4f94-4cdb-af9d-49663256c29a",
+        "type": "front",
+        "label": "Front Desk",
+        "col": 7,
+        "startRow": 12,
+        "span": 1,
+        "color": "#ffe785",
+        "employeeId": 1764577072844
+      },
+      {
+        "id": "4cda5653-9f3b-48fb-8aed-94fb15534304",
+        "type": "morning-break",
+        "label": "Morning Break",
+        "col": 7,
+        "startRow": 13,
+        "span": 1,
+        "color": "#ff4da3",
+        "employeeId": 1764577072844
+      },
+      {
+        "id": "13f3d78c-0b34-4969-bf96-623831893cd1",
+        "type": "front",
+        "label": "Front Desk",
+        "col": 7,
+        "startRow": 14,
+        "span": 2,
+        "color": "#ffe785",
+        "employeeId": 1764577072844
+      },
+      {
+        "id": "40f3e3fd-83d4-401d-b5af-8eda638d9e97",
+        "type": "gallery",
+        "label": "Gallery",
+        "col": 7,
+        "startRow": 16,
+        "span": 2,
+        "color": "#BBF7D0",
+        "employeeId": 1764577072844
+      },
+      {
+        "id": "97853961-bf1b-4a7d-afbc-73002cbb9700",
+        "type": "front",
+        "label": "Front Desk",
+        "col": 7,
+        "startRow": 18,
+        "span": 2,
+        "color": "#ffe785",
+        "employeeId": 1764577072844
+      },
+      {
+        "id": "0985dc08-d935-42a5-ac09-32a6d07d2ea2",
+        "type": "gallery",
+        "label": "Gallery",
+        "col": 7,
+        "startRow": 20,
+        "span": 2,
+        "color": "#BBF7D0",
+        "employeeId": 1764577072844
+      },
+      {
+        "id": "88759c1a-3ad0-470d-a87f-d2f623ff6642",
+        "type": "front",
+        "label": "Front Desk",
+        "col": 7,
+        "startRow": 22,
+        "span": 1,
+        "color": "#ffe785",
+        "employeeId": 1764577072844
+      },
+      {
+        "id": "5b8ba5e1-06cd-46b8-9161-677363929271",
+        "type": "break",
+        "label": "Lunch",
+        "col": 7,
+        "startRow": 23,
+        "span": 2,
+        "color": "#E9D5FF",
+        "employeeId": 1764577072844
+      },
+      {
+        "id": "dc68b35f-a932-43cd-8565-ef1a7a8a904f",
+        "type": "gallery",
+        "label": "Gallery",
+        "col": 7,
+        "startRow": 25,
+        "span": 1,
+        "color": "#BBF7D0",
+        "employeeId": 1764577072844
+      },
+      {
+        "id": "31a000c1-562c-407f-8f8c-7d2382bb9b01",
+        "type": "afternoon-break",
+        "label": "Afternoon Break",
+        "col": 7,
+        "startRow": 26,
+        "span": 1,
+        "color": "#ff2465",
+        "employeeId": 1764577072844
+      },
+      {
+        "id": "6f84cf1b-30d1-4b8f-8411-dc5f49b464fd",
+        "type": "front",
+        "label": "Front Desk",
+        "col": 7,
+        "startRow": 27,
+        "span": 1,
+        "color": "#ffe785",
+        "employeeId": 1764577072844
+      },
+      {
+        "id": "6bbc5e60-69f4-4550-824b-89ec3e9fbc65",
+        "type": "gallery",
+        "label": "Gallery",
+        "col": 8,
+        "startRow": 6,
+        "span": 2,
+        "color": "#BBF7D0",
+        "employeeId": 1767334723306
+      },
+      {
+        "id": "526cd491-f6a9-47de-8f21-d8af6be09921",
+        "type": "front",
+        "label": "Front Desk",
+        "col": 8,
+        "startRow": 8,
+        "span": 2,
+        "color": "#ffe785",
+        "employeeId": 1767334723306
+      },
+      {
+        "id": "b3b34551-8083-43bd-af35-c80cd7c7720e",
+        "type": "gallery",
+        "label": "Gallery",
+        "col": 8,
+        "startRow": 10,
+        "span": 2,
+        "color": "#BBF7D0",
+        "employeeId": 1767334723306
+      },
+      {
+        "id": "6e547f2c-e99f-41cd-acd6-02e88b0608a1",
+        "type": "front",
+        "label": "Front Desk",
+        "col": 8,
+        "startRow": 12,
+        "span": 2,
+        "color": "#ffe785",
+        "employeeId": 1767334723306
+      },
+      {
+        "id": "04bb29e3-b224-4bae-993a-d2a9f41885b8",
+        "type": "morning-break",
+        "label": "Morning Break",
+        "col": 8,
+        "startRow": 14,
+        "span": 1,
+        "color": "#ff4da3",
+        "employeeId": 1767334723306
+      },
+      {
+        "id": "182830d2-f774-40f9-aa0e-d0f12a91cdfa",
+        "type": "gallery",
+        "label": "Gallery",
+        "col": 8,
+        "startRow": 15,
+        "span": 2,
+        "color": "#BBF7D0",
+        "employeeId": 1767334723306
+      },
+      {
+        "id": "546add50-ccf7-4979-bcb7-3a9ce7225630",
+        "type": "front",
+        "label": "Front Desk",
+        "col": 8,
+        "startRow": 17,
+        "span": 2,
+        "color": "#ffe785",
+        "employeeId": 1767334723306
+      },
+      {
+        "id": "19ee775b-cf4a-41c0-b17b-e66cd37653a5",
+        "type": "gallery",
+        "label": "Gallery",
+        "col": 8,
+        "startRow": 19,
+        "span": 2,
+        "color": "#BBF7D0",
+        "employeeId": 1767334723306
+      },
+      {
+        "id": "ee665b10-ac6c-49da-a2ac-f79ad568461e",
+        "type": "front",
+        "label": "Front Desk",
+        "col": 8,
+        "startRow": 21,
+        "span": 2,
+        "color": "#ffe785",
+        "employeeId": 1767334723306
+      },
+      {
+        "id": "b7d1ee34-4d07-484a-b4a4-035fd5744826",
+        "type": "gallery",
+        "label": "Gallery",
+        "col": 8,
+        "startRow": 23,
+        "span": 1,
+        "color": "#BBF7D0",
+        "employeeId": 1767334723306
+      },
+      {
+        "id": "b0577084-85b1-4a60-97e0-972ee484c1c2",
+        "type": "break",
+        "label": "Lunch",
+        "col": 8,
+        "startRow": 24,
+        "span": 2,
+        "color": "#E9D5FF",
+        "employeeId": 1767334723306
+      },
+      {
+        "id": "c18f5b45-70a1-4088-9771-7b1ceb8452c1",
+        "type": "gallery",
+        "label": "Gallery",
+        "col": 8,
+        "startRow": 26,
+        "span": 2,
+        "color": "#BBF7D0",
+        "employeeId": 1767334723306
+      },
+      {
+        "id": "0485b97e-bd9f-4bd5-b4d9-37d1069251af",
+        "type": "front",
+        "label": "Front Desk",
+        "col": 8,
+        "startRow": 28,
+        "span": 2,
+        "color": "#ffe785",
+        "employeeId": 1767334723306
+      },
+      {
+        "id": "282ef27d-8a30-45e0-9bcc-2eaf629c0732",
+        "type": "gallery",
+        "label": "Gallery",
+        "col": 8,
+        "startRow": 30,
+        "span": 2,
+        "color": "#BBF7D0",
+        "employeeId": 1767334723306
+      },
+      {
+        "id": "baba8ac3-f882-4e11-a9d9-3db7d16dec6b",
+        "type": "afternoon-break",
+        "label": "Afternoon Break",
+        "col": 8,
+        "startRow": 32,
+        "span": 1,
+        "color": "#ff2465",
+        "employeeId": 1767334723306
+      },
+      {
+        "id": "0cecfeca-dd6e-4acb-b85e-8acfd205378b",
+        "type": "front",
+        "label": "Front Desk",
+        "col": 8,
+        "startRow": 33,
+        "span": 2,
+        "color": "#ffe785",
+        "employeeId": 1767334723306
+      },
+      {
+        "id": "30ff3b07-1ca9-40b0-9f52-f409e602c71b",
+        "type": "gallery",
+        "label": "Gallery",
+        "col": 8,
+        "startRow": 35,
+        "span": 1,
+        "color": "#BBF7D0",
+        "employeeId": 1767334723306
+      },
+      {
+        "id": "72763392-4f58-4de2-9acc-ca0ea6ec9a16",
+        "type": "front",
+        "label": "Front Desk",
+        "col": 8,
+        "startRow": 36,
+        "span": 2,
+        "color": "#ffe785",
+        "employeeId": 1767334723306
+      }
+    ],
+    "hoursStart": "08:00",
+    "hoursEnd": "17:00"
+  },
+  {
+    "id": "2026-02-12",
+    "title": "Thursday 12 February 2026",
+    "start": "2026-02-11T13:00:00.000Z",
+    "end": "2026-02-11T13:00:00.000Z",
+    "status": "Draft",
+    "updated": "Feb 12, 2026",
+    "tours": 4,
+    "people": 10
+  },
+  {
+    "id": "2026-02-13",
+    "title": "Friday 13 February 2026",
+    "start": "2026-02-12T13:00:00.000Z",
+    "end": "2026-02-12T13:00:00.000Z",
+    "status": "Draft",
+    "updated": "Feb 13, 2026",
+    "tours": 5,
+    "people": 11
+  },
+  {
+    "id": "2026-02-14",
+    "title": "Saturday 14 February 2026",
+    "start": "2026-02-13T13:00:00.000Z",
+    "end": "2026-02-13T13:00:00.000Z",
+    "status": "Draft",
+    "updated": "Feb 11, 2026",
+    "tours": 4,
+    "people": 3,
+    "employees": [
+      {
+        "id": "1",
+        "name": "Claire"
+      },
+      {
+        "id": "1764576637465",
+        "name": "William"
+      },
+      {
+        "id": "1764576831240",
+        "name": "Lindsay"
+      }
+    ],
+    "tasks": [
+      {
+        "id": "78639be8-132f-4890-884f-f0895d26fe94",
+        "type": "set-up-gallery",
+        "label": "Set up Gallery",
+        "col": 2,
+        "startRow": 2,
+        "span": 1,
+        "color": "#ff0066",
+        "employeeId": 1
+      },
+      {
+        "id": "14609058-56ba-44df-bb9b-80a85c95b1ed",
+        "type": "gallery",
+        "label": "Gallery",
+        "col": 2,
+        "startRow": 3,
+        "span": 1,
+        "color": "#BBF7D0",
+        "employeeId": 1
+      },
+      {
+        "id": "330625fd-99b7-40c3-851f-614ffd472718",
+        "type": "tour",
+        "label": "Public Tour",
+        "col": 2,
+        "startRow": 4,
+        "span": 4,
+        "color": "#BFDBFE",
+        "employeeId": 1
+      },
+      {
+        "id": "66981585-6d2a-4ab2-ab46-8c092fc20a99",
+        "type": "front",
+        "label": "Front Desk",
+        "col": 2,
+        "startRow": 8,
+        "span": 2,
+        "color": "#ffe785",
+        "employeeId": 1
+      },
+      {
+        "id": "54afc994-f03e-4ad0-becc-0dfe5cb628dd",
+        "type": "front",
+        "label": "Front Desk",
+        "col": 2,
+        "startRow": 10,
+        "span": 2,
+        "color": "#ffe785",
+        "employeeId": 1
+      },
+      {
+        "id": "64132dc3-e229-4780-ba62-d90fa265270e",
+        "type": "break",
+        "label": "Lunch",
+        "col": 2,
+        "startRow": 12,
+        "span": 2,
+        "color": "#E9D5FF",
+        "employeeId": 1
+      },
+      {
+        "id": "0130561e-54c9-4645-8507-66627cb8974d",
+        "type": "front",
+        "label": "Front Desk",
+        "col": 2,
+        "startRow": 14,
+        "span": 2,
+        "color": "#ffe785",
+        "employeeId": 1
+      },
+      {
+        "id": "93a8e16c-c3f4-4d73-b3c3-8f2b2715c0e1",
+        "type": "gallery",
+        "label": "Gallery",
+        "col": 2,
+        "startRow": 16,
+        "span": 2,
+        "color": "#BBF7D0",
+        "employeeId": 1
+      },
+      {
+        "id": "2af82aa7-417d-4ace-a607-837ceb9c0d0b",
+        "type": "tour",
+        "label": "Public Tour",
+        "col": 2,
+        "startRow": 18,
+        "span": 4,
+        "color": "#BFDBFE",
+        "employeeId": 1
+      },
+      {
+        "id": "dacfd838-74e8-4c3e-9623-c21432d7f38a",
+        "type": "front",
+        "label": "Front Desk",
+        "col": 2,
+        "startRow": 22,
+        "span": 2,
+        "color": "#ffe785",
+        "employeeId": 1
+      },
+      {
+        "id": "4d794983-c5e9-4716-8cec-9427210d4b07",
+        "type": "gallery",
+        "label": "Gallery",
+        "col": 2,
+        "startRow": 24,
+        "span": 2,
+        "color": "#BBF7D0",
+        "employeeId": 1
+      },
+      {
+        "id": "08f30f03-cad2-49a2-b5e1-99e421067856",
+        "type": "gallery",
+        "label": "Gallery",
+        "col": 3,
+        "startRow": 3,
+        "span": 1,
+        "color": "#BBF7D0",
+        "employeeId": 1764576637465
+      },
+      {
+        "id": "9660d468-a1ea-4fd5-8849-cc11449905f6",
+        "type": "front",
+        "label": "Front Desk",
+        "col": 3,
+        "startRow": 4,
+        "span": 2,
+        "color": "#ffe785",
+        "employeeId": 1764576637465
+      },
+      {
+        "id": "1be04682-7650-4577-8a7a-4b548782ab93",
+        "type": "gallery",
+        "label": "Gallery",
+        "col": 3,
+        "startRow": 6,
+        "span": 2,
+        "color": "#BBF7D0",
+        "employeeId": 1764576637465
+      },
+      {
+        "id": "d9908ca1-6226-4d5e-9381-d94613eaa071",
+        "type": "tour",
+        "label": "Public Tour",
+        "col": 3,
+        "startRow": 8,
+        "span": 4,
+        "color": "#BFDBFE",
+        "employeeId": 1764576637465
+      },
+      {
+        "id": "b2d25035-a1b0-4917-8a0b-1a3750f4b8f4",
+        "type": "front",
+        "label": "Front Desk",
+        "col": 3,
+        "startRow": 12,
+        "span": 2,
+        "color": "#ffe785",
+        "employeeId": 1764576637465
+      },
+      {
+        "id": "752f77f6-9b57-4a7f-9993-a31d0e2afcf5",
+        "type": "break",
+        "label": "Lunch",
+        "col": 3,
+        "startRow": 14,
+        "span": 2,
+        "color": "#E9D5FF",
+        "employeeId": 1764576637465
+      },
+      {
+        "id": "b51ef2ba-2b0a-4087-82f9-7f596a4caa5f",
+        "type": "front",
+        "label": "Front Desk",
+        "col": 3,
+        "startRow": 16,
+        "span": 2,
+        "color": "#ffe785",
+        "employeeId": 1764576637465
+      },
+      {
+        "id": "0d2bafd8-7b83-4f19-8f12-16004af92dc0",
+        "type": "gallery",
+        "label": "Gallery",
+        "col": 3,
+        "startRow": 18,
+        "span": 2,
+        "color": "#BBF7D0",
+        "employeeId": 1764576637465
+      },
+      {
+        "id": "f8e6f099-bc98-4df1-a066-8549f3a4f136",
+        "type": "gallery",
+        "label": "Gallery",
+        "col": 3,
+        "startRow": 20,
+        "span": 2,
+        "color": "#BBF7D0",
+        "employeeId": 1764576637465
+      },
+      {
+        "id": "dbfa3ee7-d858-49f4-897b-3271f3464bea",
+        "type": "gallery",
+        "label": "Gallery",
+        "col": 3,
+        "startRow": 22,
+        "span": 2,
+        "color": "#BBF7D0",
+        "employeeId": 1764576637465
+      },
+      {
+        "id": "bda51408-d42a-40a9-82c1-9694f29f25a6",
+        "type": "front",
+        "label": "Front Desk",
+        "col": 3,
+        "startRow": 24,
+        "span": 2,
+        "color": "#ffe785",
+        "employeeId": 1764576637465
+      },
+      {
+        "id": "81831dea-e7ae-480d-9a81-9ae630c54080",
+        "type": "tidy",
+        "label": "Tidy Gallery",
+        "col": 3,
+        "startRow": 26,
+        "span": 1,
+        "color": "#FED7AA",
+        "employeeId": 1764576637465
+      },
+      {
+        "id": "23a5c16c-1811-4b2f-b0db-c28b0450857d",
+        "type": "gallery",
+        "label": "Gallery",
+        "col": 4,
+        "startRow": 4,
+        "span": 2,
+        "color": "#BBF7D0",
+        "employeeId": 1764576831240
+      },
+      {
+        "id": "28d96cc3-ebf3-412d-82dd-af9f7ce1ec44",
+        "type": "front",
+        "label": "Front Desk",
+        "col": 4,
+        "startRow": 6,
+        "span": 2,
+        "color": "#ffe785",
+        "employeeId": 1764576831240
+      },
+      {
+        "id": "afb7aeb2-6706-4fb1-aca3-bceeb3bed79d",
+        "type": "gallery",
+        "label": "Gallery",
+        "col": 4,
+        "startRow": 8,
+        "span": 1,
+        "color": "#BBF7D0",
+        "employeeId": 1764576831240
+      },
+      {
+        "id": "c0d4e6da-dd7e-4646-b35a-e48645b83e9b",
+        "type": "break",
+        "label": "Lunch",
+        "col": 4,
+        "startRow": 9,
+        "span": 2,
+        "color": "#E9D5FF",
+        "employeeId": 1764576831240
+      },
+      {
+        "id": "c2e18c01-1d22-41ff-951c-d7a500c5fff8",
+        "type": "gallery",
+        "label": "Gallery",
+        "col": 4,
+        "startRow": 11,
+        "span": 2,
+        "color": "#BBF7D0",
+        "employeeId": 1764576831240
+      },
+      {
+        "id": "855982df-01e6-494a-b84d-c8564a33e523",
+        "type": "gallery",
+        "label": "Gallery",
+        "col": 4,
+        "startRow": 13,
+        "span": 1,
+        "color": "#BBF7D0",
+        "employeeId": 1764576831240
+      },
+      {
+        "id": "08b441c9-d2c8-4fa4-8371-98a5f8c55a82",
+        "type": "tour",
+        "label": "Public Tour",
+        "col": 4,
+        "startRow": 14,
+        "span": 4,
+        "color": "#BFDBFE",
+        "employeeId": 1764576831240
+      },
+      {
+        "id": "7f31daf6-9a8d-4cc4-ade3-463e12d76651",
+        "type": "front",
+        "label": "Front Desk",
+        "col": 4,
+        "startRow": 18,
+        "span": 2,
+        "color": "#ffe785",
+        "employeeId": 1764576831240
+      },
+      {
+        "id": "1ff33271-2c32-4bfa-9e51-0c9ec4dd3377",
+        "type": "front",
+        "label": "Front Desk",
+        "col": 4,
+        "startRow": 20,
+        "span": 2,
+        "color": "#ffe785",
+        "employeeId": 1764576831240
+      },
+      {
+        "id": "db583608-563d-43e9-b4c7-d16ec7086946",
+        "type": "front",
+        "label": "Front Desk",
+        "col": 4,
+        "startRow": 22,
+        "span": 2,
+        "color": "#ffe785",
+        "employeeId": 1764576831240
+      },
+      {
+        "id": "0331b7fb-2353-420e-9bd9-53ff0ebb4b78",
+        "type": "gallery",
+        "label": "Gallery",
+        "col": 4,
+        "startRow": 24,
+        "span": 2,
+        "color": "#BBF7D0",
+        "employeeId": 1764576831240
+      },
+      {
+        "id": "cf19314c-61c4-485b-9ed9-024add6a34d6",
+        "type": "front",
+        "label": "Front Desk",
+        "col": 4,
+        "startRow": 26,
+        "span": 2,
+        "color": "#ffe785",
+        "employeeId": 1764576831240
+      }
+    ],
+    "hoursStart": "09:45",
+    "hoursEnd": "16:15"
+  },
+  {
+    "id": "2026-02-15",
+    "title": "Sunday 15 February 2026",
+    "start": "2026-02-14T13:00:00.000Z",
+    "end": "2026-02-14T13:00:00.000Z",
+    "status": "Draft",
+    "updated": "Feb 11, 2026",
+    "tours": 4,
+    "people": 4,
+    "employees": [
+      {
+        "id": "1",
+        "name": "Claire"
+      },
+      {
+        "id": "3",
+        "name": "Anna"
+      },
+      {
+        "id": "1764576637465",
+        "name": "William"
+      },
+      {
+        "id": "1767334723306",
+        "name": "Ksenia"
+      }
+    ],
+    "tasks": [
+      {
+        "id": "9e50a99b-c07c-46a0-ace9-da4bf25a936e",
+        "type": "set-up-gallery",
+        "label": "Set up Gallery",
+        "col": 2,
+        "startRow": 2,
+        "span": 1,
+        "color": "#ff0066",
+        "employeeId": 1
+      },
+      {
+        "id": "2c849caa-8ee0-46cc-8fa7-f397d995b3c1",
+        "type": "gallery",
+        "label": "Gallery",
+        "col": 2,
+        "startRow": 3,
+        "span": 1,
+        "color": "#BBF7D0",
+        "employeeId": 1
+      },
+      {
+        "id": "968cb19b-0b7f-4e03-aa86-0647338cb360",
+        "type": "tour",
+        "label": "Public Tour",
+        "col": 2,
+        "startRow": 4,
+        "span": 4,
+        "color": "#BFDBFE",
+        "employeeId": 1
+      },
+      {
+        "id": "8a59c252-f453-4d25-924d-3a1b6f03263d",
+        "type": "front",
+        "label": "Front Desk",
+        "col": 2,
+        "startRow": 8,
+        "span": 2,
+        "color": "#ffe785",
+        "employeeId": 1
+      },
+      {
+        "id": "edd6bf4c-02a9-4192-a49f-068599a3a985",
+        "type": "front",
+        "label": "Front Desk",
+        "col": 2,
+        "startRow": 10,
+        "span": 2,
+        "color": "#ffe785",
+        "employeeId": 1
+      },
+      {
+        "id": "e337b5d8-62a1-4904-b554-63a025c1499e",
+        "type": "break",
+        "label": "Lunch",
+        "col": 2,
+        "startRow": 12,
+        "span": 2,
+        "color": "#E9D5FF",
+        "employeeId": 1
+      },
+      {
+        "id": "3139b88c-c975-4617-8fd5-14cff8b8217f",
+        "type": "gallery",
+        "label": "Gallery",
+        "col": 2,
+        "startRow": 14,
+        "span": 2,
+        "color": "#BBF7D0",
+        "employeeId": 1
+      },
+      {
+        "id": "3d651254-abd6-4756-821e-4808379a7878",
+        "type": "front",
+        "label": "Front Desk",
+        "col": 2,
+        "startRow": 16,
+        "span": 2,
+        "color": "#ffe785",
+        "employeeId": 1
+      },
+      {
+        "id": "168448a5-8be3-4d98-9e9e-16ed2b845142",
+        "type": "gallery",
+        "label": "Gallery",
+        "col": 2,
+        "startRow": 18,
+        "span": 2,
+        "color": "#BBF7D0",
+        "employeeId": 1
+      },
+      {
+        "id": "82bfcc0c-d71d-4787-b06e-b00c9c2582d4",
+        "type": "front",
+        "label": "Front Desk",
+        "col": 2,
+        "startRow": 20,
+        "span": 2,
+        "color": "#ffe785",
+        "employeeId": 1
+      },
+      {
+        "id": "495917dd-4252-4943-8a34-a7f3957dccd8",
+        "type": "gallery",
+        "label": "Gallery",
+        "col": 2,
+        "startRow": 22,
+        "span": 2,
+        "color": "#BBF7D0",
+        "employeeId": 1
+      },
+      {
+        "id": "0ef3147a-34ef-4b80-b2e4-93eb55b87592",
+        "type": "front",
+        "label": "Front Desk",
+        "col": 2,
+        "startRow": 24,
+        "span": 2,
+        "color": "#ffe785",
+        "employeeId": 1
+      },
+      {
+        "id": "38930eb3-7989-4599-b8b5-9563f9fb0465",
+        "type": "front",
+        "label": "Front Desk",
+        "col": 3,
+        "startRow": 4,
+        "span": 2,
+        "color": "#ffe785",
+        "employeeId": 3
+      },
+      {
+        "id": "47c8a71e-3c48-4814-99b0-5b26064df700",
+        "type": "gallery",
+        "label": "Gallery",
+        "col": 3,
+        "startRow": 6,
+        "span": 2,
+        "color": "#BBF7D0",
+        "employeeId": 3
+      },
+      {
+        "id": "9383bbf2-76e4-43d2-b81f-f9ef1782477a",
+        "type": "tour",
+        "label": "Public Tour",
+        "col": 3,
+        "startRow": 8,
+        "span": 4,
+        "color": "#BFDBFE",
+        "employeeId": 3
+      },
+      {
+        "id": "aa0e11fc-503b-4ae9-844c-d1be73188fc0",
+        "type": "front",
+        "label": "Front Desk",
+        "col": 3,
+        "startRow": 12,
+        "span": 2,
+        "color": "#ffe785",
+        "employeeId": 3
+      },
+      {
+        "id": "4252d6da-be15-49c5-ab74-77b906d3786d",
+        "type": "break",
+        "label": "Lunch",
+        "col": 3,
+        "startRow": 14,
+        "span": 2,
+        "color": "#E9D5FF",
+        "employeeId": 3
+      },
+      {
+        "id": "70c465d3-556c-4920-92b8-3f29041b9819",
+        "type": "gallery",
+        "label": "Gallery",
+        "col": 3,
+        "startRow": 16,
+        "span": 2,
+        "color": "#BBF7D0",
+        "employeeId": 3
+      },
+      {
+        "id": "51e3b5f7-2a60-45a4-b5f2-dcf4fa417448",
+        "type": "gallery",
+        "label": "Gallery",
+        "col": 3,
+        "startRow": 18,
+        "span": 2,
+        "color": "#BBF7D0",
+        "employeeId": 3
+      },
+      {
+        "id": "e6a534da-51b1-410f-8d38-34a1efb10a81",
+        "type": "front",
+        "label": "Front Desk",
+        "col": 3,
+        "startRow": 20,
+        "span": 2,
+        "color": "#ffe785",
+        "employeeId": 3
+      },
+      {
+        "id": "47af66f1-f109-47e0-b849-1103f0686c21",
+        "type": "gallery",
+        "label": "Gallery",
+        "col": 3,
+        "startRow": 22,
+        "span": 2,
+        "color": "#BBF7D0",
+        "employeeId": 3
+      },
+      {
+        "id": "6171f782-c451-4cc9-be2a-57bcc7d66b71",
+        "type": "front",
+        "label": "Front Desk",
+        "col": 3,
+        "startRow": 24,
+        "span": 2,
+        "color": "#ffe785",
+        "employeeId": 3
+      },
+      {
+        "id": "a096b0bc-07e9-433f-b94a-c695c3e660e3",
+        "type": "tidy",
+        "label": "Tidy Gallery",
+        "col": 3,
+        "startRow": 26,
+        "span": 1,
+        "color": "#FED7AA",
+        "employeeId": 3
+      },
+      {
+        "id": "76182545-4546-4954-8852-6595a4e8b859",
+        "type": "gallery",
+        "label": "Gallery",
+        "col": 3,
+        "startRow": 27,
+        "span": 1,
+        "color": "#BBF7D0",
+        "employeeId": 3
+      },
+      {
+        "id": "77a4e501-67d4-4ad1-8679-a522e5163753",
+        "type": "gallery",
+        "label": "Gallery",
+        "col": 4,
+        "startRow": 3,
+        "span": 2,
+        "color": "#BBF7D0",
+        "employeeId": 1764576637465
+      },
+      {
+        "id": "d164f0b8-eda8-43ea-93d7-57262fc201e4",
+        "type": "gallery",
+        "label": "Gallery",
+        "col": 4,
+        "startRow": 5,
+        "span": 1,
+        "color": "#BBF7D0",
+        "employeeId": 1764576637465
+      },
+      {
+        "id": "eb116330-c896-4c4d-a4bf-58c35b5282f9",
+        "type": "front",
+        "label": "Front Desk",
+        "col": 4,
+        "startRow": 6,
+        "span": 2,
+        "color": "#ffe785",
+        "employeeId": 1764576637465
+      },
+      {
+        "id": "9a831fda-daaf-44f5-99ab-5510fadf51ac",
+        "type": "gallery",
+        "label": "Gallery",
+        "col": 4,
+        "startRow": 8,
+        "span": 2,
+        "color": "#BBF7D0",
+        "employeeId": 1764576637465
+      },
+      {
+        "id": "f89f9c20-3faa-40e5-a462-a3c490d876cb",
+        "type": "front",
+        "label": "Front Desk",
+        "col": 4,
+        "startRow": 10,
+        "span": 1,
+        "color": "#ffe785",
+        "employeeId": 1764576637465
+      },
+      {
+        "id": "d5befe05-1d8f-46ea-bfbd-6c12bd134aad",
+        "type": "break",
+        "label": "Lunch",
+        "col": 4,
+        "startRow": 11,
+        "span": 2,
+        "color": "#E9D5FF",
+        "employeeId": 1764576637465
+      },
+      {
+        "id": "1b860d45-ac6f-4825-89b3-4cf89c61c64a",
+        "type": "gallery",
+        "label": "Gallery",
+        "col": 4,
+        "startRow": 13,
+        "span": 1,
+        "color": "#BBF7D0",
+        "employeeId": 1764576637465
+      },
+      {
+        "id": "bc1ee305-ffdb-4831-9073-550c4a8c8df2",
+        "type": "tour",
+        "label": "Public Tour",
+        "col": 4,
+        "startRow": 14,
+        "span": 4,
+        "color": "#BFDBFE",
+        "employeeId": 1764576637465
+      },
+      {
+        "id": "9bf21e7b-178a-4d4a-9b28-578746f82996",
+        "type": "front",
+        "label": "Front Desk",
+        "col": 4,
+        "startRow": 18,
+        "span": 2,
+        "color": "#ffe785",
+        "employeeId": 1764576637465
+      },
+      {
+        "id": "f436d177-b34c-4b1a-94ec-0a7e6ba38c6e",
+        "type": "gallery",
+        "label": "Gallery",
+        "col": 4,
+        "startRow": 20,
+        "span": 2,
+        "color": "#BBF7D0",
+        "employeeId": 1764576637465
+      },
+      {
+        "id": "76dd5490-57cf-4c3d-8908-909f5be076a6",
+        "type": "front",
+        "label": "Front Desk",
+        "col": 4,
+        "startRow": 22,
+        "span": 2,
+        "color": "#ffe785",
+        "employeeId": 1764576637465
+      },
+      {
+        "id": "84af6749-d41b-4997-a51c-4559b961b9d6",
+        "type": "gallery",
+        "label": "Gallery",
+        "col": 4,
+        "startRow": 24,
+        "span": 2,
+        "color": "#BBF7D0",
+        "employeeId": 1764576637465
+      },
+      {
+        "id": "ffab0152-7360-4494-a801-0cbff8997952",
+        "type": "front",
+        "label": "Front Desk",
+        "col": 4,
+        "startRow": 26,
+        "span": 1,
+        "color": "#ffe785",
+        "employeeId": 1764576637465
+      },
+      {
+        "id": "55c3894d-909b-49a9-993b-5fb9a4253d98",
+        "type": "front",
+        "label": "Front Desk",
+        "col": 5,
+        "startRow": 2,
+        "span": 2,
+        "color": "#ffe785",
+        "employeeId": 1767334723306
+      },
+      {
+        "id": "f6a5f8fb-79ee-455b-a7b6-00b46b364dc1",
+        "type": "gallery",
+        "label": "Gallery",
+        "col": 5,
+        "startRow": 4,
+        "span": 2,
+        "color": "#BBF7D0",
+        "employeeId": 1767334723306
+      },
+      {
+        "id": "ff635ddb-93e4-4938-aad2-57aa4492e3ae",
+        "type": "front",
+        "label": "Front Desk",
+        "col": 5,
+        "startRow": 6,
+        "span": 2,
+        "color": "#ffe785",
+        "employeeId": 1767334723306
+      },
+      {
+        "id": "c1fc1b51-2a88-4b94-87e8-e00039464b03",
+        "type": "gallery",
+        "label": "Gallery",
+        "col": 5,
+        "startRow": 8,
+        "span": 2,
+        "color": "#BBF7D0",
+        "employeeId": 1767334723306
+      },
+      {
+        "id": "9555825f-1f67-4aba-b920-23f26fe757f7",
+        "type": "front",
+        "label": "Front Desk",
+        "col": 5,
+        "startRow": 10,
+        "span": 2,
+        "color": "#ffe785",
+        "employeeId": 1767334723306
+      },
+      {
+        "id": "b707f00f-499c-4164-a475-33ebe96d6753",
+        "type": "gallery",
+        "label": "Gallery",
+        "col": 5,
+        "startRow": 12,
+        "span": 2,
+        "color": "#BBF7D0",
+        "employeeId": 1767334723306
+      },
+      {
+        "id": "69a86d95-cd2a-4ac4-81cd-f46cac26e3e6",
+        "type": "front",
+        "label": "Front Desk",
+        "col": 5,
+        "startRow": 14,
+        "span": 2,
+        "color": "#ffe785",
+        "employeeId": 1767334723306
+      },
+      {
+        "id": "ab131fe1-fff6-44ef-af02-8a5a5e6d2073",
+        "type": "break",
+        "label": "Lunch",
+        "col": 5,
+        "startRow": 16,
+        "span": 2,
+        "color": "#E9D5FF",
+        "employeeId": 1767334723306
+      },
+      {
+        "id": "94176a2b-9051-4e5d-9908-3fbbcdc03bab",
+        "type": "tour",
+        "label": "Public Tour",
+        "col": 5,
+        "startRow": 18,
+        "span": 4,
+        "color": "#BFDBFE",
+        "employeeId": 1767334723306
+      },
+      {
+        "id": "097dd414-83ac-474a-a89a-2dbabc1d767a",
+        "type": "gallery",
+        "label": "Gallery",
+        "col": 5,
+        "startRow": 22,
+        "span": 2,
+        "color": "#BBF7D0",
+        "employeeId": 1767334723306
+      },
+      {
+        "id": "09c3fef5-8e04-4490-b2fb-5d3f94585b09",
+        "type": "front",
+        "label": "Front Desk",
+        "col": 5,
+        "startRow": 24,
+        "span": 2,
+        "color": "#ffe785",
+        "employeeId": 1767334723306
+      },
+      {
+        "id": "641a5222-f4f6-48be-8725-905430e0b7dc",
+        "type": "front",
+        "label": "Front Desk",
+        "col": 5,
+        "startRow": 26,
+        "span": 2,
+        "color": "#ffe785",
+        "employeeId": 1767334723306
+      }
+    ],
+    "hoursStart": "09:45",
+    "hoursEnd": "16:15"
+  },
+  {
+    "id": "2026-02-16",
+    "title": "Monday 16 February 2026",
+    "start": "2026-02-15T13:00:00.000Z",
+    "end": "2026-02-15T13:00:00.000Z",
+    "status": "Draft",
+    "updated": "Feb 16, 2026",
+    "tours": 3,
+    "people": 6
+  },
+  {
+    "id": "2026-02-17",
+    "title": "Tuesday 17 February 2026",
+    "start": "2026-02-16T13:00:00.000Z",
+    "end": "2026-02-16T13:00:00.000Z",
+    "status": "Draft",
+    "updated": "Feb 17, 2026",
+    "tours": 4,
+    "people": 7
+  },
+  {
+    "id": "2026-02-18",
+    "title": "Wednesday 18 February 2026",
+    "start": "2026-02-17T13:00:00.000Z",
+    "end": "2026-02-17T13:00:00.000Z",
+    "status": "Draft",
+    "updated": "Feb 18, 2026",
+    "tours": 5,
+    "people": 8
+  },
+  {
+    "id": "2026-02-19",
+    "title": "Thursday 19 February 2026",
+    "start": "2026-02-18T13:00:00.000Z",
+    "end": "2026-02-18T13:00:00.000Z",
+    "status": "Draft",
+    "updated": "Feb 19, 2026",
+    "tours": 6,
+    "people": 9
+  },
+  {
+    "id": "2026-02-20",
+    "title": "Friday 20 February 2026",
+    "start": "2026-02-19T13:00:00.000Z",
+    "end": "2026-02-19T13:00:00.000Z",
+    "status": "Draft",
+    "updated": "Feb 20, 2026",
+    "tours": 2,
+    "people": 10
+  },
+  {
+    "id": "2026-02-21",
+    "title": "Saturday 21 February 2026",
+    "start": "2026-02-20T13:00:00.000Z",
+    "end": "2026-02-20T13:00:00.000Z",
+    "status": "Draft",
+    "updated": "Feb 21, 2026",
+    "tours": 3,
+    "people": 11
+  },
+  {
+    "id": "2026-02-22",
+    "title": "Sunday 22 February 2026",
+    "start": "2026-02-21T13:00:00.000Z",
+    "end": "2026-02-21T13:00:00.000Z",
+    "status": "Draft",
+    "updated": "Feb 22, 2026",
+    "tours": 4,
+    "people": 12
+  },
+  {
+    "id": "2026-02-23",
+    "title": "Monday 23 February 2026",
+    "start": "2026-02-22T13:00:00.000Z",
+    "end": "2026-02-22T13:00:00.000Z",
+    "status": "Draft",
+    "updated": "Feb 23, 2026",
+    "tours": 5,
+    "people": 13
+  },
+  {
+    "id": "2026-02-24",
+    "title": "Tuesday 24 February 2026",
+    "start": "2026-02-23T13:00:00.000Z",
+    "end": "2026-02-23T13:00:00.000Z",
+    "status": "Draft",
+    "updated": "Feb 24, 2026",
+    "tours": 6,
+    "people": 6
+  },
+  {
+    "id": "2026-02-25",
+    "title": "Wednesday 25 February 2026",
+    "start": "2026-02-24T13:00:00.000Z",
+    "end": "2026-02-24T13:00:00.000Z",
+    "status": "Draft",
+    "updated": "Feb 25, 2026",
+    "tours": 2,
+    "people": 7
+  },
+  {
+    "id": "2026-02-26",
+    "title": "Thursday 26 February 2026",
+    "start": "2026-02-25T13:00:00.000Z",
+    "end": "2026-02-25T13:00:00.000Z",
+    "status": "Draft",
+    "updated": "Feb 26, 2026",
+    "tours": 3,
+    "people": 8
+  },
+  {
+    "id": "2026-02-27",
+    "title": "Friday 27 February 2026",
+    "start": "2026-02-26T13:00:00.000Z",
+    "end": "2026-02-26T13:00:00.000Z",
+    "status": "Draft",
+    "updated": "Feb 27, 2026",
+    "tours": 4,
+    "people": 9
+  },
+  {
+    "id": "2026-02-28",
+    "title": "Saturday 28 February 2026",
+    "start": "2026-02-27T13:00:00.000Z",
+    "end": "2026-02-27T13:00:00.000Z",
+    "status": "Draft",
+    "updated": "Feb 28, 2026",
+    "tours": 5,
+    "people": 10
+  },
+  {
+    "id": "2026-03-01",
+    "title": "Sunday 1 March 2026",
+    "start": "2026-02-28T13:00:00.000Z",
+    "end": "2026-02-28T13:00:00.000Z",
+    "status": "Draft",
+    "updated": "Jan 19, 2026",
+    "employees": [],
+    "tasks": [],
+    "tours": 0,
+    "people": 0
+  },
+  {
+    "id": "2026-03-02",
+    "title": "Monday 2 March 2026",
+    "start": "2026-03-01T13:00:00.000Z",
+    "end": "2026-03-01T13:00:00.000Z",
+    "status": "Draft",
+    "updated": "Jan 19, 2026",
+    "employees": [],
+    "tasks": [],
+    "tours": 0,
+    "people": 0
+  },
+  {
+    "id": "2026-03-03",
+    "title": "Tuesday 3 March 2026",
+    "start": "2026-03-02T13:00:00.000Z",
+    "end": "2026-03-02T13:00:00.000Z",
+    "status": "Draft",
+    "updated": "Jan 19, 2026",
+    "employees": [],
+    "tasks": [],
+    "tours": 0,
+    "people": 0
+  },
+  {
+    "id": "2026-03-04",
+    "title": "Wednesday 4 March 2026",
+    "start": "2026-03-03T13:00:00.000Z",
+    "end": "2026-03-03T13:00:00.000Z",
+    "status": "Draft",
+    "updated": "Jan 19, 2026",
+    "employees": [],
+    "tasks": [],
+    "tours": 0,
+    "people": 0
+  },
+  {
+    "id": "2026-03-05",
+    "title": "Thursday 5 March 2026",
+    "start": "2026-03-04T13:00:00.000Z",
+    "end": "2026-03-04T13:00:00.000Z",
+    "status": "Draft",
+    "updated": "Jan 19, 2026",
+    "employees": [],
+    "tasks": [],
+    "tours": 0,
+    "people": 0
+  },
+  {
+    "id": "2026-03-06",
+    "title": "Friday 6 March 2026",
+    "start": "2026-03-05T13:00:00.000Z",
+    "end": "2026-03-05T13:00:00.000Z",
+    "status": "Draft",
+    "updated": "Jan 19, 2026",
+    "employees": [],
+    "tasks": [],
+    "tours": 0,
+    "people": 0
+  },
+  {
+    "id": "2026-03-07",
+    "title": "Saturday 7 March 2026",
+    "start": "2026-03-06T13:00:00.000Z",
+    "end": "2026-03-06T13:00:00.000Z",
+    "status": "Draft",
+    "updated": "Jan 19, 2026",
+    "employees": [],
+    "tasks": [],
+    "tours": 0,
+    "people": 0
+  },
+  {
+    "id": "2026-03-08",
+    "title": "Sunday 8 March 2026",
+    "start": "2026-03-07T13:00:00.000Z",
+    "end": "2026-03-07T13:00:00.000Z",
+    "status": "Draft",
+    "updated": "Jan 19, 2026",
+    "employees": [],
+    "tasks": [],
+    "tours": 0,
+    "people": 0
+  },
+  {
+    "id": "2026-03-09",
+    "title": "Monday 9 March 2026",
+    "start": "2026-03-08T13:00:00.000Z",
+    "end": "2026-03-08T13:00:00.000Z",
+    "status": "Draft",
+    "updated": "Jan 19, 2026",
+    "employees": [],
+    "tasks": [],
+    "tours": 0,
+    "people": 0
+  },
+  {
+    "id": "2026-03-10",
+    "title": "Tuesday 10 March 2026",
+    "start": "2026-03-09T13:00:00.000Z",
+    "end": "2026-03-09T13:00:00.000Z",
+    "status": "Draft",
+    "updated": "Jan 19, 2026",
+    "employees": [],
+    "tasks": [],
+    "tours": 0,
+    "people": 0
+  },
+  {
+    "id": "2026-03-11",
+    "title": "Wednesday 11 March 2026",
+    "start": "2026-03-10T13:00:00.000Z",
+    "end": "2026-03-10T13:00:00.000Z",
+    "status": "Draft",
+    "updated": "Jan 19, 2026",
+    "employees": [],
+    "tasks": [],
+    "tours": 0,
+    "people": 0
+  },
+  {
+    "id": "2026-03-12",
+    "title": "Thursday 12 March 2026",
+    "start": "2026-03-11T13:00:00.000Z",
+    "end": "2026-03-11T13:00:00.000Z",
+    "status": "Draft",
+    "updated": "Jan 19, 2026",
+    "employees": [],
+    "tasks": [],
+    "tours": 0,
+    "people": 0
+  },
+  {
+    "id": "2026-03-13",
+    "title": "Friday 13 March 2026",
+    "start": "2026-03-12T13:00:00.000Z",
+    "end": "2026-03-12T13:00:00.000Z",
+    "status": "Draft",
+    "updated": "Jan 19, 2026",
+    "employees": [],
+    "tasks": [],
+    "tours": 0,
+    "people": 0
+  },
+  {
+    "id": "2026-03-14",
+    "title": "Saturday 14 March 2026",
+    "start": "2026-03-13T13:00:00.000Z",
+    "end": "2026-03-13T13:00:00.000Z",
+    "status": "Draft",
+    "updated": "Jan 19, 2026",
+    "employees": [],
+    "tasks": [],
+    "tours": 0,
+    "people": 0
+  },
+  {
+    "id": "2026-03-15",
+    "title": "Sunday 15 March 2026",
+    "start": "2026-03-14T13:00:00.000Z",
+    "end": "2026-03-14T13:00:00.000Z",
+    "status": "Draft",
+    "updated": "Jan 19, 2026",
+    "employees": [],
+    "tasks": [],
+    "tours": 0,
+    "people": 0
+  },
+  {
+    "id": "2026-03-16",
+    "title": "Monday 16 March 2026",
+    "start": "2026-03-15T13:00:00.000Z",
+    "end": "2026-03-15T13:00:00.000Z",
+    "status": "Draft",
+    "updated": "Jan 19, 2026",
+    "employees": [],
+    "tasks": [],
+    "tours": 0,
+    "people": 0
+  },
+  {
+    "id": "2026-03-17",
+    "title": "Tuesday 17 March 2026",
+    "start": "2026-03-16T13:00:00.000Z",
+    "end": "2026-03-16T13:00:00.000Z",
+    "status": "Draft",
+    "updated": "Jan 19, 2026",
+    "employees": [],
+    "tasks": [],
+    "tours": 0,
+    "people": 0
+  },
+  {
+    "id": "2026-03-18",
+    "title": "Wednesday 18 March 2026",
+    "start": "2026-03-17T13:00:00.000Z",
+    "end": "2026-03-17T13:00:00.000Z",
+    "status": "Draft",
+    "updated": "Jan 19, 2026",
+    "employees": [],
+    "tasks": [],
+    "tours": 0,
+    "people": 0
+  },
+  {
+    "id": "2026-03-19",
+    "title": "Thursday 19 March 2026",
+    "start": "2026-03-18T13:00:00.000Z",
+    "end": "2026-03-18T13:00:00.000Z",
+    "status": "Draft",
+    "updated": "Jan 19, 2026",
+    "employees": [],
+    "tasks": [],
+    "tours": 0,
+    "people": 0
+  },
+  {
+    "id": "2026-03-20",
+    "title": "Friday 20 March 2026",
+    "start": "2026-03-19T13:00:00.000Z",
+    "end": "2026-03-19T13:00:00.000Z",
+    "status": "Draft",
+    "updated": "Jan 19, 2026",
+    "employees": [],
+    "tasks": [],
+    "tours": 0,
+    "people": 0
+  },
+  {
+    "id": "2026-03-21",
+    "title": "Saturday 21 March 2026",
+    "start": "2026-03-20T13:00:00.000Z",
+    "end": "2026-03-20T13:00:00.000Z",
+    "status": "Draft",
+    "updated": "Jan 19, 2026",
+    "employees": [],
+    "tasks": [],
+    "tours": 0,
+    "people": 0
+  },
+  {
+    "id": "2026-03-22",
+    "title": "Sunday 22 March 2026",
+    "start": "2026-03-21T13:00:00.000Z",
+    "end": "2026-03-21T13:00:00.000Z",
+    "status": "Draft",
+    "updated": "Jan 19, 2026",
+    "employees": [],
+    "tasks": [],
+    "tours": 0,
+    "people": 0
+  },
+  {
+    "id": "2026-03-23",
+    "title": "Monday 23 March 2026",
+    "start": "2026-03-22T13:00:00.000Z",
+    "end": "2026-03-22T13:00:00.000Z",
+    "status": "Draft",
+    "updated": "Jan 19, 2026",
+    "employees": [],
+    "tasks": [],
+    "tours": 0,
+    "people": 0
+  },
+  {
+    "id": "2026-03-24",
+    "title": "Tuesday 24 March 2026",
+    "start": "2026-03-23T13:00:00.000Z",
+    "end": "2026-03-23T13:00:00.000Z",
+    "status": "Draft",
+    "updated": "Jan 19, 2026",
+    "employees": [],
+    "tasks": [],
+    "tours": 0,
+    "people": 0
+  },
+  {
+    "id": "2026-03-25",
+    "title": "Wednesday 25 March 2026",
+    "start": "2026-03-24T13:00:00.000Z",
+    "end": "2026-03-24T13:00:00.000Z",
+    "status": "Draft",
+    "updated": "Jan 19, 2026",
+    "employees": [],
+    "tasks": [],
+    "tours": 0,
+    "people": 0
+  },
+  {
+    "id": "2026-03-26",
+    "title": "Thursday 26 March 2026",
+    "start": "2026-03-25T13:00:00.000Z",
+    "end": "2026-03-25T13:00:00.000Z",
+    "status": "Draft",
+    "updated": "Jan 19, 2026",
+    "employees": [],
+    "tasks": [],
+    "tours": 0,
+    "people": 0
+  },
+  {
+    "id": "2026-03-27",
+    "title": "Friday 27 March 2026",
+    "start": "2026-03-26T13:00:00.000Z",
+    "end": "2026-03-26T13:00:00.000Z",
+    "status": "Draft",
+    "updated": "Jan 19, 2026",
+    "employees": [],
+    "tasks": [],
+    "tours": 0,
+    "people": 0
+  },
+  {
+    "id": "2026-03-28",
+    "title": "Saturday 28 March 2026",
+    "start": "2026-03-27T13:00:00.000Z",
+    "end": "2026-03-27T13:00:00.000Z",
+    "status": "Draft",
+    "updated": "Jan 19, 2026",
+    "employees": [],
+    "tasks": [],
+    "tours": 0,
+    "people": 0
+  },
+  {
+    "id": "2026-03-29",
+    "title": "Sunday 29 March 2026",
+    "start": "2026-03-28T13:00:00.000Z",
+    "end": "2026-03-28T13:00:00.000Z",
+    "status": "Draft",
+    "updated": "Jan 19, 2026",
+    "employees": [],
+    "tasks": [],
+    "tours": 0,
+    "people": 0
+  },
+  {
+    "id": "2026-03-30",
+    "title": "Monday 30 March 2026",
+    "start": "2026-03-29T13:00:00.000Z",
+    "end": "2026-03-29T13:00:00.000Z",
+    "status": "Draft",
+    "updated": "Jan 19, 2026",
+    "employees": [],
+    "tasks": [],
+    "tours": 0,
+    "people": 0
+  },
+  {
+    "id": "2026-03-31",
+    "title": "Tuesday 31 March 2026",
+    "start": "2026-03-30T13:00:00.000Z",
+    "end": "2026-03-30T13:00:00.000Z",
+    "status": "Draft",
+    "updated": "Jan 19, 2026",
+    "employees": [],
+    "tasks": [],
+    "tours": 0,
+    "people": 0
+  },
+  {
+    "id": "2026-04-01",
+    "title": "Wednesday 1 April 2026",
+    "start": "2026-03-31T13:00:00.000Z",
+    "end": "2026-03-31T13:00:00.000Z",
+    "status": "Draft",
+    "updated": "Jan 19, 2026",
+    "tours": 0,
+    "people": 0,
+    "employees": [],
+    "tasks": []
+  },
+  {
+    "id": "2026-04-02",
+    "title": "Thursday 2 April 2026",
+    "start": "2026-04-01T13:00:00.000Z",
+    "end": "2026-04-01T13:00:00.000Z",
+    "status": "Draft",
+    "updated": "Jan 19, 2026",
+    "tours": 0,
+    "people": 0,
+    "employees": [],
+    "tasks": []
+  },
+  {
+    "id": "2026-04-03",
+    "title": "Friday 3 April 2026",
+    "start": "2026-04-02T13:00:00.000Z",
+    "end": "2026-04-02T13:00:00.000Z",
+    "status": "Draft",
+    "updated": "Jan 19, 2026",
+    "tours": 0,
+    "people": 0,
+    "employees": [],
+    "tasks": []
+  },
+  {
+    "id": "2026-04-04",
+    "title": "Saturday 4 April 2026",
+    "start": "2026-04-03T13:00:00.000Z",
+    "end": "2026-04-03T13:00:00.000Z",
+    "status": "Draft",
+    "updated": "Jan 19, 2026",
+    "tours": 0,
+    "people": 0,
+    "employees": [],
+    "tasks": []
+  },
+  {
+    "id": "2026-04-05",
+    "title": "Sunday 5 April 2026",
+    "start": "2026-04-04T13:00:00.000Z",
+    "end": "2026-04-04T13:00:00.000Z",
+    "status": "Draft",
+    "updated": "Jan 19, 2026",
+    "tours": 0,
+    "people": 0,
+    "employees": [],
+    "tasks": []
+  },
+  {
+    "id": "2026-04-06",
+    "title": "Monday 6 April 2026",
+    "start": "2026-04-05T14:00:00.000Z",
+    "end": "2026-04-05T14:00:00.000Z",
+    "status": "Draft",
+    "updated": "Jan 19, 2026",
+    "tours": 0,
+    "people": 0,
+    "employees": [],
+    "tasks": []
+  },
+  {
+    "id": "2026-04-07",
+    "title": "Tuesday 7 April 2026",
+    "start": "2026-04-06T14:00:00.000Z",
+    "end": "2026-04-06T14:00:00.000Z",
+    "status": "Draft",
+    "updated": "Jan 19, 2026",
+    "tours": 0,
+    "people": 0,
+    "employees": [],
+    "tasks": []
+  },
+  {
+    "id": "2026-04-08",
+    "title": "Wednesday 8 April 2026",
+    "start": "2026-04-07T14:00:00.000Z",
+    "end": "2026-04-07T14:00:00.000Z",
+    "status": "Draft",
+    "updated": "Jan 19, 2026",
+    "tours": 0,
+    "people": 0,
+    "employees": [],
+    "tasks": []
+  },
+  {
+    "id": "2026-04-09",
+    "title": "Thursday 9 April 2026",
+    "start": "2026-04-08T14:00:00.000Z",
+    "end": "2026-04-08T14:00:00.000Z",
+    "status": "Draft",
+    "updated": "Jan 19, 2026",
+    "tours": 0,
+    "people": 0,
+    "employees": [],
+    "tasks": []
+  },
+  {
+    "id": "2026-04-10",
+    "title": "Friday 10 April 2026",
+    "start": "2026-04-09T14:00:00.000Z",
+    "end": "2026-04-09T14:00:00.000Z",
+    "status": "Draft",
+    "updated": "Jan 19, 2026",
+    "tours": 0,
+    "people": 0,
+    "employees": [],
+    "tasks": []
+  },
+  {
+    "id": "2026-04-11",
+    "title": "Saturday 11 April 2026",
+    "start": "2026-04-10T14:00:00.000Z",
+    "end": "2026-04-10T14:00:00.000Z",
+    "status": "Draft",
+    "updated": "Jan 19, 2026",
+    "tours": 0,
+    "people": 0,
+    "employees": [],
+    "tasks": []
+  },
+  {
+    "id": "2026-04-12",
+    "title": "Sunday 12 April 2026",
+    "start": "2026-04-11T14:00:00.000Z",
+    "end": "2026-04-11T14:00:00.000Z",
+    "status": "Draft",
+    "updated": "Jan 19, 2026",
+    "tours": 0,
+    "people": 0,
+    "employees": [],
+    "tasks": []
+  },
+  {
+    "id": "2026-04-13",
+    "title": "Monday 13 April 2026",
+    "start": "2026-04-12T14:00:00.000Z",
+    "end": "2026-04-12T14:00:00.000Z",
+    "status": "Draft",
+    "updated": "Jan 19, 2026",
+    "tours": 0,
+    "people": 0,
+    "employees": [],
+    "tasks": []
+  },
+  {
+    "id": "2026-04-14",
+    "title": "Tuesday 14 April 2026",
+    "start": "2026-04-13T14:00:00.000Z",
+    "end": "2026-04-13T14:00:00.000Z",
+    "status": "Draft",
+    "updated": "Jan 19, 2026",
+    "tours": 0,
+    "people": 0,
+    "employees": [],
+    "tasks": []
+  },
+  {
+    "id": "2026-04-15",
+    "title": "Wednesday 15 April 2026",
+    "start": "2026-04-14T14:00:00.000Z",
+    "end": "2026-04-14T14:00:00.000Z",
+    "status": "Draft",
+    "updated": "Jan 19, 2026",
+    "tours": 0,
+    "people": 0,
+    "employees": [],
+    "tasks": []
+  },
+  {
+    "id": "2026-04-16",
+    "title": "Thursday 16 April 2026",
+    "start": "2026-04-15T14:00:00.000Z",
+    "end": "2026-04-15T14:00:00.000Z",
+    "status": "Draft",
+    "updated": "Jan 19, 2026",
+    "tours": 0,
+    "people": 0,
+    "employees": [],
+    "tasks": []
+  },
+  {
+    "id": "2026-04-17",
+    "title": "Friday 17 April 2026",
+    "start": "2026-04-16T14:00:00.000Z",
+    "end": "2026-04-16T14:00:00.000Z",
+    "status": "Draft",
+    "updated": "Jan 19, 2026",
+    "tours": 0,
+    "people": 0,
+    "employees": [],
+    "tasks": []
+  },
+  {
+    "id": "2026-04-18",
+    "title": "Saturday 18 April 2026",
+    "start": "2026-04-17T14:00:00.000Z",
+    "end": "2026-04-17T14:00:00.000Z",
+    "status": "Draft",
+    "updated": "Jan 19, 2026",
+    "tours": 0,
+    "people": 0,
+    "employees": [],
+    "tasks": []
+  },
+  {
+    "id": "2026-04-19",
+    "title": "Sunday 19 April 2026",
+    "start": "2026-04-18T14:00:00.000Z",
+    "end": "2026-04-18T14:00:00.000Z",
+    "status": "Draft",
+    "updated": "Jan 19, 2026",
+    "tours": 0,
+    "people": 0,
+    "employees": [],
+    "tasks": []
+  },
+  {
+    "id": "2026-04-20",
+    "title": "Monday 20 April 2026",
+    "start": "2026-04-19T14:00:00.000Z",
+    "end": "2026-04-19T14:00:00.000Z",
+    "status": "Draft",
+    "updated": "Jan 19, 2026",
+    "tours": 0,
+    "people": 0,
+    "employees": [],
+    "tasks": []
+  },
+  {
+    "id": "2026-04-21",
+    "title": "Tuesday 21 April 2026",
+    "start": "2026-04-20T14:00:00.000Z",
+    "end": "2026-04-20T14:00:00.000Z",
+    "status": "Draft",
+    "updated": "Jan 19, 2026",
+    "tours": 0,
+    "people": 0,
+    "employees": [],
+    "tasks": []
+  },
+  {
+    "id": "2026-04-22",
+    "title": "Wednesday 22 April 2026",
+    "start": "2026-04-21T14:00:00.000Z",
+    "end": "2026-04-21T14:00:00.000Z",
+    "status": "Draft",
+    "updated": "Jan 19, 2026",
+    "tours": 0,
+    "people": 0,
+    "employees": [],
+    "tasks": []
+  },
+  {
+    "id": "2026-04-23",
+    "title": "Thursday 23 April 2026",
+    "start": "2026-04-22T14:00:00.000Z",
+    "end": "2026-04-22T14:00:00.000Z",
+    "status": "Draft",
+    "updated": "Jan 19, 2026",
+    "tours": 0,
+    "people": 0,
+    "employees": [],
+    "tasks": []
+  },
+  {
+    "id": "2026-04-24",
+    "title": "Friday 24 April 2026",
+    "start": "2026-04-23T14:00:00.000Z",
+    "end": "2026-04-23T14:00:00.000Z",
+    "status": "Draft",
+    "updated": "Jan 19, 2026",
+    "tours": 0,
+    "people": 0,
+    "employees": [],
+    "tasks": []
+  },
+  {
+    "id": "2026-04-25",
+    "title": "Saturday 25 April 2026",
+    "start": "2026-04-24T14:00:00.000Z",
+    "end": "2026-04-24T14:00:00.000Z",
+    "status": "Draft",
+    "updated": "Jan 19, 2026",
+    "tours": 0,
+    "people": 0,
+    "employees": [],
+    "tasks": []
+  },
+  {
+    "id": "2026-04-26",
+    "title": "Sunday 26 April 2026",
+    "start": "2026-04-25T14:00:00.000Z",
+    "end": "2026-04-25T14:00:00.000Z",
+    "status": "Draft",
+    "updated": "Jan 19, 2026",
+    "tours": 0,
+    "people": 0,
+    "employees": [],
+    "tasks": []
+  },
+  {
+    "id": "2026-04-27",
+    "title": "Monday 27 April 2026",
+    "start": "2026-04-26T14:00:00.000Z",
+    "end": "2026-04-26T14:00:00.000Z",
+    "status": "Draft",
+    "updated": "Jan 19, 2026",
+    "tours": 0,
+    "people": 0,
+    "employees": [],
+    "tasks": []
+  },
+  {
+    "id": "2026-04-28",
+    "title": "Tuesday 28 April 2026",
+    "start": "2026-04-27T14:00:00.000Z",
+    "end": "2026-04-27T14:00:00.000Z",
+    "status": "Draft",
+    "updated": "Jan 19, 2026",
+    "tours": 0,
+    "people": 0,
+    "employees": [],
+    "tasks": []
+  },
+  {
+    "id": "2026-04-29",
+    "title": "Wednesday 29 April 2026",
+    "start": "2026-04-28T14:00:00.000Z",
+    "end": "2026-04-28T14:00:00.000Z",
+    "status": "Draft",
+    "updated": "Jan 19, 2026",
+    "tours": 0,
+    "people": 0,
+    "employees": [],
+    "tasks": []
+  },
+  {
+    "id": "2026-04-30",
+    "title": "Thursday 30 April 2026",
+    "start": "2026-04-29T14:00:00.000Z",
+    "end": "2026-04-29T14:00:00.000Z",
+    "status": "Draft",
+    "updated": "Jan 19, 2026",
+    "tours": 0,
+    "people": 0,
+    "employees": [],
+    "tasks": []
+  },
+  {
+    "id": "2026-05-01",
+    "title": "Friday 1 May 2026",
+    "start": "2026-04-30T14:00:00.000Z",
+    "end": "2026-04-30T14:00:00.000Z",
+    "status": "Draft",
+    "updated": "Jan 20, 2026",
+    "tours": 0,
+    "people": 0,
+    "employees": [],
+    "tasks": []
+  },
+  {
+    "id": "2026-05-02",
+    "title": "Saturday 2 May 2026",
+    "start": "2026-05-01T14:00:00.000Z",
+    "end": "2026-05-01T14:00:00.000Z",
+    "status": "Draft",
+    "updated": "Jan 20, 2026",
+    "tours": 0,
+    "people": 0,
+    "employees": [],
+    "tasks": []
+  },
+  {
+    "id": "2026-05-03",
+    "title": "Sunday 3 May 2026",
+    "start": "2026-05-02T14:00:00.000Z",
+    "end": "2026-05-02T14:00:00.000Z",
+    "status": "Draft",
+    "updated": "Jan 20, 2026",
+    "tours": 0,
+    "people": 0,
+    "employees": [],
+    "tasks": []
+  },
+  {
+    "id": "2026-05-04",
+    "title": "Monday 4 May 2026",
+    "start": "2026-05-03T14:00:00.000Z",
+    "end": "2026-05-03T14:00:00.000Z",
+    "status": "Draft",
+    "updated": "Jan 20, 2026",
+    "tours": 0,
+    "people": 0,
+    "employees": [],
+    "tasks": []
+  },
+  {
+    "id": "2026-05-05",
+    "title": "Tuesday 5 May 2026",
+    "start": "2026-05-04T14:00:00.000Z",
+    "end": "2026-05-04T14:00:00.000Z",
+    "status": "Draft",
+    "updated": "Jan 20, 2026",
+    "tours": 0,
+    "people": 0,
+    "employees": [],
+    "tasks": []
+  },
+  {
+    "id": "2026-05-06",
+    "title": "Wednesday 6 May 2026",
+    "start": "2026-05-05T14:00:00.000Z",
+    "end": "2026-05-05T14:00:00.000Z",
+    "status": "Draft",
+    "updated": "Jan 20, 2026",
+    "tours": 0,
+    "people": 0,
+    "employees": [],
+    "tasks": []
+  },
+  {
+    "id": "2026-05-07",
+    "title": "Thursday 7 May 2026",
+    "start": "2026-05-06T14:00:00.000Z",
+    "end": "2026-05-06T14:00:00.000Z",
+    "status": "Draft",
+    "updated": "Jan 20, 2026",
+    "tours": 0,
+    "people": 0,
+    "employees": [],
+    "tasks": []
+  },
+  {
+    "id": "2026-05-08",
+    "title": "Friday 8 May 2026",
+    "start": "2026-05-07T14:00:00.000Z",
+    "end": "2026-05-07T14:00:00.000Z",
+    "status": "Draft",
+    "updated": "Jan 20, 2026",
+    "tours": 0,
+    "people": 0,
+    "employees": [],
+    "tasks": []
+  },
+  {
+    "id": "2026-05-09",
+    "title": "Saturday 9 May 2026",
+    "start": "2026-05-08T14:00:00.000Z",
+    "end": "2026-05-08T14:00:00.000Z",
+    "status": "Draft",
+    "updated": "Jan 20, 2026",
+    "tours": 0,
+    "people": 0,
+    "employees": [],
+    "tasks": []
+  },
+  {
+    "id": "2026-05-10",
+    "title": "Sunday 10 May 2026",
+    "start": "2026-05-09T14:00:00.000Z",
+    "end": "2026-05-09T14:00:00.000Z",
+    "status": "Draft",
+    "updated": "Jan 20, 2026",
+    "tours": 0,
+    "people": 0,
+    "employees": [],
+    "tasks": []
+  },
+  {
+    "id": "2026-05-11",
+    "title": "Monday 11 May 2026",
+    "start": "2026-05-10T14:00:00.000Z",
+    "end": "2026-05-10T14:00:00.000Z",
+    "status": "Draft",
+    "updated": "Jan 20, 2026",
+    "tours": 0,
+    "people": 0,
+    "employees": [],
+    "tasks": []
+  },
+  {
+    "id": "2026-05-12",
+    "title": "Tuesday 12 May 2026",
+    "start": "2026-05-11T14:00:00.000Z",
+    "end": "2026-05-11T14:00:00.000Z",
+    "status": "Draft",
+    "updated": "Jan 20, 2026",
+    "tours": 0,
+    "people": 0,
+    "employees": [],
+    "tasks": []
+  },
+  {
+    "id": "2026-05-13",
+    "title": "Wednesday 13 May 2026",
+    "start": "2026-05-12T14:00:00.000Z",
+    "end": "2026-05-12T14:00:00.000Z",
+    "status": "Draft",
+    "updated": "Jan 20, 2026",
+    "tours": 0,
+    "people": 0,
+    "employees": [],
+    "tasks": []
+  },
+  {
+    "id": "2026-05-14",
+    "title": "Thursday 14 May 2026",
+    "start": "2026-05-13T14:00:00.000Z",
+    "end": "2026-05-13T14:00:00.000Z",
+    "status": "Draft",
+    "updated": "Jan 20, 2026",
+    "tours": 0,
+    "people": 0,
+    "employees": [],
+    "tasks": []
+  },
+  {
+    "id": "2026-05-15",
+    "title": "Friday 15 May 2026",
+    "start": "2026-05-14T14:00:00.000Z",
+    "end": "2026-05-14T14:00:00.000Z",
+    "status": "Draft",
+    "updated": "Jan 20, 2026",
+    "tours": 0,
+    "people": 0,
+    "employees": [],
+    "tasks": []
+  },
+  {
+    "id": "2026-05-16",
+    "title": "Saturday 16 May 2026",
+    "start": "2026-05-15T14:00:00.000Z",
+    "end": "2026-05-15T14:00:00.000Z",
+    "status": "Draft",
+    "updated": "Jan 20, 2026",
+    "tours": 0,
+    "people": 0,
+    "employees": [],
+    "tasks": []
+  },
+  {
+    "id": "2026-05-17",
+    "title": "Sunday 17 May 2026",
+    "start": "2026-05-16T14:00:00.000Z",
+    "end": "2026-05-16T14:00:00.000Z",
+    "status": "Draft",
+    "updated": "Jan 20, 2026",
+    "tours": 0,
+    "people": 0,
+    "employees": [],
+    "tasks": []
+  },
+  {
+    "id": "2026-05-18",
+    "title": "Monday 18 May 2026",
+    "start": "2026-05-17T14:00:00.000Z",
+    "end": "2026-05-17T14:00:00.000Z",
+    "status": "Draft",
+    "updated": "Jan 20, 2026",
+    "tours": 0,
+    "people": 0,
+    "employees": [],
+    "tasks": []
+  },
+  {
+    "id": "2026-05-19",
+    "title": "Tuesday 19 May 2026",
+    "start": "2026-05-18T14:00:00.000Z",
+    "end": "2026-05-18T14:00:00.000Z",
+    "status": "Draft",
+    "updated": "Jan 20, 2026",
+    "tours": 0,
+    "people": 0,
+    "employees": [],
+    "tasks": []
+  },
+  {
+    "id": "2026-05-20",
+    "title": "Wednesday 20 May 2026",
+    "start": "2026-05-19T14:00:00.000Z",
+    "end": "2026-05-19T14:00:00.000Z",
+    "status": "Draft",
+    "updated": "Jan 20, 2026",
+    "tours": 0,
+    "people": 0,
+    "employees": [],
+    "tasks": []
+  },
+  {
+    "id": "2026-05-21",
+    "title": "Thursday 21 May 2026",
+    "start": "2026-05-20T14:00:00.000Z",
+    "end": "2026-05-20T14:00:00.000Z",
+    "status": "Draft",
+    "updated": "Jan 20, 2026",
+    "tours": 0,
+    "people": 0,
+    "employees": [],
+    "tasks": []
+  },
+  {
+    "id": "2026-05-22",
+    "title": "Friday 22 May 2026",
+    "start": "2026-05-21T14:00:00.000Z",
+    "end": "2026-05-21T14:00:00.000Z",
+    "status": "Draft",
+    "updated": "Jan 20, 2026",
+    "tours": 0,
+    "people": 0,
+    "employees": [],
+    "tasks": []
+  },
+  {
+    "id": "2026-05-23",
+    "title": "Saturday 23 May 2026",
+    "start": "2026-05-22T14:00:00.000Z",
+    "end": "2026-05-22T14:00:00.000Z",
+    "status": "Draft",
+    "updated": "Jan 20, 2026",
+    "tours": 0,
+    "people": 0,
+    "employees": [],
+    "tasks": []
+  },
+  {
+    "id": "2026-05-24",
+    "title": "Sunday 24 May 2026",
+    "start": "2026-05-23T14:00:00.000Z",
+    "end": "2026-05-23T14:00:00.000Z",
+    "status": "Draft",
+    "updated": "Jan 20, 2026",
+    "tours": 0,
+    "people": 0,
+    "employees": [],
+    "tasks": []
+  },
+  {
+    "id": "2026-05-25",
+    "title": "Monday 25 May 2026",
+    "start": "2026-05-24T14:00:00.000Z",
+    "end": "2026-05-24T14:00:00.000Z",
+    "status": "Draft",
+    "updated": "Jan 20, 2026",
+    "tours": 0,
+    "people": 0,
+    "employees": [],
+    "tasks": []
+  },
+  {
+    "id": "2026-05-26",
+    "title": "Tuesday 26 May 2026",
+    "start": "2026-05-25T14:00:00.000Z",
+    "end": "2026-05-25T14:00:00.000Z",
+    "status": "Draft",
+    "updated": "Jan 20, 2026",
+    "tours": 0,
+    "people": 0,
+    "employees": [],
+    "tasks": []
+  },
+  {
+    "id": "2026-05-27",
+    "title": "Wednesday 27 May 2026",
+    "start": "2026-05-26T14:00:00.000Z",
+    "end": "2026-05-26T14:00:00.000Z",
+    "status": "Draft",
+    "updated": "Jan 20, 2026",
+    "tours": 0,
+    "people": 0,
+    "employees": [],
+    "tasks": []
+  },
+  {
+    "id": "2026-05-28",
+    "title": "Thursday 28 May 2026",
+    "start": "2026-05-27T14:00:00.000Z",
+    "end": "2026-05-27T14:00:00.000Z",
+    "status": "Draft",
+    "updated": "Jan 20, 2026",
+    "tours": 0,
+    "people": 0,
+    "employees": [],
+    "tasks": []
+  },
+  {
+    "id": "2026-05-29",
+    "title": "Friday 29 May 2026",
+    "start": "2026-05-28T14:00:00.000Z",
+    "end": "2026-05-28T14:00:00.000Z",
+    "status": "Draft",
+    "updated": "Jan 20, 2026",
+    "tours": 0,
+    "people": 0,
+    "employees": [],
+    "tasks": []
+  },
+  {
+    "id": "2026-05-30",
+    "title": "Saturday 30 May 2026",
+    "start": "2026-05-29T14:00:00.000Z",
+    "end": "2026-05-29T14:00:00.000Z",
+    "status": "Draft",
+    "updated": "Jan 20, 2026",
+    "tours": 0,
+    "people": 0,
+    "employees": [],
+    "tasks": []
+  },
+  {
+    "id": "2026-05-31",
+    "title": "Sunday 31 May 2026",
+    "start": "2026-05-30T14:00:00.000Z",
+    "end": "2026-05-30T14:00:00.000Z",
+    "status": "Draft",
+    "updated": "Jan 20, 2026",
+    "tours": 0,
+    "people": 0,
+    "employees": [],
+    "tasks": []
+  }
+]

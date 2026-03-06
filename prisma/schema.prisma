@@ -1,0 +1,45 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Employee {
+  id        Int      @id @default(autoincrement())
+  name      String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  tasks     Task[]
+}
+
+model Roster {
+  id        Int      @id @default(autoincrement())
+  date      DateTime
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  tasks     Task[]
+}
+
+model Task {
+  id        Int      @id @default(autoincrement())
+  type      String   // front, tour, prep, gallery, break, tidy, etc.
+  label     String
+  start     DateTime
+  end       DateTime
+
+  // relations
+  roster   Roster   @relation(fields: [rosterId], references: [id])
+  rosterId Int
+  employee Employee @relation(fields: [employeeId], references: [id])
+  employeeId Int
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([rosterId])
+  @@index([employeeId])
+  @@index([start, end])
+}
