@@ -34,6 +34,15 @@ function normalizeHoursByDay(input: any): Record<DayKey, DayHours> {
   return next;
 }
 
+function normalizeUpcomingDays(input: unknown): number {
+  const numeric = Number(input);
+  if (!Number.isFinite(numeric)) return DEFAULT_SETTINGS.upcomingDays;
+  const rounded = Math.floor(numeric);
+  if (rounded < 1) return 1;
+  if (rounded > 90) return 90;
+  return rounded;
+}
+
 export function getSettings(): AppSettings {
   try {
     ensureDataFile();
@@ -41,6 +50,7 @@ export function getSettings(): AppSettings {
     const parsed = JSON.parse(raw);
     return {
       hoursByDay: normalizeHoursByDay(parsed?.hoursByDay),
+      upcomingDays: normalizeUpcomingDays(parsed?.upcomingDays),
     };
   } catch {
     return DEFAULT_SETTINGS;
@@ -50,6 +60,7 @@ export function getSettings(): AppSettings {
 export function saveSettings(input: AppSettings): AppSettings {
   const normalized = {
     hoursByDay: normalizeHoursByDay(input?.hoursByDay),
+    upcomingDays: normalizeUpcomingDays(input?.upcomingDays),
   };
   ensureDataFile();
   fs.writeFileSync(DATA_FILE, JSON.stringify(normalized, null, 2), "utf-8");

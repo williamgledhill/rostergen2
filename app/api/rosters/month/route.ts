@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { getRostersForMonth } from "@/lib/rosters";
+import { enforceSameOrigin, requireSession } from "@/lib/apiAuth";
 
 function parseMonth(month: string) {
   if (!/^\d{4}-\d{2}$/.test(month)) return null;
@@ -12,6 +13,12 @@ function parseMonth(month: string) {
 }
 
 export async function POST(req: Request) {
+  const auth = await requireSession();
+  if (!auth.ok) return auth.response;
+
+  const originError = enforceSameOrigin(req);
+  if (originError) return originError;
+
   try {
     const body = await req.json();
     const month = typeof body?.month === "string" ? body.month : null;
@@ -26,10 +33,14 @@ export async function POST(req: Request) {
 }
 
 export async function GET(req: Request) {
+  const auth = await requireSession();
+  if (!auth.ok) return auth.response;
+
   try {
     const { searchParams } = new URL(req.url);
     const month = searchParams.get("month");
     if (!month) return NextResponse.json({ error: "Missing month" }, { status: 400 });
+    if (!parseMonth(month)) return NextResponse.json({ error: "Invalid month" }, { status: 400 });
     const rosters = getRostersForMonth(month, 5000);
     return NextResponse.json(rosters);
   } catch (err) {

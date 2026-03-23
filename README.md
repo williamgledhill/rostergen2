@@ -35,4 +35,13 @@ docker compose up --build
 - API routes are available under `/api` for employees, rosters, and tasks.
 - The grid UI supports adding tasks via `+` slots and CSV export.
 - Wire up persistence by calling the API routes from the grid (left as an exercise to keep code concise).
+
+## Security & Testing
+
+- Set `SESSION_SECRET` in production (minimum 32 characters).
+- Run tests with:
+  ```bash
+  npm test
+  ```
+- The project includes a formal design document at `docs/software-design.md`.
 ```

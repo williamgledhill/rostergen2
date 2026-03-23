@@ -1,9 +1,9 @@
 import "./globals.css";
 import React from "react";
 import AppShell from "@/components/AppShell";
-import { Poppins } from "next/font/google";
+import { Inter } from "next/font/google";
 
-const poppins = Poppins({
+const inter = Inter({
   subsets: ["latin"],
   weight: ["400", "500", "600", "700"],
   display: "swap",
@@ -17,7 +17,7 @@ export const metadata = {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en">
-      <body className={poppins.className}>
+      <body className={inter.className}>
         <AppShell>{children}</AppShell>
       </body>
     </html>

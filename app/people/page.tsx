@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 import React, { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -117,7 +117,7 @@ export default function PeopleList() {
 
   return (
     <div className="w-full py-3 px-3">
-      <div className="space-y-3 flex flex-col items-start w-full max-w-5xl mx-auto">
+      <div className="space-y-3 flex flex-col items-start w-full">
         <div className="flex items-center justify-between w-full">
           <div>
             <h1 className="text-2xl font-semibold">People</h1>
@@ -170,7 +170,7 @@ export default function PeopleList() {
                         <span>{p.name}</span>
                       </div>
                     </td>
-                    <td className="align-middle px-3 py-2 text-slate-600">{(people.find(x=>x.id===p.id)?.email) || "â€”"}</td>
+                    <td className="align-middle px-3 py-2 text-slate-600">{(people.find(x=>x.id===p.id)?.email) || "Ã¢â‚¬â€"}</td>
                     <td className="align-middle px-3 py-2 text-slate-600">{p.days || ""}</td>
                   </tr>
                 ))}
@@ -292,3 +292,4 @@ export default function PeopleList() {
     </div>
   );
 }
+

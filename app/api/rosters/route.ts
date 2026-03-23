@@ -1,19 +1,40 @@
 import { NextResponse } from "next/server";
-import { saveRosterEntry, getRosterById, loadSavedRosters } from "@/lib/rosters";
+import { saveRosterEntry, getRosterById } from "@/lib/rosters";
 import { parseLocalId, formatFullDay } from "@/lib/dateUtils";
+import { enforceSameOrigin, requireSession } from "@/lib/apiAuth";
+import { z } from "zod";
+
+const timeSchema = z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/);
+const rosterUpsertSchema = z.object({
+  date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+  employees: z.array(z.unknown()).max(500).optional(),
+  tasks: z.array(z.unknown()).max(5000).optional(),
+  hoursStart: timeSchema.optional(),
+  hoursEnd: timeSchema.optional(),
+});
 
 export async function POST(req: Request) {
+  const auth = await requireSession();
+  if (!auth.ok) return auth.response;
+
+  const originError = enforceSameOrigin(req);
+  if (originError) return originError;
+
   try {
-    const body = await req.json();
-    const date = typeof body?.date === "string" ? body.date : null;
-    if (!date) return NextResponse.json({ error: "Missing date" }, { status: 400 });
+    const parsedBody = rosterUpsertSchema.safeParse(await req.json());
+    if (!parsedBody.success) return NextResponse.json({ error: "Invalid payload" }, { status: 400 });
+
+    const { date } = parsedBody.data;
     const parsed = parseLocalId(date);
     if (!parsed) return NextResponse.json({ error: "Invalid date" }, { status: 400 });
 
-    const employees = Array.isArray(body?.employees) ? body.employees : [];
-    const tasks = Array.isArray(body?.tasks) ? body.tasks : [];
-    const hoursStart = typeof body?.hoursStart === "string" ? body.hoursStart : undefined;
-    const hoursEnd = typeof body?.hoursEnd === "string" ? body.hoursEnd : undefined;
+    const employees = parsedBody.data.employees ?? [];
+    const tasks = parsedBody.data.tasks ?? [];
+    const hoursStart = parsedBody.data.hoursStart;
+    const hoursEnd = parsedBody.data.hoursEnd;
+    if (hoursStart && hoursEnd && hoursStart >= hoursEnd) {
+      return NextResponse.json({ error: "Invalid hours range" }, { status: 400 });
+    }
 
     const existing = getRosterById(date);
 
@@ -46,6 +67,9 @@ export async function POST(req: Request) {
 }
 
 export async function GET(req: Request) {
+  const auth = await requireSession();
+  if (!auth.ok) return auth.response;
+
   try {
     const { searchParams } = new URL(req.url);
     const date = searchParams.get("date");

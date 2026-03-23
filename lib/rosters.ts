@@ -71,6 +71,69 @@ function formatMonthTitle(date: Date) {
   return new Intl.DateTimeFormat("en-US", { month: "long", year: "numeric" }).format(date);
 }
 
+function startOfDay(date: Date) {
+  const d = new Date(date);
+  d.setHours(0, 0, 0, 0);
+  return d;
+}
+
+function normalizeUpcomingWindowDays(input: number) {
+  if (!Number.isFinite(input)) return 7;
+  const rounded = Math.floor(input);
+  if (rounded < 1) return 1;
+  if (rounded > 90) return 90;
+  return rounded;
+}
+
+function toLocalStartDate(value: Date | string | undefined) {
+  if (!value) return null;
+  const parsed = value instanceof Date ? new Date(value.getTime()) : new Date(value);
+  if (Number.isNaN(parsed.getTime())) return null;
+  parsed.setHours(0, 0, 0, 0);
+  return parsed;
+}
+
+function buildBlankRosterForDate(date: Date): RosterFile {
+  return {
+    id: formatLocalId(date),
+    title: formatFullDay(date),
+    start: new Date(date),
+    end: new Date(date),
+    status: "Draft",
+    updated: "-",
+    tours: 0,
+    people: 0,
+    employees: [],
+    tasks: [],
+  };
+}
+
+function normalizeRosterForDate(roster: RosterFile, date: Date): RosterFile {
+  const employees = Array.isArray(roster.employees) ? roster.employees : [];
+  const tasks = Array.isArray(roster.tasks) ? roster.tasks : [];
+  const tours =
+    typeof roster.tours === "number" && Number.isFinite(roster.tours)
+      ? roster.tours
+      : tasks.filter((t: any) => String(t?.type).toLowerCase() === "tour").length;
+  const people =
+    typeof roster.people === "number" && Number.isFinite(roster.people)
+      ? roster.people
+      : employees.length;
+  return {
+    ...roster,
+    id: formatLocalId(date),
+    title: roster.title || formatFullDay(date),
+    start: new Date(date),
+    end: new Date(date),
+    status: roster.status === "Published" ? "Published" : "Draft",
+    updated: typeof roster.updated === "string" && roster.updated.trim() ? roster.updated : "-",
+    tours,
+    people,
+    employees,
+    tasks,
+  };
+}
+
 export function buildRosterList(limit?: number): RosterFile[] {
   const saved = loadSavedRosters();
   const sorted = saved.sort((a, b) => {
@@ -135,6 +198,43 @@ export function getRostersForMonth(month: string, limit = 200): RosterFile[] {
       return aDate.getTime() - bDate.getTime();
     });
   return typeof limit === "number" ? filtered.slice(0, limit) : filtered;
+}
+
+export function buildUpcomingRosterWindow(
+  savedRosters: RosterFile[],
+  upcomingDays: number,
+  fromDate: Date = new Date()
+): RosterFile[] {
+  const dayCount = normalizeUpcomingWindowDays(upcomingDays);
+  const start = startOfDay(fromDate);
+  const last = new Date(start);
+  last.setDate(last.getDate() + dayCount - 1);
+
+  const byDateId = new Map<string, RosterFile>();
+
+  savedRosters.forEach((roster) => {
+    const rosterDate = parseLocalId(roster.id) ?? toLocalStartDate(roster.start);
+    if (!rosterDate) return;
+    if (rosterDate.getTime() < start.getTime()) return;
+    if (rosterDate.getTime() > last.getTime()) return;
+
+    const id = formatLocalId(rosterDate);
+    byDateId.set(id, normalizeRosterForDate(roster, rosterDate));
+  });
+
+  const result: RosterFile[] = [];
+  for (let offset = 0; offset < dayCount; offset += 1) {
+    const date = new Date(start);
+    date.setDate(start.getDate() + offset);
+    const id = formatLocalId(date);
+    result.push(byDateId.get(id) ?? buildBlankRosterForDate(date));
+  }
+
+  return result;
+}
+
+export function getUpcomingRosters(upcomingDays = 7): RosterFile[] {
+  return buildUpcomingRosterWindow(loadSavedRosters(), upcomingDays, new Date());
 }
 
 export function formatMonthLabel(month: string) {

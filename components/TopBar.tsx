@@ -43,12 +43,12 @@ export default function TopBar({
   }
 
   return (
-    <header className="bg-transparent">
-      <div className="h-14 flex items-center gap-3">
+    <header className="rounded-[12px] border border-[var(--border)] bg-[var(--surface-subtle)] px-3 py-2">
+      <div className="flex min-h-[38px] items-center gap-2">
         {!isOpen && (
           <div className="flex items-center gap-2">
             <button
-              className="btn px-2 py-2"
+              className="btn px-2"
               onClick={toggleNav}
               aria-pressed={isOpen}
               title={isOpen ? "Collapse sidebar" : "Expand sidebar"}

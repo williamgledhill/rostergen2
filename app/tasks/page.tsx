@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Plus } from "lucide-react";
@@ -107,7 +107,7 @@ export default function TasksPage() {
 
   return (
     <div className="w-full py-3 px-3">
-      <div className="space-y-3 flex flex-col items-start w-full max-w-5xl mx-auto">
+      <div className="space-y-3 flex flex-col items-start w-full">
         <div className="flex items-center justify-between w-full">
           <div>
             <h1 className="text-2xl font-semibold">Tasks</h1>
@@ -189,3 +189,4 @@ export default function TasksPage() {
     </div>
   );
 }
+

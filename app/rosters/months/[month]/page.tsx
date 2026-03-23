@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 import React, { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { ChevronRight, Plus } from "lucide-react";
@@ -49,14 +49,14 @@ export default function RostersForMonth() {
 
   return (
     <div className="w-full py-3 px-3">
-      <div className="space-y-3 flex flex-col items-start w-full max-w-5xl mx-auto">
+      <div className="space-y-3 flex flex-col items-start w-full">
         <div className="w-full flex flex-col gap-2">
           <div>
             <Link
-              href="/rosters/months"
+              href="/rosters"
               className="inline-flex items-center gap-1 text-[#675dff] font-semibold text-[14px]"
             >
-              <span className="hover:underline">All months</span>
+              <span className="hover:underline">Rosters</span>
               <ChevronRight className="w-4 h-4 text-slate-700" />
             </Link>
           </div>
@@ -84,3 +84,4 @@ export default function RostersForMonth() {
     </div>
   );
 }
+

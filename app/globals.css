@@ -4,14 +4,18 @@
 
 :root{
   --blk:#0f172a;
-  --border:#d5d9e0;
-  --muted:#4b5563;
+  --canvas:#f1efe7;
+  --frame-surface:#f6f6f8;
+  --frame-border:#e4e6ed;
+  --border:#d8dce5;
+  --muted:#5a6271;
   --surface:#ffffff;
-  --surface-subtle:#f7f8fb;
-  --accent:rgb(103, 93, 255);
-  --accent-soft:#ebe6ff;
-  --radius-md: 12px;
-  --radius-lg: 16px;
+  --surface-subtle:#f5f7fb;
+  --accent:#344de8;
+  --accent-strong:#263dc7;
+  --accent-soft:#e8ecff;
+  --radius-md: 10px;
+  --radius-lg: 14px;
   --timew: 130px;
   --empw: 170px;
   --rowh: 36px;
@@ -26,7 +30,7 @@
 html, body { height: 100%; }
 body {
   @apply text-slate-900 bg-[var(--surface)];
-  font-family: "Poppins", "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+  font-family: "Inter", "Segoe UI", "Helvetica Neue", Arial, sans-serif;
   margin: 0;
 }
 
@@ -39,30 +43,30 @@ h1, h2, h3, h4, h5, h6 {
 .btn {
   @apply inline-flex items-center justify-center gap-2 border font-medium rounded-md bg-white text-slate-900;
   border-color: var(--border);
-  box-shadow: 0 1px 2px rgba(15,23,42,0.05);
+  box-shadow: 0 1px 1px rgba(15,23,42,0.04);
   transition: all 0.15s ease;
   border-radius: var(--radius-md);
-  font-size: 14px;
-  height: 36px;
-  padding: 0 12px;
+  font-size: 13px;
+  height: 34px;
+  padding: 0 11px;
 }
 .btn:hover {
-  background: var(--surface-subtle);
-  border-color: #94a3b8;
+  background: #f2f5fb;
+  border-color: #b8c2d3;
 }
 .btn-primary {
   @apply text-white inline-flex items-center justify-center gap-2;
   background: var(--accent);
   border-color: var(--accent);
-  border-radius: 10px;
-  box-shadow: 0 1px 1px rgba(0,0,0,0.1);
+  border-radius: var(--radius-md);
+  box-shadow: 0 1px 1px rgba(15,23,42,0.15);
   min-width: 0;
-  height: 36px;
-  padding: 0 14px;
-  font-size: 14px;
+  height: 34px;
+  padding: 0 12px;
+  font-size: 13px;
   font-weight: 500;
 }
-.btn-primary:hover { background: #4c26d6; box-shadow: 0 2px 4px rgba(0,0,0,0.12); }
+.btn-primary:hover { background: var(--accent-strong); box-shadow: 0 2px 6px rgba(38,61,199,0.28); }
 .badge {
   @apply inline-flex items-center gap-2 px-2 py-1 rounded-full text-xs font-semibold;
   background: var(--accent-soft);
@@ -73,12 +77,17 @@ h1, h2, h3, h4, h5, h6 {
   @apply bg-white;
   border-radius: var(--radius-lg);
   border: 1px solid var(--border);
-  box-shadow: 0 8px 30px rgba(15,23,42,0.04);
+  box-shadow: 0 8px 24px rgba(15,23,42,0.06);
 }
 .input {
-  @apply px-3 py-2 bg-white focus:outline-none focus:ring-2 focus:ring-blue-100;
+  @apply px-3 py-2 bg-white focus:outline-none;
   border: 1px solid var(--border);
-  border-radius: 6px;
+  border-radius: var(--radius-md);
+  box-shadow: 0 1px 0 rgba(15,23,42,0.02);
+}
+.input:focus {
+  border-color: rgba(52, 77, 232, 0.45);
+  box-shadow: 0 0 0 3px rgba(52, 77, 232, 0.14);
 }
 
 input[type="checkbox"] {
@@ -125,9 +134,9 @@ input[type="checkbox"]::after {
 }
 .table-clean th,
 .table-clean td {
-  padding: 12px 14px;
+  padding: 11px 12px;
   border-bottom: 1px solid var(--border);
-  font-size: 0.95rem;
+  font-size: 0.875rem;
 }
 .table-clean th {
   text-align: left;

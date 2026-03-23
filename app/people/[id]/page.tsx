@@ -110,7 +110,7 @@ export default function PersonDetail() {
   return (
     <div className="w-full py-4 px-3">
       <div className="space-y-3 flex flex-col items-start">
-        <div className="flex items-center justify-between w-full max-w-3xl">
+        <div className="flex items-center justify-between w-full">
           <button className="btn" onClick={()=>router.push("/people")}>Back</button>
           <div className="text-center flex-1">
             <h1 className="text-2xl font-semibold">{formatTitle(person.name)}</h1>
@@ -123,7 +123,7 @@ export default function PersonDetail() {
           </div>
         </div>
 
-        <div className="card border border-[var(--border)] bg-white w-full max-w-3xl">
+        <div className="card border border-[var(--border)] bg-white w-full">
           <div className="px-4 py-3 border-b border-[var(--border)]">
             <h2 className="text-lg font-semibold">Schedule</h2>
             <p className="text-sm text-slate-600">Toggle a day, then set start/end times.</p>

@@ -5,9 +5,12 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import type { RosterFile } from "@/lib/rosters";
 
-type Props = { rosters: RosterFile[] };
+type Props = {
+  rosters: RosterFile[];
+  footer?: React.ReactNode;
+};
 
-export default function RosterTable({ rosters }: Props) {
+export default function RosterTable({ rosters, footer }: Props) {
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const headerCheckboxRef = useRef<HTMLInputElement>(null);
   const today = useMemo(() => new Date(), []);
@@ -46,10 +49,6 @@ export default function RosterTable({ rosters }: Props) {
 
   return (
     <div className="bg-white rounded-lg shadow-sm w-full overflow-hidden">
-      <div className="flex items-center justify-between px-4 py-3 border-b border-[#E6EAF0]">
-        <h2 className="text-lg font-semibold">Rosters</h2>
-        <span className="text-sm text-slate-600">Click a roster to open</span>
-      </div>
       <div className="overflow-x-auto">
         <table className="w-full text-sm border-collapse">
           <thead className="text-slate-600 text-sm">
@@ -69,7 +68,6 @@ export default function RosterTable({ rosters }: Props) {
               <th className="px-3 py-2 text-left font-semibold">People</th>
               <th className="px-3 py-2 text-left font-semibold">Status</th>
               <th className="px-3 py-2 text-left font-semibold">Updated</th>
-              <th className="px-3 py-2 text-left font-semibold"></th>
             </tr>
           </thead>
           <tbody>
@@ -120,27 +118,20 @@ export default function RosterTable({ rosters }: Props) {
                     </span>
                   </td>
                   <td className="align-middle px-3 py-2 text-slate-600">{r.updated}</td>
-                  <td className="align-middle px-3 py-2 text-right">
-                    <Link
-                      href={`/editor?date=${encodeURIComponent(r.id)}`}
-                      className="text-sm font-medium text-[#675dff] hover:underline"
-                      onClick={(e) => e.stopPropagation()}
-                    >
-                      Open
-                    </Link>
-                  </td>
                 </tr>
               );
             })}
             {rosters.length === 0 && (
               <tr>
-                <td colSpan={7} className="py-6 text-center text-slate-600">No rosters yet.</td>
+                <td colSpan={6} className="py-6 text-center text-slate-600">No rosters yet.</td>
               </tr>
             )}
           </tbody>
         </table>
       </div>
-      <div className="px-4 py-3 text-sm text-slate-600">{rosters.length} roster{rosters.length === 1 ? "" : "s"}</div>
+      <div className="px-4 py-3 text-sm text-slate-600">
+        {footer ?? `${rosters.length} roster${rosters.length === 1 ? "" : "s"}`}
+      </div>
     </div>
   );
 }

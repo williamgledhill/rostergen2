@@ -444,5 +444,64 @@
     "packingMinutes": 0,
     "limitPerDay": 0,
     "enabled": true
+  },
+  {
+    "id": "morning-briefing",
+    "name": "Briefing",
+    "description": "No description yet.",
+    "category": "Custom",
+    "color": "#ff5b14",
+    "mustManned": false,
+    "autogenStart": "",
+    "autogenEnd": "",
+    "regularDays": [
+      "Mon",
+      "Tue",
+      "Wed",
+      "Thu",
+      "Fri",
+      "Sat",
+      "Sun"
+    ],
+    "regularTimes": [],
+    "regularTimesByDay": {},
+    "regularDayWindows": {
+      "Mon": {
+        "start": "09:00",
+        "end": "09:15"
+      },
+      "Tue": {
+        "start": "09:00",
+        "end": "09:15"
+      },
+      "Wed": {
+        "start": "09:00",
+        "end": "09:15"
+      },
+      "Thu": {
+        "start": "09:00",
+        "end": "09:15"
+      },
+      "Fri": {
+        "start": "09:00",
+        "end": "09:15"
+      },
+      "Sat": {
+        "start": "10:00",
+        "end": "10:15"
+      },
+      "Sun": {
+        "start": "10:00",
+        "end": "10:15"
+      }
+    },
+    "minPerEmployeePerDay": 0,
+    "maxPerEmployeePerDay": 0,
+    "durationMinutes": 15,
+    "maxConsecutiveMinutes": 0,
+    "waitingMinutes": 0,
+    "packingMinutes": 0,
+    "limitPerDay": 0,
+    "enabled": true
   }
 ]

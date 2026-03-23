@@ -81,7 +81,7 @@ export default function HomePage() {
 
   return (
     <div className="min-h-screen bg-white px-6 py-10">
-      <div className="max-w-5xl mx-auto w-full">
+      <div className="w-full">
         <div className="flex items-center justify-between mb-10">
           <div className="flex flex-col">
             <span className="text-sm uppercase tracking-[0.2em] text-slate-400">roster.app</span>

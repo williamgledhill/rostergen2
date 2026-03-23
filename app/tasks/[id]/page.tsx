@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 import React, { useEffect, useState } from "react";
 import Link from "next/link";
 import { useParams, notFound, useRouter } from "next/navigation";
@@ -166,7 +166,7 @@ export default function TaskDetailPage() {
 
   return (
     <div className="w-full py-3 px-3">
-      <div className="space-y-3 flex flex-col items-start w-full max-w-5xl mx-auto">
+      <div className="space-y-3 flex flex-col items-start w-full">
         <div className="flex items-center gap-1 text-[14px]">
           <Link href="/tasks" className="text-[#675dff] font-semibold hover:underline">
             Tasks
@@ -571,4 +571,5 @@ export default function TaskDetailPage() {
     </div>
   );
 }
+
 

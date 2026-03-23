@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 import React, { useEffect, useMemo, useState } from "react";
 import { AppSettings, DEFAULT_SETTINGS, DAY_KEYS } from "@/lib/settingsDefaults";
 
@@ -50,6 +50,16 @@ export default function SettingsPage() {
     }));
   }
 
+  function updateUpcomingDays(value: string) {
+    const numeric = Math.floor(Number(value));
+    setSettings((prev) => ({
+      ...prev,
+      upcomingDays: Number.isFinite(numeric)
+        ? Math.min(90, Math.max(1, numeric))
+        : DEFAULT_SETTINGS.upcomingDays,
+    }));
+  }
+
   async function save() {
     if (invalidDays.length) return;
     try {
@@ -72,16 +82,30 @@ export default function SettingsPage() {
 
   return (
     <div className="w-full py-3 px-3">
-      <div className="space-y-4 flex flex-col items-start w-full max-w-5xl mx-auto">
+      <div className="space-y-4 flex flex-col items-start w-full">
         <div>
           <h1 className="text-2xl font-semibold">Settings</h1>
           <p className="text-slate-600 text-[14px]">Default roster hours by day.</p>
         </div>
 
-        <div className="bg-white rounded-lg shadow-sm w-full border border-[var(--border)] max-w-[600px]">
-          <div className="px-4 py-3 border-b border-[var(--border)]">
+        <div className="bg-white rounded-lg shadow-sm w-full border border-[var(--border)]">
+          <div className="px-4 py-3 border-b border-[var(--border)] space-y-3">
             <h2 className="text-lg font-semibold">Default Hours</h2>
             <p className="text-sm text-slate-600">Used when creating or opening a roster day.</p>
+            <div className="flex items-center gap-3 pt-1">
+              <label className="text-sm font-semibold" htmlFor="upcoming-days">Upcoming roster days</label>
+              <input
+                id="upcoming-days"
+                type="number"
+                min={1}
+                max={90}
+                className="input text-[14px] w-[120px]"
+                value={settings.upcomingDays}
+                onChange={(e) => updateUpcomingDays(e.target.value)}
+                aria-label="Upcoming roster days"
+              />
+              <span className="text-xs text-slate-500">Auto-generates blank upcoming rows from today.</span>
+            </div>
           </div>
           <div className="divide-y divide-[var(--border)]">
             <div className="grid grid-cols-[160px,1fr,1fr] gap-3 px-4 py-2 text-[12px] text-slate-500 bg-[var(--surface-subtle)]">
@@ -133,3 +157,4 @@ export default function SettingsPage() {
     </div>
   );
 }
+

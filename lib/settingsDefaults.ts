@@ -2,7 +2,10 @@ export const DAY_KEYS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"] as con
 export type DayKey = (typeof DAY_KEYS)[number];
 
 export type DayHours = { start: string; end: string };
-export type AppSettings = { hoursByDay: Record<DayKey, DayHours> };
+export type AppSettings = {
+  hoursByDay: Record<DayKey, DayHours>;
+  upcomingDays: number;
+};
 
 export const DEFAULT_SETTINGS: AppSettings = {
   hoursByDay: {
@@ -14,4 +17,5 @@ export const DEFAULT_SETTINGS: AppSettings = {
     Sat: { start: "09:30", end: "16:00" },
     Sun: { start: "09:30", end: "16:00" },
   },
+  upcomingDays: 7,
 };

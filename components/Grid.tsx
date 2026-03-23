@@ -938,11 +938,6 @@ export default function Grid({
         style={{ borderBottomWidth: 0 }}
         onClick={() => setSelected(undefined)}
       >
-      {/* internal header */}
-      <div className="h-[var(--rowh)] flex items-center px-3 border-b border-black justify-between gap-3">
-        <h2 className="text-base font-semibold uppercase tracking-wide leading-none">Roster Preview</h2>
-      </div>
-
       {/* grid */}
       <div className="grid inline-grid"
         style={{ gridTemplateColumns: `var(--timew) repeat(${employees.length}, var(--empw))`, gridAutoRows: "var(--rowh)" }}>
