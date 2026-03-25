@@ -1,6 +1,6 @@
 "use client";
 import React from "react";
-import { Download, Plus, Sparkles, Menu, Save, RotateCcw } from "lucide-react";
+import { Download, Plus, Sparkles, Menu, Save, RotateCcw, Trash2 } from "lucide-react";
 import { useNav } from "@/components/NavContext";
 
 export default function TopBar({
@@ -29,6 +29,11 @@ export default function TopBar({
   function handleSave(){
     if(typeof window !== "undefined"){
       window.dispatchEvent(new Event("roster-save"));
+    }
+  }
+  function handleClear(){
+    if(typeof window !== "undefined"){
+      window.dispatchEvent(new Event("roster-clear"));
     }
   }
   function handleAutofill(){
@@ -67,6 +72,9 @@ export default function TopBar({
             </button>
             <button className="btn whitespace-nowrap" onClick={handleSave}>
               <Save className="w-4 h-4" /> Save
+            </button>
+            <button className="btn whitespace-nowrap" onClick={handleClear}>
+              <Trash2 className="w-4 h-4" /> Clear
             </button>
             <button className="btn whitespace-nowrap" onClick={handleExport}>
               <Download className="w-4 h-4" /> Export

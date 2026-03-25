@@ -16,6 +16,9 @@ type GridTask = {
   span: number;
   color?: string;
   employeeId?: number;
+  locked?: boolean;
+  isLocked?: boolean;
+  readOnly?: boolean;
 };
 
 const MIN_ROW = 2;
@@ -34,6 +37,21 @@ function parseTimeToMinutes(value?: string) {
 
 function clampNumber(value: number, min: number, max: number) {
   return Math.min(max, Math.max(min, value));
+}
+
+function isTaskLocked(task: GridTask) {
+  return task.locked === true || task.isLocked === true || task.readOnly === true;
+}
+
+function isEditableTarget(target: EventTarget | null) {
+  if (!(target instanceof Element)) return false;
+  const editable = target.closest("input, textarea, select, [contenteditable], [role='textbox']");
+  if (!editable) return false;
+  if (editable instanceof HTMLInputElement) return true;
+  if (editable instanceof HTMLTextAreaElement) return true;
+  if (editable instanceof HTMLSelectElement) return true;
+  if (editable instanceof HTMLElement && editable.isContentEditable) return true;
+  return editable.getAttribute("role") === "textbox";
 }
 
 const typeToClassLabel: Record<string, [string, string]> = {
@@ -118,6 +136,12 @@ export default function Grid({
 
   useEffect(() => { setEmployees(initialEmployees); }, [initialEmployees]);
   useEffect(() => { setTasks(initialTasks); }, [initialTasks]);
+  useEffect(() => {
+    if (selected === undefined) return;
+    if (!tasks.some((task) => task.id === selected)) {
+      setSelected(undefined);
+    }
+  }, [tasks, selected]);
 
   useEffect(() => {
     if (prevStartRef.current === null) {
@@ -680,6 +704,15 @@ export default function Grid({
     }
   }, [employees, tasks, rosterDateId, hoursStart, hoursEnd]);
 
+  const clearNonLockedTasks = useCallback(() => {
+    setTasks((prev) => prev.filter((task) => isTaskLocked(task)));
+  }, []);
+
+  const deleteSelectedTask = useCallback(() => {
+    if (selected === undefined) return;
+    setTasks((prev) => prev.filter((task) => task.id !== selected || isTaskLocked(task)));
+  }, [selected]);
+
   useEffect(() => {
     const handler = () => { setAddOpen(true); };
     window.addEventListener("roster:add-employee", handler);
@@ -699,6 +732,12 @@ export default function Grid({
   }, [saveRoster]);
 
   useEffect(() => {
+    const handler = () => clearNonLockedTasks();
+    window.addEventListener("roster-clear", handler);
+    return () => window.removeEventListener("roster-clear", handler);
+  }, [clearNonLockedTasks]);
+
+  useEffect(() => {
     const onOutside = (e: MouseEvent) => {
       if (!containerRef.current) return;
       if (containerRef.current.contains(e.target as Node)) return;
@@ -713,6 +752,18 @@ export default function Grid({
     window.addEventListener("roster-reset", handler);
     return () => window.removeEventListener("roster-reset", handler);
   }, [resetRoster]);
+
+  useEffect(() => {
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (selected === undefined) return;
+      if (e.key !== "Backspace" && e.key !== "Delete") return;
+      if (isEditableTarget(e.target)) return;
+      e.preventDefault();
+      deleteSelectedTask();
+    };
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [selected, deleteSelectedTask]);
 
   const exportExcel = useCallback(() => {
     const border = "#000000";
