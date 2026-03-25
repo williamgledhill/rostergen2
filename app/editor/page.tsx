@@ -168,44 +168,21 @@ export default function Page() {
         </div>
 
         <div className="sticky top-3 z-30 w-full">
-          <TopBar />
-        </div>
-
-        <div className="flex items-center w-full flex-wrap gap-3">
-          <div className="flex items-center gap-2 flex-wrap">
-            <span className="text-[14px] font-semibold text-slate-700">Hours</span>
-            <input
-              type="time"
-              className="input w-[140px] text-[14px]"
-              value={hours.start}
-              step={900}
-              onChange={(e) => {
-                setHoursTouched(true);
-                setHours((prev) => ({ ...prev, start: e.target.value }));
-              }}
-            />
-            <span className="text-slate-500 text-[13px]">to</span>
-            <input
-              type="time"
-              className="input w-[140px] text-[14px]"
-              value={hours.end}
-              step={900}
-              onChange={(e) => {
-                setHoursTouched(true);
-                setHours((prev) => ({ ...prev, end: e.target.value }));
-              }}
-            />
-            <button
-              className="btn h-8 px-3"
-              type="button"
-              onClick={() => {
-                setHoursTouched(false);
-                setHours({ start: defaultHoursForDay.start, end: defaultHoursForDay.end });
-              }}
-            >
-              Default
-            </button>
-          </div>
+          <TopBar
+            hours={hours}
+            onHoursStartChange={(value) => {
+              setHoursTouched(true);
+              setHours((prev) => ({ ...prev, start: value }));
+            }}
+            onHoursEndChange={(value) => {
+              setHoursTouched(true);
+              setHours((prev) => ({ ...prev, end: value }));
+            }}
+            onHoursDefault={() => {
+              setHoursTouched(false);
+              setHours({ start: defaultHoursForDay.start, end: defaultHoursForDay.end });
+            }}
+          />
         </div>
 
         <Grid
