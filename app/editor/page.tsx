@@ -165,9 +165,10 @@ export default function Page() {
           <div className="flex flex-col leading-tight">
             <h1 className="text-2xl font-semibold">{dayLabel}</h1>
           </div>
-          <div className="sticky top-3 z-30">
-            <TopBar />
-          </div>
+        </div>
+
+        <div className="sticky top-3 z-30 w-full">
+          <TopBar />
         </div>
 
         <div className="flex items-center w-full flex-wrap gap-3">
