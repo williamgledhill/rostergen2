@@ -134,6 +134,7 @@ export default function Grid({
   const [employees, setEmployees] = useState<Employee[]>(initialEmployees);
   const [tasks, setTasks] = useState<GridTask[]>(initialTasks);
   const [selected, setSelected] = useState<string | number | undefined>();
+  const [hoveredCol, setHoveredCol] = useState<number | null>(null);
   const [drag, setDrag] = useState<null | { id: string | number; which: "top" | "bottom"; y0: number; start0: number; span0: number }>(null);
   const [modal, setModal] = useState<null | { col: number; row: number }>(null);
   const [addOpen, setAddOpen] = useState(false);
@@ -380,7 +381,7 @@ export default function Grid({
     setSelected(undefined);
   }, [people, rosterDate, initialEmployees, applyRosterState]);
 
-  const removeEmployee = useCallback((id: number) => {
+  const removeEmployee = useCallback((id: string | number) => {
     const prevEmployees = employeesRef.current;
     const idx = prevEmployees.findIndex((e) => e.id === id);
     if (idx === -1) return;
@@ -1134,58 +1135,91 @@ export default function Grid({
     }
   }
   const lastCol = employeeCols[employeeCols.length - 1]?.col;
+  const selectedTaskCol = tasks.find((t) => t.id === selected)?.col ?? null;
+  const emphasizedCol = hoveredCol ?? selectedTaskCol;
 
   return (
     <div className="w-full overflow-x-auto">
       <div
         ref={containerRef}
-        className="card p-0 inline-block"
+        className="card p-0 inline-block overflow-hidden"
         style={{ borderBottomWidth: 0 }}
         onClick={() => setSelected(undefined)}
       >
       {/* grid */}
-      <div className="grid inline-grid"
-        style={{ gridTemplateColumns: `var(--timew) repeat(${employees.length}, var(--empw))`, gridAutoRows: "var(--rowh)" }}>
-        <div className="font-semibold uppercase text-xs tracking-wide p-2 border-b border-r text-center">Time</div>
-        {employeeCols.map(h => (
-          <div
-            key={h.id}
-            className={`relative px-3 py-0.5 border-b ${h.col === lastCol ? "" : "border-r"} text-center`}
-          >
-            <button
-              className="absolute top-0.5 right-2 text-[10px] font-normal underline text-red-700 leading-none"
-              onClick={(e) => { e.stopPropagation(); removeEmployee(h.id as number); }}
-              title="Remove employee"
+      <div
+        className="grid inline-grid"
+        style={{
+          gridTemplateColumns: `var(--timew) repeat(${employees.length}, var(--empw))`,
+          gridTemplateRows: "62px",
+          gridAutoRows: "var(--rowh)",
+        }}
+      >
+        <div className="sticky left-0 top-[66px] z-40 rounded-tl-[12px] border-b border-r bg-[var(--surface-subtle)] px-3 py-2 text-center shadow-[0_1px_0_rgba(15,23,42,0.08),0_2px_8px_rgba(15,23,42,0.04)] supports-[backdrop-filter]:bg-white/90 supports-[backdrop-filter]:backdrop-blur">
+          <span className="text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-700">Time</span>
+        </div>
+        {employeeCols.map((h) => {
+          const highlighted = emphasizedCol === h.col;
+          return (
+            <div
+              key={h.id}
+              className={`group relative sticky top-[66px] z-30 border-b ${h.col === lastCol ? "rounded-tr-[12px]" : "border-r"} bg-[var(--surface-subtle)] px-2 py-1 shadow-[0_1px_0_rgba(15,23,42,0.08),0_2px_8px_rgba(15,23,42,0.04)] supports-[backdrop-filter]:bg-white/90 supports-[backdrop-filter]:backdrop-blur`}
+              onMouseEnter={() => setHoveredCol(h.col)}
+              onMouseLeave={() => setHoveredCol((current) => (current === h.col ? null : current))}
             >
-              Remove
-            </button>
-            <div className="flex flex-col items-center justify-center gap-0.5 leading-[1.1]">
-              <span className="text-xs font-semibold uppercase tracking-wide leading-none">{h.name}</span>
-              <span className="text-[10px] font-normal text-slate-500 normal-case leading-none">
-                {getEmployeeHoursLabel(h)}
-              </span>
+              <button
+                className="absolute right-2 top-2 grid h-5 w-5 place-items-center rounded-md border border-transparent bg-white/70 text-slate-400 opacity-0 shadow-sm transition hover:border-red-200 hover:bg-white hover:text-red-600 group-hover:opacity-100 focus-visible:opacity-100"
+                onClick={(e) => { e.stopPropagation(); removeEmployee(h.id); }}
+                title={`Remove ${h.name}`}
+                aria-label={`Remove ${h.name}`}
+              >
+                <X className="h-3 w-3" />
+              </button>
+              <div
+                className={`flex h-full flex-col items-center justify-center gap-1 rounded-[10px] border px-2 pr-8 transition ${
+                  highlighted ? "border-[#c7d3ff] bg-[#eef2ff]" : "border-[#dbe1ed] bg-white/90"
+                }`}
+              >
+                <span className="max-w-full truncate text-[12px] font-semibold tracking-[0.01em] text-slate-800">
+                  {h.name}
+                </span>
+                <span className="inline-flex items-center rounded-full border border-slate-200 bg-[#f7f9fc] px-2 py-[1px] text-[10px] font-medium text-slate-600">
+                  {getEmployeeHoursLabel(h)}
+                </span>
+              </div>
             </div>
-          </div>
-        ))}
+          );
+        })}
 
         {Array.from({ length: maxRowEx - MIN_ROW }).map((_, i) => {
           const r = MIN_ROW + i;
           return (
-            <div key={`time-${r}`} ref={i === 0 ? firstTimeCellRef : undefined}
-              className="border-b border-r p-2 text-sm text-black font-semibold text-center">
+            <div
+              key={`time-${r}`}
+              ref={i === 0 ? firstTimeCellRef : undefined}
+              className="sticky left-0 z-10 border-b border-r bg-[#f8f9fc] px-2 py-2 text-center text-sm font-semibold text-slate-700"
+            >
               {timeRangeForRow(r)}
             </div>
           );
         })}
 
-        {slots.map((s, idx) => (
-          <div key={`slot-${idx}`} className={`border-b ${s.col === lastCol ? "" : "border-r"} relative cursor-pointer hover:bg-slate-50`}
-            style={{ gridColumn: String(s.col), gridRow: String(s.row) }}
-            onClick={(e) => { e.stopPropagation(); openPicker(s.col, s.row); }}
-            title="Add task">
-            <span className="opacity-25 absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 font-extrabold text-lg">+</span>
-          </div>
-        ))}
+        {slots.map((s, idx) => {
+          const highlighted = emphasizedCol === s.col;
+          return (
+            <div
+              key={`slot-${idx}`}
+              className={`relative cursor-pointer border-b ${s.col === lastCol ? "" : "border-r"} ${
+                highlighted ? "bg-[#eef2ff]/55" : ""
+              } hover:bg-slate-50`}
+              style={{ gridColumn: String(s.col), gridRow: String(s.row) }}
+              onClick={(e) => { e.stopPropagation(); openPicker(s.col, s.row); }}
+              title="Add task"
+            >
+              <span className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 text-lg font-extrabold opacity-25">+</span>
+            </div>
+          );
+        })}
 
         {tasks.map(t => {
           const template = templateById.get(t.type);
@@ -1202,6 +1236,7 @@ export default function Grid({
               waitingMinutes={template?.waitingMinutes}
               packingMinutes={template?.packingMinutes}
               selected={t.id === selected}
+              highlighted={emphasizedCol === t.col}
               onSelect={() => setSelected(t.id)}
               isLastCol={t.col === lastCol}
               onStartResize={(which, e) => onStartResize(which, t.id, e)}

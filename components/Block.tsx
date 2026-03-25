@@ -12,6 +12,7 @@ type Props = {
   waitingMinutes?: number;
   packingMinutes?: number;
   selected?: boolean;
+  highlighted?: boolean;
   isLastCol?: boolean;
   onSelect?: () => void;
   onStartResize?: (which: "top" | "bottom", e: React.MouseEvent) => void;
@@ -34,6 +35,7 @@ export default function Block({
   startRow,
   span,
   selected,
+  highlighted,
   onSelect,
   onStartResize,
   isLastCol,
@@ -44,6 +46,7 @@ export default function Block({
   const cls = color ? "" : typeToClass[type] ?? "bg-[var(--gallery)]";
   const rightBorder = isLastCol ? "" : "border-r";
   const selOverlay = selected ? "shadow-[inset_0_0_0_2px_rgba(0,0,0,0.8)]" : "";
+  const colHighlight = highlighted && !selected ? "shadow-[inset_0_0_0_1px_rgba(52,77,232,0.28)]" : "";
   const totalRows = Math.max(1, span);
   const waitingRows = Math.max(0, Math.round((waitingMinutes ?? 0) / 15));
   const packingRows = Math.max(0, Math.round((packingMinutes ?? 0) / 15));
@@ -58,7 +61,7 @@ export default function Block({
   return (
     <div
       data-id={id}
-      className={`relative border-b ${rightBorder} border-black ${cls} ${selOverlay} 
+      className={`relative border-b ${rightBorder} border-black ${cls} ${selOverlay} ${colHighlight}
                   flex items-center justify-center text-center select-none overflow-hidden`}
       style={{ gridColumn: String(col), gridRow: `${startRow} / span ${span}`, backgroundColor: color || undefined }}
       onClick={(e) => { e.stopPropagation(); onSelect?.(); }}
