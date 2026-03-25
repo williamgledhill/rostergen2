@@ -1,12 +1,12 @@
 "use client";
 import React, { useMemo, useState, useRef, useEffect, useCallback } from "react";
-import { X } from "lucide-react";
+import { X, Settings2, Trash2 } from "lucide-react";
 import Block from "@/components/Block";
 import Modal from "@/components/Modal";
 import { TaskTemplate, defaultTaskTemplates } from "@/lib/taskTemplates";
 import type { Person } from "@/lib/people";
 
-type Employee = { id: string | number; name: string };
+type Employee = { id: string | number; name: string; startTime?: string; endTime?: string };
 type GridTask = {
   id: string | number;
   type: string;
@@ -84,6 +84,12 @@ function areTasksEqual(a: GridTask[], b: GridTask[]) {
   return true;
 }
 
+function formatMinutesToTime(totalMinutes: number) {
+  const h = Math.floor(totalMinutes / 60);
+  const m = totalMinutes % 60;
+  return `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}`;
+}
+
 function isTaskLocked(task: GridTask) {
   return task.locked === true || task.isLocked === true || task.readOnly === true;
 }
@@ -135,6 +141,9 @@ export default function Grid({
   const [tasks, setTasks] = useState<GridTask[]>(initialTasks);
   const [selected, setSelected] = useState<string | number | undefined>();
   const [hoveredCol, setHoveredCol] = useState<number | null>(null);
+  const [employeeSettingsId, setEmployeeSettingsId] = useState<string | number | null>(null);
+  const [employeeSettingsDraft, setEmployeeSettingsDraft] = useState<{ start: string; end: string }>({ start: "", end: "" });
+  const [employeeSettingsError, setEmployeeSettingsError] = useState("");
   const [drag, setDrag] = useState<null | { id: string | number; which: "top" | "bottom"; y0: number; start0: number; span0: number }>(null);
   const [modal, setModal] = useState<null | { col: number; row: number }>(null);
   const [addOpen, setAddOpen] = useState(false);
@@ -142,6 +151,7 @@ export default function Grid({
   const [templates, setTemplates] = useState<TaskTemplate[]>(defaultTaskTemplates);
 
   const containerRef = useRef<HTMLDivElement>(null);
+  const employeeSettingsRef = useRef<HTMLDivElement>(null);
   const firstTimeCellRef = useRef<HTMLDivElement>(null);
   const prevStartRef = useRef<number | null>(null);
   const prevMaxRef = useRef<number | null>(null);
@@ -252,6 +262,8 @@ export default function Grid({
     historyPastRef.current = [];
     historyFutureRef.current = [];
     setSelected(undefined);
+    setEmployeeSettingsId(null);
+    setEmployeeSettingsError("");
   }, [initialEmployees, initialTasks, rosterDateId, setRosterState]);
 
   useEffect(() => {
@@ -268,6 +280,26 @@ export default function Grid({
       setSelected(undefined);
     }
   }, [tasks, selected]);
+
+  useEffect(() => {
+    if (employeeSettingsId === null) return;
+    const onOutsideClick = (e: MouseEvent) => {
+      if (!employeeSettingsRef.current) return;
+      if (employeeSettingsRef.current.contains(e.target as Node)) return;
+      setEmployeeSettingsId(null);
+      setEmployeeSettingsError("");
+    };
+    document.addEventListener("mousedown", onOutsideClick);
+    return () => document.removeEventListener("mousedown", onOutsideClick);
+  }, [employeeSettingsId]);
+
+  useEffect(() => {
+    if (employeeSettingsId === null) return;
+    if (!employees.some((emp) => emp.id === employeeSettingsId)) {
+      setEmployeeSettingsId(null);
+      setEmployeeSettingsError("");
+    }
+  }, [employeeSettingsId, employees]);
 
   useEffect(() => {
     if (prevStartRef.current === null) {
@@ -330,7 +362,10 @@ export default function Grid({
 
   const colorForType = useCallback((type: string) => templateById.get(type)?.color || defaultColorByType[type], [templateById]);
 
-  const employeeCols = useMemo(() => employees.map((e, idx) => ({ id: e.id, name: e.name, col: idx + 2 })), [employees]);
+  const employeeCols = useMemo(
+    () => employees.map((e, idx) => ({ id: e.id, name: e.name, startTime: e.startTime, endTime: e.endTime, col: idx + 2 })),
+    [employees]
+  );
   const dayKeyLabel = DAY_KEYS[rosterDate.getDay()];
   const peopleById = useMemo(() => new Map(people.map((p) => [String(p.id), p])), [people]);
   const peopleByName = useMemo(
@@ -338,15 +373,75 @@ export default function Grid({
     [people]
   );
 
-  function getEmployeeHoursLabel(emp: Employee) {
+  function resolveEmployeeHours(emp: Employee) {
+    const overrideStart = parseTimeToMinutes(emp.startTime);
+    const overrideEnd = parseTimeToMinutes(emp.endTime);
+    if (overrideStart !== null && overrideEnd !== null && overrideStart < overrideEnd) {
+      return { start: emp.startTime as string, end: emp.endTime as string, isOff: false, isOverride: true };
+    }
+
     const person =
       peopleById.get(String(emp.id)) ||
       peopleByName.get(String(emp.name || "").toLowerCase());
     const sched = person?.schedule?.[dayKeyLabel];
-    if (!sched?.enabled) return "Off";
-    return `${sched.start}-${sched.end}`;
+    if (sched?.enabled) {
+      return { start: sched.start, end: sched.end, isOff: false, isOverride: false };
+    }
+
+    return {
+      start: formatMinutesToTime(dayStartMin),
+      end: formatMinutesToTime(dayEndMin),
+      isOff: !!person && !!sched && !sched.enabled,
+      isOverride: false,
+    };
+  }
+
+  function getEmployeeHoursLabel(emp: Employee) {
+    const resolved = resolveEmployeeHours(emp);
+    if (resolved.isOff) return "Off";
+    return `${resolved.start}-${resolved.end}`;
   }
   const rowHeight = () => firstTimeCellRef.current?.getBoundingClientRect().height ?? 44;
+
+  function openEmployeeSettings(emp: Employee) {
+    if (employeeSettingsId === emp.id) {
+      setEmployeeSettingsId(null);
+      setEmployeeSettingsError("");
+      return;
+    }
+    const resolved = resolveEmployeeHours(emp);
+    setEmployeeSettingsId(emp.id);
+    setEmployeeSettingsDraft({ start: resolved.start, end: resolved.end });
+    setEmployeeSettingsError("");
+  }
+
+  const applyEmployeeSettings = useCallback(() => {
+    if (employeeSettingsId === null) return;
+    const start = employeeSettingsDraft.start;
+    const end = employeeSettingsDraft.end;
+    const startMin = parseTimeToMinutes(start);
+    const endMin = parseTimeToMinutes(end);
+    if (startMin === null || endMin === null || startMin >= endMin) {
+      setEmployeeSettingsError("Enter a valid start/end time.");
+      return;
+    }
+    const nextEmployees = employeesRef.current.map((emp) =>
+      emp.id === employeeSettingsId ? { ...emp, startTime: start, endTime: end } : emp
+    );
+    applyRosterState(nextEmployees, tasksRef.current);
+    setEmployeeSettingsId(null);
+    setEmployeeSettingsError("");
+  }, [employeeSettingsId, employeeSettingsDraft.start, employeeSettingsDraft.end, applyRosterState]);
+
+  const clearEmployeeSettingsOverride = useCallback(() => {
+    if (employeeSettingsId === null) return;
+    const nextEmployees = employeesRef.current.map((emp) =>
+      emp.id === employeeSettingsId ? { ...emp, startTime: undefined, endTime: undefined } : emp
+    );
+    applyRosterState(nextEmployees, tasksRef.current);
+    setEmployeeSettingsId(null);
+    setEmployeeSettingsError("");
+  }, [employeeSettingsId, applyRosterState]);
 
   function blocksInCol(col: number) {
     return tasks.filter(t => t.col === col).sort((a, b) => a.startRow - b.startRow);
@@ -392,7 +487,11 @@ export default function Grid({
       .filter((t) => t.col !== colToRemove)
       .map((t) => (t.col > colToRemove ? { ...t, col: t.col - 1 } : t));
     applyRosterState(nextEmployees, nextTasks);
-  }, [applyRosterState]);
+    if (employeeSettingsId === id) {
+      setEmployeeSettingsId(null);
+      setEmployeeSettingsError("");
+    }
+  }, [applyRosterState, employeeSettingsId]);
 
   const autofill = useCallback(() => {
     if (!employees.length) {
@@ -439,10 +538,39 @@ export default function Grid({
     const getEmployeeWindow = (emp: Employee) => {
       const cached = employeeWindows.get(emp.id);
       if (cached !== undefined) return cached;
+
+      const overrideStart = parseTimeToMinutes(emp.startTime);
+      const overrideEnd = parseTimeToMinutes(emp.endTime);
+      if (overrideStart !== null && overrideEnd !== null && overrideStart < overrideEnd) {
+        const startRaw = rowFromTime(emp.startTime as string, "ceil");
+        const endRaw = rowFromTime(emp.endTime as string, "floor");
+        if (startRaw !== null && endRaw !== null) {
+          const startRow = clampNumber(startRaw, MIN_ROW, maxRowEx - 1);
+          const endRow = clampNumber(endRaw, MIN_ROW + 1, maxRowEx);
+          if (endRow > startRow) {
+            const window = { startRow, endRow };
+            employeeWindows.set(emp.id, window);
+            return window;
+          }
+        }
+      }
+
       const person =
         peopleById.get(String(emp.id)) ||
         peopleByName.get(String(emp.name || "").toLowerCase());
-      if (!person?.schedule?.[dayKey]?.enabled) {
+      const sched = person?.schedule?.[dayKey];
+      if (!sched?.enabled) {
+        if (person) {
+          employeeWindows.set(emp.id, null);
+          return null;
+        }
+        const fallback = { startRow: MIN_ROW, endRow: maxRowEx };
+        employeeWindows.set(emp.id, fallback);
+        return fallback;
+      }
+      const startRaw = rowFromTime(sched.start, "ceil");
+      const endRaw = rowFromTime(sched.end, "floor");
+      if (startRaw === null || endRaw === null) {
         if (!person) {
           const fallback = { startRow: MIN_ROW, endRow: maxRowEx };
           employeeWindows.set(emp.id, fallback);
@@ -450,14 +578,6 @@ export default function Grid({
         }
         employeeWindows.set(emp.id, null);
         return null;
-      }
-      const sched = person.schedule[dayKey];
-      const startRaw = rowFromTime(sched.start, "ceil");
-      const endRaw = rowFromTime(sched.end, "floor");
-      if (startRaw === null || endRaw === null) {
-        const fallback = { startRow: MIN_ROW, endRow: maxRowEx };
-        employeeWindows.set(emp.id, fallback);
-        return fallback;
       }
       const startRow = clampNumber(startRaw, MIN_ROW, maxRowEx - 1);
       const endRow = clampNumber(endRaw, MIN_ROW + 1, maxRowEx);
@@ -1151,42 +1271,102 @@ export default function Grid({
         className="grid inline-grid"
         style={{
           gridTemplateColumns: `var(--timew) repeat(${employees.length}, var(--empw))`,
-          gridTemplateRows: "62px",
+          gridTemplateRows: "72px",
           gridAutoRows: "var(--rowh)",
         }}
       >
-        <div className="sticky left-0 top-[66px] z-40 rounded-tl-[12px] border-b border-r bg-[var(--surface-subtle)] px-3 py-2 text-center shadow-[0_1px_0_rgba(15,23,42,0.08),0_2px_8px_rgba(15,23,42,0.04)] supports-[backdrop-filter]:bg-white/90 supports-[backdrop-filter]:backdrop-blur">
+        <div className="sticky left-0 z-40 rounded-tl-[12px] border-b border-r bg-[var(--surface-subtle)] px-3 py-2 text-center shadow-[inset_0_-1px_0_rgba(15,23,42,0.08)]">
           <span className="text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-700">Time</span>
         </div>
         {employeeCols.map((h) => {
           const highlighted = emphasizedCol === h.col;
+          const resolved = resolveEmployeeHours(h);
+          const hoursLabel = resolved.isOff ? "Off" : `${resolved.start}-${resolved.end}`;
           return (
             <div
               key={h.id}
-              className={`group relative sticky top-[66px] z-30 border-b ${h.col === lastCol ? "rounded-tr-[12px]" : "border-r"} bg-[var(--surface-subtle)] px-2 py-1 shadow-[0_1px_0_rgba(15,23,42,0.08),0_2px_8px_rgba(15,23,42,0.04)] supports-[backdrop-filter]:bg-white/90 supports-[backdrop-filter]:backdrop-blur`}
+              className={`group relative border-b ${h.col === lastCol ? "rounded-tr-[12px]" : "border-r"} px-3 py-2 transition ${
+                highlighted ? "bg-[#eef2ff]" : "bg-[var(--surface-subtle)]"
+              }`}
               onMouseEnter={() => setHoveredCol(h.col)}
               onMouseLeave={() => setHoveredCol((current) => (current === h.col ? null : current))}
             >
               <button
-                className="absolute right-2 top-2 grid h-5 w-5 place-items-center rounded-md border border-transparent bg-white/70 text-slate-400 opacity-0 shadow-sm transition hover:border-red-200 hover:bg-white hover:text-red-600 group-hover:opacity-100 focus-visible:opacity-100"
-                onClick={(e) => { e.stopPropagation(); removeEmployee(h.id); }}
-                title={`Remove ${h.name}`}
-                aria-label={`Remove ${h.name}`}
+                className="absolute right-2 top-2 grid h-6 w-6 place-items-center rounded-md border border-[#d6dcea] bg-white text-slate-500 shadow-sm transition hover:border-[#b9c7e6] hover:text-slate-700"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  openEmployeeSettings({ id: h.id, name: h.name, startTime: h.startTime, endTime: h.endTime });
+                }}
+                title={`Settings for ${h.name}`}
+                aria-label={`Settings for ${h.name}`}
               >
-                <X className="h-3 w-3" />
+                <Settings2 className="h-3.5 w-3.5" />
               </button>
-              <div
-                className={`flex h-full flex-col items-center justify-center gap-1 rounded-[10px] border px-2 pr-8 transition ${
-                  highlighted ? "border-[#c7d3ff] bg-[#eef2ff]" : "border-[#dbe1ed] bg-white/90"
-                }`}
-              >
-                <span className="max-w-full truncate text-[12px] font-semibold tracking-[0.01em] text-slate-800">
+              <div className="flex h-full flex-col items-start justify-center pr-8">
+                <span className="max-w-full truncate text-[14px] font-semibold tracking-[0.01em] text-slate-800">
                   {h.name}
                 </span>
-                <span className="inline-flex items-center rounded-full border border-slate-200 bg-[#f7f9fc] px-2 py-[1px] text-[10px] font-medium text-slate-600">
-                  {getEmployeeHoursLabel(h)}
+                <span className={`text-[11px] ${resolved.isOff ? "italic text-slate-400" : "text-slate-500"}`}>
+                  {hoursLabel}
                 </span>
               </div>
+              {employeeSettingsId === h.id && (
+                <div
+                  ref={employeeSettingsRef}
+                  className="absolute right-2 top-9 z-50 w-[230px] rounded-[10px] border border-[var(--border)] bg-white p-3 shadow-xl"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  <div className="mb-2">
+                    <p className="text-[13px] font-semibold text-slate-800">{h.name}</p>
+                    <p className="text-[11px] text-slate-500">Day time override</p>
+                  </div>
+                  <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-2">
+                    <input
+                      type="time"
+                      className="input h-8 w-full px-2 text-[13px]"
+                      value={employeeSettingsDraft.start}
+                      step={900}
+                      onChange={(e) => {
+                        setEmployeeSettingsDraft((prev) => ({ ...prev, start: e.target.value }));
+                        setEmployeeSettingsError("");
+                      }}
+                    />
+                    <span className="text-[11px] text-slate-500">to</span>
+                    <input
+                      type="time"
+                      className="input h-8 w-full px-2 text-[13px]"
+                      value={employeeSettingsDraft.end}
+                      step={900}
+                      onChange={(e) => {
+                        setEmployeeSettingsDraft((prev) => ({ ...prev, end: e.target.value }));
+                        setEmployeeSettingsError("");
+                      }}
+                    />
+                  </div>
+                  {employeeSettingsError && (
+                    <p className="mt-2 text-[11px] text-red-600">{employeeSettingsError}</p>
+                  )}
+                  <div className="mt-3 flex items-center gap-2">
+                    <button className="btn h-8 px-3 text-[12px]" onClick={applyEmployeeSettings}>
+                      Save Times
+                    </button>
+                    <button className="btn h-8 px-3 text-[12px]" onClick={clearEmployeeSettingsOverride}>
+                      Use Default
+                    </button>
+                  </div>
+                  <button
+                    className="btn mt-2 h-8 w-full justify-center gap-1 border-red-200 text-[12px] text-red-700 hover:bg-red-50"
+                    onClick={() => {
+                      setEmployeeSettingsId(null);
+                      setEmployeeSettingsError("");
+                      removeEmployee(h.id);
+                    }}
+                  >
+                    <Trash2 className="h-3.5 w-3.5" />
+                    Remove Employee
+                  </button>
+                </div>
+              )}
             </div>
           );
         })}
