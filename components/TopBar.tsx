@@ -1,6 +1,6 @@
 "use client";
 import React from "react";
-import { Download, Plus, Sparkles, Menu, Save, RotateCcw, Trash2 } from "lucide-react";
+import { Download, Plus, Sparkles, Menu, Save, RotateCcw, Trash2, Undo2, Redo2 } from "lucide-react";
 import { useNav } from "@/components/NavContext";
 
 export default function TopBar({
@@ -41,6 +41,16 @@ export default function TopBar({
       window.dispatchEvent(new Event("roster-autofill"));
     }
   }
+  function handleUndo(){
+    if(typeof window !== "undefined"){
+      window.dispatchEvent(new Event("roster-undo"));
+    }
+  }
+  function handleRedo(){
+    if(typeof window !== "undefined"){
+      window.dispatchEvent(new Event("roster-redo"));
+    }
+  }
   function handleReset(){
     if(typeof window !== "undefined"){
       window.dispatchEvent(new Event("roster-reset"));
@@ -64,6 +74,12 @@ export default function TopBar({
         )}
         {showActions && (
           <div className="flex items-center gap-2 flex-wrap">
+            <button className="btn whitespace-nowrap" onClick={handleUndo}>
+              <Undo2 className="w-4 h-4" /> Undo
+            </button>
+            <button className="btn whitespace-nowrap" onClick={handleRedo}>
+              <Redo2 className="w-4 h-4" /> Redo
+            </button>
             <button className="btn whitespace-nowrap" onClick={handleAddEmployee}>
               <Plus className="w-4 h-4" /> Add Employee
             </button>

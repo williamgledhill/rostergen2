@@ -20,11 +20,16 @@ type GridTask = {
   isLocked?: boolean;
   readOnly?: boolean;
 };
+type HistorySnapshot = {
+  employees: Employee[];
+  tasks: GridTask[];
+};
 
 const MIN_ROW = 2;
 const DEFAULT_START_MIN = 9 * 60 + 30;
 const DEFAULT_END_MIN = 16 * 60;
 const DAY_KEYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+const MAX_HISTORY_ENTRIES = 100;
 
 function parseTimeToMinutes(value?: string) {
   if (!value) return null;
@@ -37,6 +42,46 @@ function parseTimeToMinutes(value?: string) {
 
 function clampNumber(value: number, min: number, max: number) {
   return Math.min(max, Math.max(min, value));
+}
+
+function cloneEmployees(input: Employee[]) {
+  return input.map((emp) => ({ ...emp }));
+}
+
+function cloneTasks(input: GridTask[]) {
+  return input.map((task) => ({ ...task }));
+}
+
+function areEmployeesEqual(a: Employee[], b: Employee[]) {
+  if (a.length !== b.length) return false;
+  for (let i = 0; i < a.length; i += 1) {
+    if (a[i].id !== b[i].id || a[i].name !== b[i].name) return false;
+  }
+  return true;
+}
+
+function areTasksEqual(a: GridTask[], b: GridTask[]) {
+  if (a.length !== b.length) return false;
+  for (let i = 0; i < a.length; i += 1) {
+    const x = a[i];
+    const y = b[i];
+    if (
+      x.id !== y.id ||
+      x.type !== y.type ||
+      x.label !== y.label ||
+      x.col !== y.col ||
+      x.startRow !== y.startRow ||
+      x.span !== y.span ||
+      x.color !== y.color ||
+      x.employeeId !== y.employeeId ||
+      x.locked !== y.locked ||
+      x.isLocked !== y.isLocked ||
+      x.readOnly !== y.readOnly
+    ) {
+      return false;
+    }
+  }
+  return true;
 }
 
 function isTaskLocked(task: GridTask) {
@@ -99,6 +144,10 @@ export default function Grid({
   const firstTimeCellRef = useRef<HTMLDivElement>(null);
   const prevStartRef = useRef<number | null>(null);
   const prevMaxRef = useRef<number | null>(null);
+  const employeesRef = useRef<Employee[]>(initialEmployees);
+  const tasksRef = useRef<GridTask[]>(initialTasks);
+  const historyPastRef = useRef<HistorySnapshot[]>([]);
+  const historyFutureRef = useRef<HistorySnapshot[]>([]);
 
   const dayStartMin = useMemo(() => parseTimeToMinutes(hoursStart) ?? DEFAULT_START_MIN, [hoursStart]);
   const rawEndMin = useMemo(() => parseTimeToMinutes(hoursEnd) ?? DEFAULT_END_MIN, [hoursEnd]);
@@ -134,8 +183,84 @@ export default function Grid({
     [dayStartMin]
   );
 
-  useEffect(() => { setEmployees(initialEmployees); }, [initialEmployees]);
-  useEffect(() => { setTasks(initialTasks); }, [initialTasks]);
+  const snapshotFrom = useCallback((employeeList: Employee[], taskList: GridTask[]): HistorySnapshot => {
+    return {
+      employees: cloneEmployees(employeeList),
+      tasks: cloneTasks(taskList),
+    };
+  }, []);
+
+  const pushHistorySnapshot = useCallback((employeeList: Employee[], taskList: GridTask[]) => {
+    historyPastRef.current.push(snapshotFrom(employeeList, taskList));
+    if (historyPastRef.current.length > MAX_HISTORY_ENTRIES) {
+      historyPastRef.current.shift();
+    }
+    historyFutureRef.current = [];
+  }, [snapshotFrom]);
+
+  const setRosterState = useCallback((nextEmployees: Employee[], nextTasks: GridTask[]) => {
+    employeesRef.current = nextEmployees;
+    tasksRef.current = nextTasks;
+    setEmployees(nextEmployees);
+    setTasks(nextTasks);
+  }, []);
+
+  const applyRosterState = useCallback(
+    (nextEmployees: Employee[], nextTasks: GridTask[], options?: { recordHistory?: boolean }) => {
+      const prevEmployees = employeesRef.current;
+      const prevTasks = tasksRef.current;
+      const employeesChanged = !areEmployeesEqual(prevEmployees, nextEmployees);
+      const tasksChanged = !areTasksEqual(prevTasks, nextTasks);
+      if (!employeesChanged && !tasksChanged) return false;
+      if (options?.recordHistory !== false) {
+        pushHistorySnapshot(prevEmployees, prevTasks);
+      }
+      setRosterState(nextEmployees, nextTasks);
+      return true;
+    },
+    [pushHistorySnapshot, setRosterState]
+  );
+
+  const undo = useCallback(() => {
+    const past = historyPastRef.current;
+    if (past.length === 0) return;
+    const previous = past[past.length - 1];
+    const current = snapshotFrom(employeesRef.current, tasksRef.current);
+    historyPastRef.current = past.slice(0, -1);
+    historyFutureRef.current.push(current);
+    setRosterState(cloneEmployees(previous.employees), cloneTasks(previous.tasks));
+    setSelected(undefined);
+  }, [setRosterState, snapshotFrom]);
+
+  const redo = useCallback(() => {
+    const future = historyFutureRef.current;
+    if (future.length === 0) return;
+    const next = future[future.length - 1];
+    const current = snapshotFrom(employeesRef.current, tasksRef.current);
+    historyFutureRef.current = future.slice(0, -1);
+    historyPastRef.current.push(current);
+    if (historyPastRef.current.length > MAX_HISTORY_ENTRIES) {
+      historyPastRef.current.shift();
+    }
+    setRosterState(cloneEmployees(next.employees), cloneTasks(next.tasks));
+    setSelected(undefined);
+  }, [setRosterState, snapshotFrom]);
+
+  useEffect(() => {
+    setRosterState(initialEmployees, initialTasks);
+    historyPastRef.current = [];
+    historyFutureRef.current = [];
+    setSelected(undefined);
+  }, [initialEmployees, initialTasks, rosterDateId, setRosterState]);
+
+  useEffect(() => {
+    employeesRef.current = employees;
+  }, [employees]);
+
+  useEffect(() => {
+    tasksRef.current = tasks;
+  }, [tasks]);
+
   useEffect(() => {
     if (selected === undefined) return;
     if (!tasks.some((task) => task.id === selected)) {
@@ -227,48 +352,50 @@ export default function Grid({
   }
 
   const addEmployee = useCallback((person: Person) => {
-    setEmployees(prev => {
-      const exists = prev.some(e => String(e.id) === person.id || e.name === person.name);
-      if (exists) return prev;
-      const nextId = Math.max(0, ...prev.map(e => Number(e.id) || 0)) + 1;
-      return [...prev, { id: person.id || String(nextId), name: person.name } as any];
-    });
-  }, []);
+    const prevEmployees = employeesRef.current;
+    const exists = prevEmployees.some((e) => String(e.id) === person.id || e.name === person.name);
+    if (exists) return;
+    const nextId = Math.max(0, ...prevEmployees.map((e) => Number(e.id) || 0)) + 1;
+    const nextEmployees = [...prevEmployees, { id: person.id || String(nextId), name: person.name }];
+    applyRosterState(nextEmployees, tasksRef.current);
+  }, [applyRosterState]);
 
   const editEmployee = useCallback((id: number) => {
-    const emp = employees.find(e => e.id === id);
+    const prevEmployees = employeesRef.current;
+    const emp = prevEmployees.find((e) => e.id === id);
     if (!emp) return;
     const name = prompt("Edit employee name", emp.name);
     if (name === null) return;
     const trimmed = name.trim();
     if (!trimmed) return;
-    setEmployees(prev => prev.map(e => e.id === id ? { ...e, name: trimmed } : e));
-  }, [employees]);
+    const nextEmployees = prevEmployees.map((e) => (e.id === id ? { ...e, name: trimmed } : e));
+    applyRosterState(nextEmployees, tasksRef.current);
+  }, [applyRosterState]);
 
   const resetRoster = useCallback(() => {
     const dow = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"][rosterDate.getDay()];
-    const working = people.filter(p => p.schedule?.[dow]?.enabled);
-    const nextEmps = (working.length ? working : []).map(p => ({ id: p.id, name: p.name }));
-    setEmployees(nextEmps.length ? nextEmps : initialEmployees);
-    setTasks([]);
+    const working = people.filter((p) => p.schedule?.[dow]?.enabled);
+    const nextEmps = (working.length ? working : []).map((p) => ({ id: p.id, name: p.name }));
+    applyRosterState(nextEmps.length ? nextEmps : initialEmployees, []);
     setSelected(undefined);
-  }, [people, rosterDate, initialEmployees]);
+  }, [people, rosterDate, initialEmployees, applyRosterState]);
 
   const removeEmployee = useCallback((id: number) => {
-    const idx = employees.findIndex(e => e.id === id);
+    const prevEmployees = employeesRef.current;
+    const idx = prevEmployees.findIndex((e) => e.id === id);
     if (idx === -1) return;
     if (!confirm("Remove this employee from the roster?")) return;
     const colToRemove = idx + 2;
-    setEmployees(prev => prev.filter(e => e.id !== id));
-    setTasks(prev => prev
-      .filter(t => t.col !== colToRemove)
-      .map(t => t.col > colToRemove ? ({ ...t, col: t.col - 1 }) : t)
-    );
-  }, [employees]);
+    const nextEmployees = prevEmployees.filter((e) => e.id !== id);
+    const nextTasks = tasksRef.current
+      .filter((t) => t.col !== colToRemove)
+      .map((t) => (t.col > colToRemove ? { ...t, col: t.col - 1 } : t));
+    applyRosterState(nextEmployees, nextTasks);
+  }, [applyRosterState]);
 
   const autofill = useCallback(() => {
     if (!employees.length) {
-      setTasks([]);
+      applyRosterState(employees, []);
       return;
     }
 
@@ -484,7 +611,7 @@ export default function Grid({
       });
 
     if (!templatesToSchedule.length) {
-      setTasks([]);
+      applyRosterState(employees, []);
       return;
     }
 
@@ -682,8 +809,8 @@ export default function Grid({
     });
 
     const ordered = generated.sort((a, b) => (a.col - b.col) || (a.startRow - b.startRow));
-    setTasks(ordered);
-  }, [employees, templates, rosterDate, colorForType, maxRowEx, rowFromTime, people]);
+    applyRosterState(employees, ordered);
+  }, [employees, templates, rosterDate, colorForType, maxRowEx, rowFromTime, people, applyRosterState]);
 
   const saveRoster = useCallback(async () => {
     try {
@@ -705,13 +832,22 @@ export default function Grid({
   }, [employees, tasks, rosterDateId, hoursStart, hoursEnd]);
 
   const clearNonLockedTasks = useCallback(() => {
-    setTasks((prev) => prev.filter((task) => isTaskLocked(task)));
-  }, []);
+    const nextTasks = tasksRef.current.filter((task) => isTaskLocked(task));
+    if (applyRosterState(employeesRef.current, nextTasks)) {
+      setSelected(undefined);
+    }
+  }, [applyRosterState]);
 
   const deleteSelectedTask = useCallback(() => {
     if (selected === undefined) return;
-    setTasks((prev) => prev.filter((task) => task.id !== selected || isTaskLocked(task)));
-  }, [selected]);
+    const prevTasks = tasksRef.current;
+    const target = prevTasks.find((task) => task.id === selected);
+    if (!target || isTaskLocked(target)) return;
+    const nextTasks = prevTasks.filter((task) => task.id !== selected);
+    if (applyRosterState(employeesRef.current, nextTasks)) {
+      setSelected(undefined);
+    }
+  }, [selected, applyRosterState]);
 
   useEffect(() => {
     const handler = () => { setAddOpen(true); };
@@ -736,6 +872,18 @@ export default function Grid({
     window.addEventListener("roster-clear", handler);
     return () => window.removeEventListener("roster-clear", handler);
   }, [clearNonLockedTasks]);
+
+  useEffect(() => {
+    const handler = () => undo();
+    window.addEventListener("roster-undo", handler);
+    return () => window.removeEventListener("roster-undo", handler);
+  }, [undo]);
+
+  useEffect(() => {
+    const handler = () => redo();
+    window.addEventListener("roster-redo", handler);
+    return () => window.removeEventListener("roster-redo", handler);
+  }, [redo]);
 
   useEffect(() => {
     const onOutside = (e: MouseEvent) => {
@@ -915,7 +1063,11 @@ export default function Grid({
     const cls = fallback[0] || template?.id || "gallery";
     const label = fallback[1] || template?.name || "Task";
     const id = crypto.randomUUID?.() ?? String(Math.random());
-    setTasks(prev => [...prev, { id, type: cls, label, col: modal.col, startRow: modal.row, span: 1, color: template.color }]);
+    const nextTasks = [
+      ...tasksRef.current,
+      { id, type: cls, label, col: modal.col, startRow: modal.row, span: 1, color: template.color },
+    ];
+    applyRosterState(employeesRef.current, nextTasks);
     setSelected(id);
     closePicker();
   }
@@ -923,7 +1075,9 @@ export default function Grid({
   // drag/resize with "consume neighbours"
   function onStartResize(which: "top" | "bottom", id: string | number, e: React.MouseEvent) {
     e.preventDefault(); e.stopPropagation();
-    const t = tasks.find(x => x.id === id); if (!t) return;
+    const currentTasks = tasksRef.current;
+    const t = currentTasks.find((x) => x.id === id); if (!t) return;
+    pushHistorySnapshot(employeesRef.current, currentTasks);
     setDrag({ id, which, y0: e.clientY, start0: t.startRow, span0: t.span });
   }
 
