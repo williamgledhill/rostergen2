@@ -8,7 +8,7 @@ export default function GlobalTopBar() {
   const profileRef = useRef<HTMLDivElement>(null);
   const pageTitle = useMemo(() => {
     if (pathname.startsWith("/rosters")) return "Rosters";
-    if (pathname.startsWith("/editor")) return "Editor";
+    if (pathname.startsWith("/editor")) return "Roster Editor";
     if (pathname.startsWith("/people")) return "People";
     if (pathname.startsWith("/tasks")) return "Tasks";
     if (pathname.startsWith("/settings")) return "Settings";

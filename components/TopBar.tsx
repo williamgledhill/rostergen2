@@ -59,19 +59,19 @@ export default function TopBar({
         )}
         {showActions && (
           <div className="flex items-center gap-2 flex-wrap">
+            <button className="btn whitespace-nowrap" onClick={handleAddEmployee}>
+              <Plus className="w-4 h-4" /> Add Employee
+            </button>
+            <button className="btn whitespace-nowrap" onClick={handleAutofill}>
+              <Sparkles className="w-4 h-4" /> Autofill
+            </button>
             <button className="btn whitespace-nowrap" onClick={handleSave}>
               <Save className="w-4 h-4" /> Save
             </button>
             <button className="btn whitespace-nowrap" onClick={handleExport}>
               <Download className="w-4 h-4" /> Export
             </button>
-            <button className="btn whitespace-nowrap" onClick={handleAutofill}>
-              <Sparkles className="w-4 h-4" /> Autofill
-            </button>
-            <button className="btn whitespace-nowrap" onClick={handleAddEmployee}>
-              <Plus className="w-4 h-4" /> Add Employee
-            </button>
-            <button className="btn whitespace-nowrap" onClick={handleReset}>
+            <button className="btn whitespace-nowrap border-l border-[var(--border)] pl-3 ml-1" onClick={handleReset}>
               <RotateCcw className="w-4 h-4" /> Reset
             </button>
           </div>
