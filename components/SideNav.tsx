@@ -79,6 +79,7 @@ export default function SideNav({ open = true }: { open?: boolean }){
         </div>
         <div className="mt-auto px-3 pt-4">
           <p className="text-center text-[12px] text-[#707991]">Powered by rostergenerator.app</p>
+          <p className="mt-1 text-center text-[11px] text-[#707991]">Copyright William Gledhill 2026 (excluding Mint Logo).</p>
         </div>
       </div>
     </aside>
