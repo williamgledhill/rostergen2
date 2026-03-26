@@ -21,7 +21,7 @@ const DEFAULT_ACCOUNTS: Account[] = [
   {
     id: "mint",
     name: "Mint",
-    company: "roster.app",
+    company: "Roster Generator",
     editors: [
       { id: "admin", name: "Mint Admin", isAdmin: true },
       { id: "editor-1", name: "Mint Editor 1" },

@@ -24,8 +24,28 @@ const poppins = Poppins({
 type Editor = { id: string; name: string; isAdmin?: boolean };
 type Account = { id: string; name: string; company: string; editors: Editor[] };
 type FlowStep = "email" | "picker";
+type QuickLoginOption = {
+  accountId: string;
+  editorId: string;
+  editorName: string;
+  accountLabel: string;
+  email: string;
+};
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+function toSlugToken(value: string) {
+  const normalized = value
+    .toLowerCase()
+    .trim()
+    .replace(/[^a-z0-9]+/g, ".")
+    .replace(/(^\.+|\.+$)/g, "");
+  return normalized || "editor";
+}
+
+function defaultEmailForEditor(editor: Editor) {
+  return `${toSlugToken(editor.id || editor.name)}@rostergenerator.com`;
+}
 
 export default function HomePage() {
   const router = useRouter();
@@ -60,7 +80,10 @@ export default function HomePage() {
         if (firstAccount) {
           setSelectedAccount(firstAccount.id);
           const firstEditor = firstAccount.editors?.[0];
-          if (firstEditor) setSelectedEditor(firstEditor.id);
+          if (firstEditor) {
+            setSelectedEditor(firstEditor.id);
+            setEmail((current) => current || defaultEmailForEditor(firstEditor));
+          }
         }
       })
       .finally(() => {
@@ -80,6 +103,21 @@ export default function HomePage() {
   const activeEditor = useMemo(
     () => activeAccount?.editors?.find((editor) => editor.id === selectedEditor) || null,
     [activeAccount, selectedEditor]
+  );
+  const quickLoginOptions = useMemo<QuickLoginOption[]>(
+    () =>
+      accounts
+        .flatMap((account) =>
+          (account.editors || []).map((editor) => ({
+            accountId: account.id,
+            editorId: editor.id,
+            editorName: editor.name,
+            accountLabel: `${account.name} (${account.company})`,
+            email: defaultEmailForEditor(editor),
+          }))
+        )
+        .slice(0, 5),
+    [accounts]
   );
 
   useEffect(() => {
@@ -104,6 +142,14 @@ export default function HomePage() {
     }
 
     setEmail(trimmed);
+    setFlowStep("picker");
+  }
+
+  function handleApplyQuickOption(option: QuickLoginOption) {
+    setError("");
+    setEmail(option.email);
+    setSelectedAccount(option.accountId);
+    setSelectedEditor(option.editorId);
     setFlowStep("picker");
   }
 
@@ -145,7 +191,7 @@ export default function HomePage() {
               <div className="grid h-12 w-12 place-items-center rounded-xl bg-white/14 shadow-lg ring-1 ring-white/35 backdrop-blur-sm">
                 <ClipboardCheck className="h-7 w-7" strokeWidth={2.2} />
               </div>
-              <span className="text-[2.6rem] font-semibold tracking-tight">Clipboard</span>
+              <span className="text-[2.6rem] font-semibold tracking-tight">Roster Generator</span>
             </div>
 
             <div className="relative mx-auto flex w-full max-w-[460px] flex-1 items-center justify-center">
@@ -187,7 +233,7 @@ export default function HomePage() {
 
         <section className="flex items-center justify-center px-6 py-12 sm:px-10">
           <div className="w-full max-w-[390px]">
-            <h1 className="text-[3rem] font-semibold leading-[1.12] tracking-tight text-[#0f172a]">Log in to your Clipboard</h1>
+            <h1 className="text-[3rem] font-semibold leading-[1.12] tracking-tight text-[#0f172a]">Log in to Roster Generator</h1>
 
             <div className="mt-10 space-y-5">
               {flowStep === "email" ? (
@@ -207,6 +253,29 @@ export default function HomePage() {
                     />
                     <Mail className="pointer-events-none absolute right-3 top-1/2 h-[18px] w-[18px] -translate-y-1/2 text-slate-500" />
                   </div>
+
+                  {quickLoginOptions.length > 0 && (
+                    <div className="space-y-2">
+                      <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-500">Quick autofill options</p>
+                      <div className="grid gap-2">
+                        {quickLoginOptions.map((option) => (
+                          <button
+                            key={`${option.accountId}:${option.editorId}`}
+                            type="button"
+                            disabled={loading}
+                            onClick={() => handleApplyQuickOption(option)}
+                            className="flex w-full items-center justify-between rounded-[8px] border border-slate-200 bg-white px-3 py-2 text-left transition hover:border-[#8e9af8] hover:bg-[#f7f8ff] disabled:cursor-not-allowed disabled:opacity-60"
+                          >
+                            <span className="min-w-0 pr-2">
+                              <span className="block truncate text-[13px] font-semibold text-slate-800">{option.editorName}</span>
+                              <span className="block truncate text-[11px] text-slate-500">{option.accountLabel}</span>
+                            </span>
+                            <span className="truncate text-[11px] font-medium text-[#4d58f1]">{option.email}</span>
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
 
                   <button
                     type="submit"
