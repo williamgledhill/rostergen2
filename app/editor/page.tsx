@@ -1,13 +1,11 @@
 "use client";
 import Grid from "@/components/Grid";
 import TopBar from "@/components/TopBar";
-import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import React, { useEffect, useMemo, useState } from "react";
 import { formatLocalId, formatFullDay } from "@/lib/dateUtils";
 import { DEFAULT_SETTINGS } from "@/lib/settingsDefaults";
 import { Person } from "@/lib/people";
-import { ChevronRight } from "lucide-react";
 
 function downloadXLS(html: string) {
   const blob = new Blob([html], { type: "application/vnd.ms-excel;charset=utf-8;" });
@@ -29,8 +27,6 @@ export default function Page() {
   const initialDate = useMemo(() => (dateParam ? new Date(`${dateParam}T00:00:00`) : undefined), [dateParam]);
   const [selectedDate, setSelectedDate] = useState<Date>(initialDate ?? new Date());
   const rosterDateId = formatLocalId(selectedDate);
-  const monthId = `${selectedDate.getFullYear()}-${String(selectedDate.getMonth() + 1).padStart(2, "0")}`;
-  const monthLabel = new Intl.DateTimeFormat("en-US", { month: "long", year: "numeric" }).format(selectedDate);
   const dayLabel = useMemo(() => formatFullDay(selectedDate), [selectedDate]);
   const dayKey = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"][selectedDate.getDay()];
 
@@ -145,22 +141,6 @@ export default function Page() {
   return (
     <div className="w-full py-4 px-3">
       <div className="space-y-4 flex flex-col items-start">
-        <div className="flex items-center gap-2">
-          <Link
-            href="/rosters"
-            className="inline-flex items-center gap-1 text-[#675dff] font-semibold text-[14px]"
-          >
-            <span className="hover:underline">Rosters</span>
-            <ChevronRight className="w-4 h-4 text-slate-700" />
-          </Link>
-          <Link
-            href={`/rosters/months/${monthId}`}
-            className="inline-flex items-center gap-1 text-[#675dff] font-semibold text-[14px]"
-          >
-            <span className="hover:underline">{monthLabel}</span>
-          </Link>
-        </div>
-
         <div className="flex flex-col w-full gap-2">
           <div className="flex flex-col leading-tight">
             <h1 className="text-2xl font-semibold">{dayLabel}</h1>
