@@ -375,13 +375,23 @@ export default function Grid({
   );
   const filteredPeople = useMemo(() => {
     const query = employeePickerQuery.trim().toLowerCase();
-    if (!query) return people;
-    return people.filter((person) => {
-      const nameMatch = person.name.toLowerCase().includes(query);
-      const emailMatch = (person.email || "").toLowerCase().includes(query);
-      return nameMatch || emailMatch;
-    });
+    const base = query
+      ? people.filter((person) => {
+          const nameMatch = person.name.toLowerCase().includes(query);
+          const emailMatch = (person.email || "").toLowerCase().includes(query);
+          return nameMatch || emailMatch;
+        })
+      : people;
+    return [...base].sort((a, b) => a.name.localeCompare(b.name));
   }, [people, employeePickerQuery]);
+  const selectedEmployeeIds = useMemo(
+    () => new Set(employees.map((employee) => String(employee.id))),
+    [employees]
+  );
+  const selectedEmployeeNames = useMemo(
+    () => new Set(employees.map((employee) => employee.name.trim().toLowerCase())),
+    [employees]
+  );
 
   function resolveEmployeeHours(emp: Employee) {
     const overrideStart = parseTimeToMinutes(emp.startTime);
@@ -1465,7 +1475,7 @@ export default function Grid({
               <div className="flex items-start justify-between border-b border-[var(--border)] px-5 py-4">
                 <div>
                   <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-500">People</p>
-                  <h2 className="mt-1 text-[24px] font-semibold leading-tight text-slate-800">Add employee</h2>
+                  <h2 className="mt-1 text-[22px] font-semibold leading-tight text-slate-800">Add employee</h2>
                   <p className="mt-1 text-sm text-slate-600">Pick from saved people.</p>
                 </div>
                 <button
@@ -1478,9 +1488,14 @@ export default function Grid({
               </div>
 
               <div className="space-y-3 px-5 py-4 text-[14px]">
-                <label htmlFor="add-employee-search" className="sr-only">
-                  Search people
-                </label>
+                <div className="flex items-center justify-between">
+                  <label htmlFor="add-employee-search" className="text-[12px] font-semibold uppercase tracking-[0.1em] text-slate-500">
+                    Search
+                  </label>
+                  <span className="text-[12px] text-slate-500">
+                    {filteredPeople.length} result{filteredPeople.length === 1 ? "" : "s"}
+                  </span>
+                </div>
                 <div className="relative">
                   <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
                   <input
@@ -1494,25 +1509,52 @@ export default function Grid({
                   />
                 </div>
 
-                <div className="max-h-[260px] space-y-1 overflow-y-auto rounded-[10px] border border-[var(--border)] bg-[var(--surface-subtle)] p-2">
+                <div className="max-h-[280px] overflow-y-auto rounded-[10px] border border-[var(--border)] bg-white">
                   {filteredPeople.length === 0 ? (
-                    <div className="rounded-[8px] bg-white px-3 py-2 text-[13px] text-slate-600">
+                    <div className="px-3 py-3 text-[13px] text-slate-600">
                       {people.length === 0 ? "No saved people yet." : "No people match that search."}
                     </div>
                   ) : (
-                    filteredPeople.map((person) => (
-                      <button
-                        key={person.id}
-                        className="w-full rounded-[8px] border border-transparent bg-white px-3 py-2 text-left transition hover:border-[#cad3ea] hover:bg-[#f8faff] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#7283f5]/40"
-                        onClick={() => {
-                          addEmployee(person);
-                          setAddOpen(false);
-                        }}
-                      >
-                        <span className="block text-[14px] font-semibold text-slate-800">{person.name}</span>
-                        {person.email && <span className="block text-[12px] text-slate-500">{person.email}</span>}
-                      </button>
-                    ))
+                    <div className="divide-y divide-[var(--border)]">
+                      {filteredPeople.map((person) => {
+                        const alreadyAdded =
+                          selectedEmployeeIds.has(String(person.id)) ||
+                          selectedEmployeeNames.has(person.name.trim().toLowerCase());
+                        return (
+                          <button
+                            key={person.id}
+                            disabled={alreadyAdded}
+                            className={`flex w-full items-center justify-between gap-3 px-3 py-2.5 text-left transition ${
+                              alreadyAdded
+                                ? "cursor-not-allowed bg-slate-50/70 text-slate-400"
+                                : "hover:bg-[#f8faff] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#7283f5]/40"
+                            }`}
+                            onClick={() => {
+                              addEmployee(person);
+                              setAddOpen(false);
+                            }}
+                          >
+                            <span className="min-w-0">
+                              <span className={`block truncate text-[14px] font-semibold ${alreadyAdded ? "text-slate-500" : "text-slate-800"}`}>
+                                {person.name}
+                              </span>
+                              <span className="block truncate text-[12px] text-slate-500">
+                                {person.email || "No email on file"}
+                              </span>
+                            </span>
+                            <span
+                              className={`shrink-0 rounded-full border px-2 py-0.5 text-[11px] font-semibold ${
+                                alreadyAdded
+                                  ? "border-slate-200 bg-slate-100 text-slate-500"
+                                  : "border-[#c9d4ff] bg-[#eef2ff] text-[#3f53d5]"
+                              }`}
+                            >
+                              {alreadyAdded ? "Added" : "Add"}
+                            </span>
+                          </button>
+                        );
+                      })}
+                    </div>
                   )}
                 </div>
               </div>
