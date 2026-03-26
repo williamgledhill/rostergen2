@@ -9,7 +9,6 @@ export const dynamic = "force-dynamic";
 export default function Page() {
   const settings = getSettings();
   const rosters = getUpcomingRosters(settings.upcomingDays);
-  const dayLabel = settings.upcomingDays === 1 ? "day" : "days";
 
   return (
     <div className="w-full py-3 px-3">
@@ -17,9 +16,6 @@ export default function Page() {
         <div className="w-full flex items-start justify-between gap-3">
           <div>
             <h1 className="text-2xl font-semibold">Upcoming Rosters</h1>
-            <p className="text-slate-600 text-[14px]">
-              Showing the next {settings.upcomingDays} {dayLabel} starting today, with blank rows auto-generated.
-            </p>
           </div>
           <Link href="/rosters/old" className="btn h-9 px-4 whitespace-nowrap">
             Old Rosters
