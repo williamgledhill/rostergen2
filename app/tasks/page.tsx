@@ -121,7 +121,13 @@ export default function TasksPage() {
 
         <div className="bg-white rounded-lg shadow-sm w-full overflow-hidden">
           <div className="overflow-x-auto">
-            <table className="w-full text-sm border-collapse">
+            <table className="w-full table-fixed text-sm border-collapse">
+              <colgroup>
+                <col className="w-10" />
+                <col className="w-[34%]" />
+                <col className="w-[24%]" />
+                <col />
+              </colgroup>
               <thead className="text-slate-600 text-sm">
                 <tr className="border-b border-[#E6EAF0]">
                   <th className="w-10 px-3 py-3 text-left font-semibold">
@@ -157,21 +163,21 @@ export default function TasksPage() {
                       />
                     </td>
                     <td className="align-middle px-3 py-3">
-                      <span className="inline-flex items-center gap-2 font-semibold text-slate-800">
+                      <span className="flex min-w-0 items-center gap-2 font-semibold text-slate-800">
                         <span
                           className="inline-block w-[18px] h-[18px] rounded-full border border-slate-400"
                           style={{ backgroundColor: t.color || "#fff" }}
                           aria-label={`Colour ${t.color || "default"}`}
                           title={t.color || "default"}
                         />
-                        <span>{t.name}</span>
+                        <span className="truncate">{t.name}</span>
                       </span>
                     </td>
                     <td className="align-middle px-3 py-3 text-slate-600">
-                      {t.enabled === false ? "Disabled" : "Enabled"}
+                      <span className="block truncate">{t.enabled === false ? "Disabled" : "Enabled"}</span>
                     </td>
                     <td className="align-middle px-3 py-3 text-slate-600">
-                      {t.occurrence}
+                      <span className="block truncate">{t.occurrence}</span>
                     </td>
                   </tr>
                 ))}

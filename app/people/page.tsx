@@ -131,7 +131,12 @@ export default function PeopleList() {
 
         <div className="bg-white rounded-lg shadow-sm w-full overflow-hidden">
           <div className="overflow-x-auto">
-            <table className="w-full text-sm border-collapse">
+            <table className="w-full table-fixed text-sm border-collapse">
+              <colgroup>
+                <col className="w-10" />
+                <col className="w-[38%]" />
+                <col />
+              </colgroup>
               <thead className="text-slate-600 text-sm">
                 <tr className="border-b border-[#E6EAF0]">
                   <th className="w-10 px-3 py-3 text-left font-semibold">
@@ -144,7 +149,6 @@ export default function PeopleList() {
                     />
                   </th>
                   <th className="px-3 py-3 text-left font-semibold">Employee</th>
-                  <th className="px-3 py-3 text-left font-semibold">Email</th>
                   <th className="px-3 py-3 text-left font-semibold">Default days</th>
                 </tr>
               </thead>
@@ -167,16 +171,17 @@ export default function PeopleList() {
                     </td>
                     <td className="align-middle px-3 py-3">
                       <div className="inline-flex items-center gap-2 font-semibold text-slate-800">
-                        <span>{p.name}</span>
+                        <span className="block truncate">{p.name}</span>
                       </div>
                     </td>
-                    <td className="align-middle px-3 py-3 text-slate-600">{(people.find(x=>x.id===p.id)?.email) || "Ã¢â‚¬â€"}</td>
-                    <td className="align-middle px-3 py-3 text-slate-600">{p.days || ""}</td>
+                    <td className="align-middle px-3 py-3 text-slate-600">
+                      <span className="block truncate">{p.days || ""}</span>
+                    </td>
                   </tr>
                 ))}
                 {summaries.length === 0 && (
                   <tr>
-                    <td colSpan={4} className="py-6 text-center text-slate-600">No people yet.</td>
+                    <td colSpan={3} className="py-6 text-center text-slate-600">No people yet.</td>
                   </tr>
                 )}
               </tbody>
