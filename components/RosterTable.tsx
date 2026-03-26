@@ -53,7 +53,7 @@ export default function RosterTable({ rosters, footer }: Props) {
         <table className="w-full text-sm border-collapse">
           <thead className="text-slate-600 text-sm">
             <tr className="border-b border-[#E6EAF0]">
-              <th className="w-10 px-3 py-2 text-left font-semibold">
+              <th className="w-10 px-3 py-3 text-left font-semibold">
                 <input
                   ref={headerCheckboxRef}
                   type="checkbox"
@@ -63,11 +63,11 @@ export default function RosterTable({ rosters, footer }: Props) {
                   onChange={(e) => toggleAll(e.target.checked)}
                 />
               </th>
-              <th className="px-3 py-2 text-left font-semibold">Roster</th>
-              <th className="px-3 py-2 text-left font-semibold">Tours</th>
-              <th className="px-3 py-2 text-left font-semibold">People</th>
-              <th className="px-3 py-2 text-left font-semibold">Status</th>
-              <th className="px-3 py-2 text-left font-semibold">Updated</th>
+              <th className="px-3 py-3 text-left font-semibold">Roster</th>
+              <th className="px-3 py-3 text-left font-semibold">Tours</th>
+              <th className="px-3 py-3 text-left font-semibold">People</th>
+              <th className="px-3 py-3 text-left font-semibold">Status</th>
+              <th className="px-3 py-3 text-left font-semibold">Updated</th>
             </tr>
           </thead>
           <tbody>
@@ -82,7 +82,7 @@ export default function RosterTable({ rosters, footer }: Props) {
                   className={`group border-b border-[#E6EAF0] hover:bg-[#f8fafc] cursor-pointer ${rowStyles}`}
                   onClick={() => handleRowClick(r.id)}
                 >
-                  <td className="align-middle px-3 py-2">
+                  <td className="align-middle px-3 py-3">
                     <input
                       type="checkbox"
                       className="h-4 w-4"
@@ -104,9 +104,9 @@ export default function RosterTable({ rosters, footer }: Props) {
                       <span className="text-xs text-slate-600">Daily roster</span>
                     </div>
                   </td>
-                  <td className="align-middle px-3 py-2 text-slate-700">{r.tours} tours</td>
-                  <td className="align-middle px-3 py-2 text-slate-700">{r.people} people</td>
-                  <td className="align-middle px-3 py-2">
+                  <td className="align-middle px-3 py-3 text-slate-700">{r.tours} tours</td>
+                  <td className="align-middle px-3 py-3 text-slate-700">{r.people} people</td>
+                  <td className="align-middle px-3 py-3">
                     <span
                       className={`text-xs px-2 py-1 rounded-sm border ${
                         r.status === "Published"
@@ -117,7 +117,7 @@ export default function RosterTable({ rosters, footer }: Props) {
                       {r.status}
                     </span>
                   </td>
-                  <td className="align-middle px-3 py-2 text-slate-600">{r.updated}</td>
+                  <td className="align-middle px-3 py-3 text-slate-600">{r.updated}</td>
                 </tr>
               );
             })}

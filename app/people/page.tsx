@@ -134,7 +134,7 @@ export default function PeopleList() {
             <table className="w-full text-sm border-collapse">
               <thead className="text-slate-600 text-sm">
                 <tr className="border-b border-[#E6EAF0]">
-                  <th className="w-10 px-3 py-2 text-left font-semibold">
+                  <th className="w-10 px-3 py-3 text-left font-semibold">
                     <input
                       type="checkbox"
                       className="h-4 w-4"
@@ -143,9 +143,9 @@ export default function PeopleList() {
                       onChange={(e) => toggleAll(e.target.checked)}
                     />
                   </th>
-                  <th className="px-3 py-2 text-left font-semibold">Employee</th>
-                  <th className="px-3 py-2 text-left font-semibold">Email</th>
-                  <th className="px-3 py-2 text-left font-semibold">Default days</th>
+                  <th className="px-3 py-3 text-left font-semibold">Employee</th>
+                  <th className="px-3 py-3 text-left font-semibold">Email</th>
+                  <th className="px-3 py-3 text-left font-semibold">Default days</th>
                 </tr>
               </thead>
               <tbody>
@@ -155,7 +155,7 @@ export default function PeopleList() {
                     className="border-b border-[#E6EAF0] hover:bg-[#f8fafc] cursor-pointer"
                     onClick={() => router.push(`/people/${p.id}`)}
                   >
-                    <td className="align-middle px-3 py-2">
+                    <td className="align-middle px-3 py-3">
                       <input
                         type="checkbox"
                         className="h-4 w-4"
@@ -165,13 +165,13 @@ export default function PeopleList() {
                         onChange={(e)=>toggleRow(String(p.id), e.target.checked)}
                       />
                     </td>
-                    <td className="align-middle px-3 py-2">
+                    <td className="align-middle px-3 py-3">
                       <div className="inline-flex items-center gap-2 font-semibold text-slate-800">
                         <span>{p.name}</span>
                       </div>
                     </td>
-                    <td className="align-middle px-3 py-2 text-slate-600">{(people.find(x=>x.id===p.id)?.email) || "Ã¢â‚¬â€"}</td>
-                    <td className="align-middle px-3 py-2 text-slate-600">{p.days || ""}</td>
+                    <td className="align-middle px-3 py-3 text-slate-600">{(people.find(x=>x.id===p.id)?.email) || "Ã¢â‚¬â€"}</td>
+                    <td className="align-middle px-3 py-3 text-slate-600">{p.days || ""}</td>
                   </tr>
                 ))}
                 {summaries.length === 0 && (

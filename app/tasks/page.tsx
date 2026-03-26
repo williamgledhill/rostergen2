@@ -124,7 +124,7 @@ export default function TasksPage() {
             <table className="w-full text-sm border-collapse">
               <thead className="text-slate-600 text-sm">
                 <tr className="border-b border-[#E6EAF0]">
-                  <th className="w-10 px-3 py-2 text-left font-semibold">
+                  <th className="w-10 px-3 py-3 text-left font-semibold">
                     <input
                       ref={selectAllRef}
                       type="checkbox"
@@ -134,9 +134,9 @@ export default function TasksPage() {
                       onChange={(e) => toggleAll(e.target.checked)}
                     />
                   </th>
-                  <th className="px-3 py-2 text-left font-semibold">Task</th>
-                  <th className="px-3 py-2 text-left font-semibold">Status</th>
-                  <th className="px-3 py-2 text-left font-semibold">Occurance</th>
+                  <th className="px-3 py-3 text-left font-semibold">Task</th>
+                  <th className="px-3 py-3 text-left font-semibold">Status</th>
+                  <th className="px-3 py-3 text-left font-semibold">Occurance</th>
                 </tr>
               </thead>
               <tbody>
@@ -146,7 +146,7 @@ export default function TasksPage() {
                     className="border-b border-[#E6EAF0] hover:bg-[#f8fafc] cursor-pointer"
                     onClick={() => router.push(`/tasks/${t.id}`)}
                   >
-                    <td className="align-middle px-3 py-2">
+                    <td className="align-middle px-3 py-3">
                       <input
                         type="checkbox"
                         className="h-4 w-4"
@@ -167,10 +167,10 @@ export default function TasksPage() {
                         <span>{t.name}</span>
                       </span>
                     </td>
-                    <td className="align-middle px-3 py-2 text-[13px] text-slate-600">
+                    <td className="align-middle px-3 py-3 text-slate-600">
                       {t.enabled === false ? "Disabled" : "Enabled"}
                     </td>
-                    <td className="align-middle px-3 py-2 text-slate-600 text-[13px]">
+                    <td className="align-middle px-3 py-3 text-slate-600">
                       {t.occurrence}
                     </td>
                   </tr>
