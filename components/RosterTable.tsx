@@ -93,16 +93,13 @@ export default function RosterTable({ rosters, footer }: Props) {
                     />
                   </td>
                   <td className="align-middle px-3 py-3">
-                    <div className="flex flex-col gap-1">
-                      <Link
-                        href={`/editor?date=${encodeURIComponent(r.id)}`}
-                        className="font-semibold text-slate-800 hover:underline group-hover:underline"
-                        onClick={(e) => e.stopPropagation()}
-                      >
-                        {r.title}
-                      </Link>
-                      <span className="text-xs text-slate-600">Daily roster</span>
-                    </div>
+                    <Link
+                      href={`/editor?date=${encodeURIComponent(r.id)}`}
+                      className="block truncate font-semibold text-slate-800 hover:underline group-hover:underline"
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      {r.title}
+                    </Link>
                   </td>
                   <td className="align-middle px-3 py-3 text-slate-700">{r.tours} tours</td>
                   <td className="align-middle px-3 py-3 text-slate-700">{r.people} people</td>

@@ -14,11 +14,16 @@ export default function Page() {
   return (
     <div className="w-full py-3 px-3">
       <div className="space-y-3 flex flex-col items-start w-full">
-        <div>
-          <h1 className="text-2xl font-semibold">Upcoming Rosters</h1>
-          <p className="text-slate-600 text-[14px]">
-            Showing the next {settings.upcomingDays} {dayLabel} starting today, with blank rows auto-generated.
-          </p>
+        <div className="w-full flex items-start justify-between gap-3">
+          <div>
+            <h1 className="text-2xl font-semibold">Upcoming Rosters</h1>
+            <p className="text-slate-600 text-[14px]">
+              Showing the next {settings.upcomingDays} {dayLabel} starting today, with blank rows auto-generated.
+            </p>
+          </div>
+          <Link href="/rosters/old" className="btn h-9 px-4 whitespace-nowrap">
+            Old Rosters
+          </Link>
         </div>
 
         <RosterTable
