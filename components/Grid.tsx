@@ -1,6 +1,6 @@
 "use client";
 import React, { useMemo, useState, useRef, useEffect, useCallback } from "react";
-import { X, Settings2, Trash2, Clock3 } from "lucide-react";
+import { X, Settings2, Trash2 } from "lucide-react";
 import Block from "@/components/Block";
 import Modal from "@/components/Modal";
 import { TaskTemplate, defaultTaskTemplates } from "@/lib/taskTemplates";
@@ -88,21 +88,6 @@ function formatMinutesToTime(totalMinutes: number) {
   const h = Math.floor(totalMinutes / 60);
   const m = totalMinutes % 60;
   return `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}`;
-}
-
-function formatTimeRangeLabel(start: string, end: string) {
-  return `${start} - ${end}`;
-}
-
-function initialsFromName(name: string) {
-  const initials = name
-    .trim()
-    .split(/\s+/)
-    .map((part) => part[0] || "")
-    .join("")
-    .slice(0, 2)
-    .toUpperCase();
-  return initials || "?";
 }
 
 function isTaskLocked(task: GridTask) {
@@ -1286,70 +1271,44 @@ export default function Grid({
         className="grid inline-grid"
         style={{
           gridTemplateColumns: `var(--timew) repeat(${employees.length}, var(--empw))`,
-          gridTemplateRows: "84px",
+          gridTemplateRows: "76px",
           gridAutoRows: "var(--rowh)",
         }}
       >
-        <div className="sticky left-0 z-40 rounded-tl-[12px] border-b border-r bg-[var(--surface-subtle)] px-3 py-2.5 shadow-[inset_0_-1px_0_rgba(15,23,42,0.08)]">
-          <div className="flex items-center gap-2">
-            <span className="grid h-7 w-7 place-items-center rounded-md border border-slate-200 bg-white text-slate-600 shadow-sm">
-              <Clock3 className="h-3.5 w-3.5" />
-            </span>
-            <div className="leading-tight">
-              <span className="block text-[10px] font-semibold uppercase tracking-[0.12em] text-slate-500">Timeline</span>
-              <span className="block text-[13px] font-semibold text-slate-800">Time</span>
-            </div>
-          </div>
+        <div className="sticky left-0 z-40 rounded-tl-[12px] border-b border-r bg-[var(--surface-subtle)] px-3 py-2 text-center shadow-[inset_0_-1px_0_rgba(15,23,42,0.08)]">
+          <span className="text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-700">Time</span>
         </div>
         {employeeCols.map((h) => {
           const highlighted = emphasizedCol === h.col;
           const resolved = resolveEmployeeHours(h);
-          const hoursLabel = resolved.isOff ? "Not scheduled" : formatTimeRangeLabel(resolved.start, resolved.end);
-          const statusLabel = resolved.isOff ? "Off" : resolved.isOverride ? "Custom" : "Default";
-          const statusClass = resolved.isOff
-            ? "border-slate-200 bg-slate-100 text-slate-600"
-            : resolved.isOverride
-              ? "border-indigo-200 bg-indigo-50 text-indigo-700"
-              : "border-emerald-200 bg-emerald-50 text-emerald-700";
-          const initials = initialsFromName(h.name);
+          const hoursLabel = resolved.isOff ? "Off" : `${resolved.start} - ${resolved.end}`;
           return (
             <div
               key={h.id}
-              className={`group relative border-b ${h.col === lastCol ? "rounded-tr-[12px]" : "border-r"} px-3.5 py-2.5 transition-colors ${
+              className={`group relative border-b ${h.col === lastCol ? "rounded-tr-[12px]" : "border-r"} px-3 py-2 transition ${
                 highlighted ? "bg-[#eef2ff]" : "bg-[var(--surface-subtle)]"
               }`}
               onMouseEnter={() => setHoveredCol(h.col)}
               onMouseLeave={() => setHoveredCol((current) => (current === h.col ? null : current))}
             >
               <button
-                className="absolute right-2.5 top-2.5 grid h-7 w-7 place-items-center rounded-md border border-[#d6dcea] bg-white text-slate-500 shadow-sm transition hover:border-[#b9c7e6] hover:text-slate-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#7283f5]/45"
+                className="absolute right-2 top-2 grid h-7 w-7 place-items-center rounded-md border border-[#d6dcea] bg-white text-slate-500 shadow-sm transition hover:border-[#b9c7e6] hover:text-slate-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#7283f5]/45"
                 onClick={(e) => {
                   e.stopPropagation();
                   openEmployeeSettings({ id: h.id, name: h.name, startTime: h.startTime, endTime: h.endTime });
                 }}
-                title={`Set shift time for ${h.name}`}
-                aria-label={`Set shift time for ${h.name}`}
+                title={`Settings for ${h.name}`}
+                aria-label={`Settings for ${h.name}`}
               >
                 <Settings2 className="h-3.5 w-3.5" />
               </button>
-              <div className="flex h-full items-center gap-2.5 pr-10">
-                <div className="grid h-9 w-9 shrink-0 place-items-center rounded-full border border-slate-200 bg-white text-[11px] font-semibold tracking-[0.04em] text-slate-700 shadow-sm">
-                  {initials}
-                </div>
-                <div className="min-w-0">
-                  <div className="flex items-center gap-2">
-                    <span className="max-w-full truncate text-[15px] font-semibold tracking-[0.01em] text-slate-900">
-                      {h.name}
-                    </span>
-                    <span className={`hidden rounded-full border px-1.5 py-[1px] text-[10px] font-semibold uppercase tracking-[0.08em] md:inline-flex ${statusClass}`}>
-                      {statusLabel}
-                    </span>
-                  </div>
-                  <span className={`mt-0.5 inline-flex items-center gap-1 text-[12px] font-medium tabular-nums ${resolved.isOff ? "italic text-slate-500" : "text-slate-600"}`}>
-                    <Clock3 className="h-3.5 w-3.5 text-slate-400" />
-                    {hoursLabel}
-                  </span>
-                </div>
+              <div className="flex h-full flex-col items-start justify-center pr-10">
+                <span className="max-w-full truncate text-[15px] font-semibold leading-tight tracking-[0.01em] text-slate-900">
+                  {h.name}
+                </span>
+                <span className={`mt-1 text-[12px] font-medium tabular-nums ${resolved.isOff ? "italic text-slate-500" : "text-slate-600"}`}>
+                  {hoursLabel}
+                </span>
               </div>
               {employeeSettingsId === h.id && (
                 <div
