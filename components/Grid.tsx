@@ -1,6 +1,6 @@
 "use client";
 import React, { useMemo, useState, useRef, useEffect, useCallback } from "react";
-import { X, Settings2, Trash2 } from "lucide-react";
+import { X, Settings2, Trash2, Search } from "lucide-react";
 import Block from "@/components/Block";
 import Modal from "@/components/Modal";
 import { TaskTemplate, defaultTaskTemplates } from "@/lib/taskTemplates";
@@ -147,6 +147,7 @@ export default function Grid({
   const [drag, setDrag] = useState<null | { id: string | number; which: "top" | "bottom"; y0: number; start0: number; span0: number }>(null);
   const [modal, setModal] = useState<null | { col: number; row: number }>(null);
   const [addOpen, setAddOpen] = useState(false);
+  const [employeePickerQuery, setEmployeePickerQuery] = useState("");
   const [people, setPeople] = useState<Person[]>([]);
   const [templates, setTemplates] = useState<TaskTemplate[]>(defaultTaskTemplates);
 
@@ -372,6 +373,15 @@ export default function Grid({
     () => new Map(people.map((p) => [p.name.toLowerCase(), p])),
     [people]
   );
+  const filteredPeople = useMemo(() => {
+    const query = employeePickerQuery.trim().toLowerCase();
+    if (!query) return people;
+    return people.filter((person) => {
+      const nameMatch = person.name.toLowerCase().includes(query);
+      const emailMatch = (person.email || "").toLowerCase().includes(query);
+      return nameMatch || emailMatch;
+    });
+  }, [people, employeePickerQuery]);
 
   function resolveEmployeeHours(emp: Employee) {
     const overrideStart = parseTimeToMinutes(emp.startTime);
@@ -974,7 +984,23 @@ export default function Grid({
     const handler = () => { setAddOpen(true); };
     window.addEventListener("roster:add-employee", handler);
     return () => window.removeEventListener("roster:add-employee", handler);
-  }, [people]);
+  }, []);
+
+  useEffect(() => {
+    if (!addOpen) return;
+    setEmployeePickerQuery("");
+  }, [addOpen]);
+
+  useEffect(() => {
+    if (!addOpen) return;
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        setAddOpen(false);
+      }
+    };
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [addOpen]);
 
   useEffect(() => {
     const handler = () => autofill();
@@ -1271,11 +1297,11 @@ export default function Grid({
         className="grid inline-grid"
         style={{
           gridTemplateColumns: `var(--timew) repeat(${employees.length}, var(--empw))`,
-          gridTemplateRows: "76px",
+          gridTemplateRows: "68px",
           gridAutoRows: "var(--rowh)",
         }}
       >
-        <div className="sticky left-0 z-40 rounded-tl-[12px] border-b border-r bg-[var(--surface-subtle)] px-3 py-2 text-center shadow-[inset_0_-1px_0_rgba(15,23,42,0.08)]">
+        <div className="sticky left-0 z-40 rounded-tl-[12px] border-b border-r bg-[var(--surface-subtle)] px-3 py-1.5 text-center shadow-[inset_0_-1px_0_rgba(15,23,42,0.08)]">
           <span className="text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-700">Time</span>
         </div>
         {employeeCols.map((h) => {
@@ -1285,14 +1311,14 @@ export default function Grid({
           return (
             <div
               key={h.id}
-              className={`group relative border-b ${h.col === lastCol ? "rounded-tr-[12px]" : "border-r"} px-3 py-2 transition ${
+              className={`group relative border-b ${h.col === lastCol ? "rounded-tr-[12px]" : "border-r"} px-3 py-1.5 transition ${
                 highlighted ? "bg-[#eef2ff]" : "bg-[var(--surface-subtle)]"
               }`}
               onMouseEnter={() => setHoveredCol(h.col)}
               onMouseLeave={() => setHoveredCol((current) => (current === h.col ? null : current))}
             >
               <button
-                className="absolute right-2 top-2 grid h-7 w-7 place-items-center rounded-md border border-[#d6dcea] bg-white text-slate-500 shadow-sm transition hover:border-[#b9c7e6] hover:text-slate-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#7283f5]/45"
+                className="absolute right-2 top-1.5 grid h-7 w-7 place-items-center rounded-md border border-[#d6dcea] bg-white text-slate-500 shadow-sm transition hover:border-[#b9c7e6] hover:text-slate-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#7283f5]/45"
                 onClick={(e) => {
                   e.stopPropagation();
                   openEmployeeSettings({ id: h.id, name: h.name, startTime: h.startTime, endTime: h.endTime });
@@ -1306,7 +1332,7 @@ export default function Grid({
                 <span className="max-w-full truncate text-[15px] font-semibold leading-tight tracking-[0.01em] text-slate-900">
                   {h.name}
                 </span>
-                <span className={`mt-1 text-[12px] font-medium tabular-nums ${resolved.isOff ? "italic text-slate-500" : "text-slate-600"}`}>
+                <span className={`mt-0.5 text-[12px] font-medium tabular-nums ${resolved.isOff ? "italic text-slate-500" : "text-slate-600"}`}>
                   {hoursLabel}
                 </span>
               </div>
@@ -1429,50 +1455,70 @@ export default function Grid({
 
         {addOpen && (
           <div
-            className="fixed inset-0 z-[2147483647] bg-black/40 flex items-center justify-center"
-            style={{ top: 0, left: 0, right: 0, bottom: 0, margin: 0, padding: 0 }}
+            className="fixed inset-0 z-[2147483647] grid place-items-center bg-black/35 p-4 backdrop-blur-[1px]"
             onClick={() => setAddOpen(false)}
           >
             <div
-              className="bg-white rounded-[8px] w-full max-w-md shadow-xl border border-[var(--border)] overflow-hidden mx-4"
+              className="card w-full max-w-[540px] overflow-hidden"
               onClick={(e) => e.stopPropagation()}
             >
-              <div className="flex items-center justify-between px-6 py-4">
+              <div className="flex items-start justify-between border-b border-[var(--border)] px-5 py-4">
                 <div>
-                  <h2 className="text-xl font-semibold">Add employee</h2>
-                  <p className="text-sm text-slate-600">Pick from saved people.</p>
+                  <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-500">People</p>
+                  <h2 className="mt-1 text-[24px] font-semibold leading-tight text-slate-800">Add employee</h2>
+                  <p className="mt-1 text-sm text-slate-600">Pick from saved people.</p>
                 </div>
                 <button
-                  className="p-2 text-slate-500 hover:text-slate-700 rounded-lg hover:bg-[#f5f7fa] transition"
+                  className="btn h-8 w-8 p-0 text-slate-500 hover:text-slate-700"
                   onClick={() => setAddOpen(false)}
-                  aria-label="Close"
+                  aria-label="Close add employee dialog"
                 >
-                  <X className="w-4 h-4" />
+                  <X className="h-4 w-4" />
                 </button>
               </div>
-              <div className="px-6 pb-5 text-[14px]" style={{ color: "#1A1B25" }}>
-                <div className="space-y-1 max-h-48 overflow-y-auto border border-[var(--border)] rounded-md p-2">
-                  {people.length === 0 && <div className="text-sm text-slate-600">No saved people yet.</div>}
-                  {people.map((p) => (
-                    <button
-                      key={p.id}
-                      className="w-full text-left px-3 py-2 hover:bg-slate-50 border border-[var(--border)] rounded-md text-[14px]"
-                      onClick={() => {
-                        addEmployee(p);
-                        setAddOpen(false);
-                      }}
-                    >
-                      {p.name}
-                    </button>
-                  ))}
+
+              <div className="space-y-3 px-5 py-4 text-[14px]">
+                <label htmlFor="add-employee-search" className="sr-only">
+                  Search people
+                </label>
+                <div className="relative">
+                  <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+                  <input
+                    id="add-employee-search"
+                    type="text"
+                    value={employeePickerQuery}
+                    onChange={(event) => setEmployeePickerQuery(event.target.value)}
+                    placeholder="Search by name or email"
+                    autoFocus
+                    className="input h-10 w-full pr-3 pl-9 text-[14px]"
+                  />
+                </div>
+
+                <div className="max-h-[260px] space-y-1 overflow-y-auto rounded-[10px] border border-[var(--border)] bg-[var(--surface-subtle)] p-2">
+                  {filteredPeople.length === 0 ? (
+                    <div className="rounded-[8px] bg-white px-3 py-2 text-[13px] text-slate-600">
+                      {people.length === 0 ? "No saved people yet." : "No people match that search."}
+                    </div>
+                  ) : (
+                    filteredPeople.map((person) => (
+                      <button
+                        key={person.id}
+                        className="w-full rounded-[8px] border border-transparent bg-white px-3 py-2 text-left transition hover:border-[#cad3ea] hover:bg-[#f8faff] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#7283f5]/40"
+                        onClick={() => {
+                          addEmployee(person);
+                          setAddOpen(false);
+                        }}
+                      >
+                        <span className="block text-[14px] font-semibold text-slate-800">{person.name}</span>
+                        {person.email && <span className="block text-[12px] text-slate-500">{person.email}</span>}
+                      </button>
+                    ))
+                  )}
                 </div>
               </div>
-              <div className="px-6 py-4 flex items-center justify-end gap-3 bg-white">
-                <button
-                  className="btn h-[30px] justify-center text-black/80 hover:text-black"
-                  style={{ width: "65px", boxShadow: "inset 0 0 0 1px #CFCFCF", borderRadius: "6px", border: "none", background: "white" }}
-                  onClick={() => setAddOpen(false)}
-                >
+
+              <div className="flex items-center justify-end border-t border-[var(--border)] bg-white px-5 py-3">
+                <button className="btn h-9 px-4 text-[13px]" onClick={() => setAddOpen(false)}>
                   Cancel
                 </button>
               </div>
