@@ -73,7 +73,7 @@ export default function TopBar({
 
   return (
     <header className="rounded-[12px] border border-[var(--border)] bg-[var(--surface-subtle)] px-3 py-2">
-      <div className="flex min-h-[38px] w-full items-center gap-2">
+      <div className="flex min-h-[38px] w-full items-start gap-2">
         {!isOpen && (
           <button
             className="btn h-9 w-9 shrink-0 p-0"
@@ -85,30 +85,33 @@ export default function TopBar({
           </button>
         )}
         {showActions && (
-          <div className="topbar-actions-scroll min-w-0 flex-1 overflow-x-auto pb-1">
-            <div className="flex w-max items-center gap-2 pr-1">
-              <button className="btn whitespace-nowrap" onClick={handleUndo}>
+          <div className="min-w-0 flex-1">
+            <div className="grid grid-cols-2 gap-2 sm:flex sm:flex-wrap sm:items-center">
+              <button className="btn h-9 w-full justify-center whitespace-nowrap text-[13px] sm:w-auto" onClick={handleUndo}>
                 <Undo2 className="w-4 h-4" /> Undo
               </button>
-              <button className="btn whitespace-nowrap" onClick={handleRedo}>
+              <button className="btn h-9 w-full justify-center whitespace-nowrap text-[13px] sm:w-auto" onClick={handleRedo}>
                 <Redo2 className="w-4 h-4" /> Redo
               </button>
-              <button className="btn whitespace-nowrap" onClick={handleAddEmployee}>
+              <button className="btn h-9 w-full justify-center whitespace-nowrap text-[13px] sm:w-auto" onClick={handleAddEmployee}>
                 <Plus className="w-4 h-4" /> Add Employee
               </button>
-              <button className="btn whitespace-nowrap" onClick={handleAutofill}>
+              <button className="btn h-9 w-full justify-center whitespace-nowrap text-[13px] sm:w-auto" onClick={handleAutofill}>
                 <Sparkles className="w-4 h-4" /> Autofill
               </button>
-              <button className="btn whitespace-nowrap" onClick={handleSave}>
+              <button className="btn h-9 w-full justify-center whitespace-nowrap text-[13px] sm:w-auto" onClick={handleSave}>
                 <Save className="w-4 h-4" /> Save
               </button>
-              <button className="btn whitespace-nowrap" onClick={handleClear}>
+              <button className="btn h-9 w-full justify-center whitespace-nowrap text-[13px] sm:w-auto" onClick={handleClear}>
                 <Trash2 className="w-4 h-4" /> Clear
               </button>
-              <button className="btn whitespace-nowrap" onClick={handleExport}>
+              <button className="btn h-9 w-full justify-center whitespace-nowrap text-[13px] sm:w-auto" onClick={handleExport}>
                 <Download className="w-4 h-4" /> Export
               </button>
-              <button className="btn whitespace-nowrap border-l border-[var(--border)] pl-3 ml-1" onClick={handleReset}>
+              <button
+                className="btn h-9 w-full justify-center whitespace-nowrap text-[13px] sm:ml-1 sm:w-auto sm:border-l sm:border-[var(--border)] sm:pl-3"
+                onClick={handleReset}
+              >
                 <RotateCcw className="w-4 h-4" /> Reset
               </button>
             </div>
@@ -116,26 +119,53 @@ export default function TopBar({
         )}
       </div>
       {showHoursControls && (
-        <div className="mt-2 flex flex-wrap items-center gap-2 border-t border-[var(--border)] pt-2 md:justify-end">
-          <span className="text-[14px] font-semibold text-slate-700 whitespace-nowrap">Hours</span>
-          <input
-            type="time"
-            className="input h-9 w-[126px] min-w-[116px] text-[14px]"
-            value={hours.start}
-            step={900}
-            onChange={(e) => onHoursStartChange(e.target.value)}
-          />
-          <span className="text-slate-500 text-[13px]">to</span>
-          <input
-            type="time"
-            className="input h-9 w-[126px] min-w-[116px] text-[14px]"
-            value={hours.end}
-            step={900}
-            onChange={(e) => onHoursEndChange(e.target.value)}
-          />
-          <button className="btn h-9 px-3" type="button" onClick={onHoursDefault}>
-            Default
-          </button>
+        <div className="mt-2 border-t border-[var(--border)] pt-2">
+          <div className="space-y-2 sm:hidden">
+            <div className="flex items-center justify-between">
+              <span className="text-[14px] font-semibold text-slate-700">Hours</span>
+              <button className="btn h-9 px-3 text-[13px]" type="button" onClick={onHoursDefault}>
+                Default
+              </button>
+            </div>
+            <div className="space-y-2">
+              <input
+                type="time"
+                className="input h-10 w-full min-w-0 text-[14px]"
+                value={hours.start}
+                step={900}
+                onChange={(e) => onHoursStartChange(e.target.value)}
+              />
+              <input
+                type="time"
+                className="input h-10 w-full min-w-0 text-[14px]"
+                value={hours.end}
+                step={900}
+                onChange={(e) => onHoursEndChange(e.target.value)}
+              />
+            </div>
+          </div>
+
+          <div className="hidden flex-wrap items-center gap-2 sm:flex md:justify-end">
+            <span className="text-[14px] font-semibold text-slate-700 whitespace-nowrap">Hours</span>
+            <input
+              type="time"
+              className="input h-9 w-[126px] min-w-[116px] text-[14px]"
+              value={hours.start}
+              step={900}
+              onChange={(e) => onHoursStartChange(e.target.value)}
+            />
+            <span className="text-slate-500 text-[13px]">to</span>
+            <input
+              type="time"
+              className="input h-9 w-[126px] min-w-[116px] text-[14px]"
+              value={hours.end}
+              step={900}
+              onChange={(e) => onHoursEndChange(e.target.value)}
+            />
+            <button className="btn h-9 px-3" type="button" onClick={onHoursDefault}>
+              Default
+            </button>
+          </div>
         </div>
       )}
       {!showHoursControls && <div className="h-1" />}

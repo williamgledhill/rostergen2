@@ -150,18 +150,6 @@ input[type="checkbox"]::after {
 .grid-outer { position:relative; }
 .grid > div { border-color: var(--border); }
 
-.topbar-actions-scroll {
-  scrollbar-width: thin;
-  scrollbar-color: #c3cbdb transparent;
-}
-.topbar-actions-scroll::-webkit-scrollbar {
-  height: 8px;
-}
-.topbar-actions-scroll::-webkit-scrollbar-thumb {
-  background: #c3cbdb;
-  border-radius: 999px;
-}
-
 @media (max-width: 640px) {
   :root {
     --timew: 112px;

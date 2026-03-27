@@ -143,7 +143,9 @@ export default function Page() {
       <div className="space-y-4 flex flex-col items-start">
         <div className="flex flex-col w-full gap-2">
           <div className="flex flex-col leading-tight">
-            <h1 className="text-xl font-semibold sm:text-2xl">{dayLabel}</h1>
+            <h1 className="break-words text-[clamp(1.2rem,5vw,1.5rem)] font-semibold leading-tight">
+              {dayLabel}
+            </h1>
           </div>
         </div>
 
