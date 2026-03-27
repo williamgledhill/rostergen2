@@ -73,7 +73,7 @@ export default function TopBar({
 
   return (
     <header className="rounded-[12px] border border-[var(--border)] bg-[var(--surface-subtle)] px-3 py-2">
-      <div className="flex min-h-[38px] w-full items-start gap-2">
+      <div className="flex min-h-[38px] w-full items-start gap-2 sm:items-center">
         {!isOpen && (
           <button
             className="btn h-9 w-9 shrink-0 p-0"
@@ -86,7 +86,7 @@ export default function TopBar({
         )}
         {showActions && (
           <div className="min-w-0 flex-1">
-            <div className="grid grid-cols-2 gap-2 sm:flex sm:flex-wrap sm:items-center">
+            <div className="grid grid-cols-2 gap-2 sm:flex sm:w-max sm:items-center sm:gap-2">
               <button className="btn h-9 w-full justify-center whitespace-nowrap text-[13px] sm:w-auto" onClick={handleUndo}>
                 <Undo2 className="w-4 h-4" /> Undo
               </button>
@@ -117,10 +117,33 @@ export default function TopBar({
             </div>
           </div>
         )}
+        {showHoursControls && (
+          <div className="ml-auto hidden items-center gap-2 border-l border-[var(--border)] pl-3 sm:flex">
+            <span className="text-[14px] font-semibold text-slate-700 whitespace-nowrap">Hours</span>
+            <input
+              type="time"
+              className="input h-9 w-[126px] min-w-[116px] text-[14px]"
+              value={hours.start}
+              step={900}
+              onChange={(e) => onHoursStartChange(e.target.value)}
+            />
+            <span className="text-slate-500 text-[13px]">to</span>
+            <input
+              type="time"
+              className="input h-9 w-[126px] min-w-[116px] text-[14px]"
+              value={hours.end}
+              step={900}
+              onChange={(e) => onHoursEndChange(e.target.value)}
+            />
+            <button className="btn h-9 px-3" type="button" onClick={onHoursDefault}>
+              Default
+            </button>
+          </div>
+        )}
       </div>
       {showHoursControls && (
-        <div className="mt-2 border-t border-[var(--border)] pt-2">
-          <div className="space-y-2 sm:hidden">
+        <div className="mt-2 border-t border-[var(--border)] pt-2 sm:hidden">
+          <div className="space-y-2">
             <div className="flex items-center justify-between">
               <span className="text-[14px] font-semibold text-slate-700">Hours</span>
               <button className="btn h-9 px-3 text-[13px]" type="button" onClick={onHoursDefault}>
@@ -143,28 +166,6 @@ export default function TopBar({
                 onChange={(e) => onHoursEndChange(e.target.value)}
               />
             </div>
-          </div>
-
-          <div className="hidden flex-wrap items-center gap-2 sm:flex md:justify-end">
-            <span className="text-[14px] font-semibold text-slate-700 whitespace-nowrap">Hours</span>
-            <input
-              type="time"
-              className="input h-9 w-[126px] min-w-[116px] text-[14px]"
-              value={hours.start}
-              step={900}
-              onChange={(e) => onHoursStartChange(e.target.value)}
-            />
-            <span className="text-slate-500 text-[13px]">to</span>
-            <input
-              type="time"
-              className="input h-9 w-[126px] min-w-[116px] text-[14px]"
-              value={hours.end}
-              step={900}
-              onChange={(e) => onHoursEndChange(e.target.value)}
-            />
-            <button className="btn h-9 px-3" type="button" onClick={onHoursDefault}>
-              Default
-            </button>
           </div>
         </div>
       )}

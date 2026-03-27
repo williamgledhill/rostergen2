@@ -1379,8 +1379,8 @@ export default function Grid({
                     <p className="text-[13px] font-semibold text-slate-800">{h.name}</p>
                     <p className="text-[11px] text-slate-500">Day time override</p>
                   </div>
-                  <div className="space-y-2">
-                    <div>
+                  <div className="grid grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-end gap-2">
+                    <div className="min-w-0">
                       <label className="mb-1 block text-[11px] font-semibold uppercase tracking-[0.08em] text-slate-500">
                         Start
                       </label>
@@ -1396,7 +1396,8 @@ export default function Grid({
                         }}
                       />
                     </div>
-                    <div>
+                    <span className="pb-2 text-[11px] text-slate-500">to</span>
+                    <div className="min-w-0">
                       <label className="mb-1 block text-[11px] font-semibold uppercase tracking-[0.08em] text-slate-500">
                         End
                       </label>
@@ -1421,7 +1422,7 @@ export default function Grid({
                       Use Default
                     </button>
                     <button
-                      className="btn h-8 justify-center gap-1 border-red-200 bg-red-50 text-[12px] text-red-700 hover:bg-red-100"
+                      className="inline-flex h-8 items-center justify-center gap-1 rounded-[var(--radius-md)] border border-red-300 bg-white px-3 text-[12px] font-medium text-red-700 transition hover:border-red-600 hover:bg-red-600 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-300/70"
                       onClick={() => {
                         setEmployeeSettingsId(null);
                         setEmployeeSettingsDirty(false);
