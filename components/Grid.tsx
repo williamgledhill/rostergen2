@@ -1484,7 +1484,7 @@ export default function Grid({
             >
               <div className="flex items-start justify-between border-b border-[var(--border)] px-5 py-4">
                 <div>
-                  <h2 className="text-[30px] font-semibold leading-[1.1] text-slate-800">Add employee</h2>
+                  <h2 className="text-2xl font-semibold leading-tight text-slate-800">Add employee</h2>
                   <p className="mt-2 text-sm text-slate-600">Pick from saved people.</p>
                 </div>
                 <button
@@ -1545,18 +1545,13 @@ export default function Grid({
                               {person.email && <span className="block truncate text-[12px] text-slate-500">{person.email}</span>}
                             </span>
                             {alreadyAdded ? (
-                              <div className="shrink-0 flex items-center gap-2">
-                                <span className="rounded-full border border-emerald-300 bg-emerald-100 px-3 py-1 text-[12px] font-semibold text-emerald-800">
-                                  Added
-                                </span>
-                                <button
-                                  type="button"
-                                  onClick={() => removeEmployeeFromPicker(person)}
-                                  className="rounded-full border border-rose-300 bg-rose-100 px-3 py-1 text-[12px] font-semibold text-rose-700 transition hover:bg-rose-200 hover:text-rose-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-300/70"
-                                >
-                                  Remove
-                                </button>
-                              </div>
+                              <button
+                                type="button"
+                                onClick={() => removeEmployeeFromPicker(person)}
+                                className="shrink-0 rounded-full border border-rose-300 bg-rose-100 px-3 py-1 text-[12px] font-semibold text-rose-700 transition hover:bg-rose-200 hover:text-rose-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-300/70"
+                              >
+                                Remove
+                              </button>
                             ) : (
                               <button
                                 type="button"

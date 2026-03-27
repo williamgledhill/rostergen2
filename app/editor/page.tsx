@@ -139,15 +139,15 @@ export default function Page() {
   const tasks = loaded?.tasks ?? fallbackTasks;
 
   return (
-    <div className="w-full py-4 px-3">
+    <div className="w-full px-1 py-2 sm:px-2 sm:py-3 md:px-3 md:py-4">
       <div className="space-y-4 flex flex-col items-start">
         <div className="flex flex-col w-full gap-2">
           <div className="flex flex-col leading-tight">
-            <h1 className="text-2xl font-semibold">{dayLabel}</h1>
+            <h1 className="text-xl font-semibold sm:text-2xl">{dayLabel}</h1>
           </div>
         </div>
 
-        <div className="sticky top-3 z-30 w-full">
+        <div className="sticky top-2 z-30 w-full md:top-3">
           <TopBar
             hours={hours}
             onHoursStartChange={(value) => {
