@@ -143,6 +143,7 @@ export default function Grid({
   const [hoveredCol, setHoveredCol] = useState<number | null>(null);
   const [employeeSettingsId, setEmployeeSettingsId] = useState<string | number | null>(null);
   const [employeeSettingsDraft, setEmployeeSettingsDraft] = useState<{ start: string; end: string }>({ start: "", end: "" });
+  const [employeeSettingsDirty, setEmployeeSettingsDirty] = useState(false);
   const [employeeSettingsError, setEmployeeSettingsError] = useState("");
   const [drag, setDrag] = useState<null | { id: string | number; which: "top" | "bottom"; y0: number; start0: number; span0: number }>(null);
   const [modal, setModal] = useState<null | { col: number; row: number }>(null);
@@ -288,6 +289,7 @@ export default function Grid({
       if (!employeeSettingsRef.current) return;
       if (employeeSettingsRef.current.contains(e.target as Node)) return;
       setEmployeeSettingsId(null);
+      setEmployeeSettingsDirty(false);
       setEmployeeSettingsError("");
     };
     document.addEventListener("mousedown", onOutsideClick);
@@ -298,6 +300,7 @@ export default function Grid({
     if (employeeSettingsId === null) return;
     if (!employees.some((emp) => emp.id === employeeSettingsId)) {
       setEmployeeSettingsId(null);
+      setEmployeeSettingsDirty(false);
       setEmployeeSettingsError("");
     }
   }, [employeeSettingsId, employees]);
@@ -426,17 +429,19 @@ export default function Grid({
   function openEmployeeSettings(emp: Employee) {
     if (employeeSettingsId === emp.id) {
       setEmployeeSettingsId(null);
+      setEmployeeSettingsDirty(false);
       setEmployeeSettingsError("");
       return;
     }
     const resolved = resolveEmployeeHours(emp);
     setEmployeeSettingsId(emp.id);
     setEmployeeSettingsDraft({ start: resolved.start, end: resolved.end });
+    setEmployeeSettingsDirty(false);
     setEmployeeSettingsError("");
   }
 
-  const applyEmployeeSettings = useCallback(() => {
-    if (employeeSettingsId === null) return;
+  useEffect(() => {
+    if (employeeSettingsId === null || !employeeSettingsDirty) return;
     const start = employeeSettingsDraft.start;
     const end = employeeSettingsDraft.end;
     const startMin = parseTimeToMinutes(start);
@@ -445,13 +450,19 @@ export default function Grid({
       setEmployeeSettingsError("Enter a valid start/end time.");
       return;
     }
+    const current = employeesRef.current.find((emp) => emp.id === employeeSettingsId);
+    if (current && current.startTime === start && current.endTime === end) {
+      setEmployeeSettingsDirty(false);
+      setEmployeeSettingsError("");
+      return;
+    }
     const nextEmployees = employeesRef.current.map((emp) =>
       emp.id === employeeSettingsId ? { ...emp, startTime: start, endTime: end } : emp
     );
     applyRosterState(nextEmployees, tasksRef.current);
-    setEmployeeSettingsId(null);
+    setEmployeeSettingsDirty(false);
     setEmployeeSettingsError("");
-  }, [employeeSettingsId, employeeSettingsDraft.start, employeeSettingsDraft.end, applyRosterState]);
+  }, [employeeSettingsId, employeeSettingsDirty, employeeSettingsDraft.start, employeeSettingsDraft.end, applyRosterState]);
 
   const clearEmployeeSettingsOverride = useCallback(() => {
     if (employeeSettingsId === null) return;
@@ -460,6 +471,7 @@ export default function Grid({
     );
     applyRosterState(nextEmployees, tasksRef.current);
     setEmployeeSettingsId(null);
+    setEmployeeSettingsDirty(false);
     setEmployeeSettingsError("");
   }, [employeeSettingsId, applyRosterState]);
 
@@ -509,6 +521,7 @@ export default function Grid({
     applyRosterState(nextEmployees, nextTasks);
     if (employeeSettingsId === id) {
       setEmployeeSettingsId(null);
+      setEmployeeSettingsDirty(false);
       setEmployeeSettingsError("");
     }
   }, [applyRosterState, employeeSettingsId]);
@@ -1359,58 +1372,67 @@ export default function Grid({
               {employeeSettingsId === h.id && (
                 <div
                   ref={employeeSettingsRef}
-                  className="absolute right-2 top-9 z-50 w-[230px] rounded-[10px] border border-[var(--border)] bg-white p-3 shadow-xl"
+                  className="absolute right-2 top-9 z-50 w-[280px] max-w-[calc(100vw-1.5rem)] rounded-[10px] border border-[var(--border)] bg-white p-3 shadow-xl"
                   onClick={(e) => e.stopPropagation()}
                 >
                   <div className="mb-2">
                     <p className="text-[13px] font-semibold text-slate-800">{h.name}</p>
                     <p className="text-[11px] text-slate-500">Day time override</p>
                   </div>
-                  <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-2">
-                    <input
-                      type="time"
-                      className="input h-8 w-full px-2 text-[13px]"
-                      value={employeeSettingsDraft.start}
-                      step={900}
-                      onChange={(e) => {
-                        setEmployeeSettingsDraft((prev) => ({ ...prev, start: e.target.value }));
-                        setEmployeeSettingsError("");
-                      }}
-                    />
-                    <span className="text-[11px] text-slate-500">to</span>
-                    <input
-                      type="time"
-                      className="input h-8 w-full px-2 text-[13px]"
-                      value={employeeSettingsDraft.end}
-                      step={900}
-                      onChange={(e) => {
-                        setEmployeeSettingsDraft((prev) => ({ ...prev, end: e.target.value }));
-                        setEmployeeSettingsError("");
-                      }}
-                    />
+                  <div className="space-y-2">
+                    <div>
+                      <label className="mb-1 block text-[11px] font-semibold uppercase tracking-[0.08em] text-slate-500">
+                        Start
+                      </label>
+                      <input
+                        type="time"
+                        className="input time-input-no-icon h-8 w-full min-w-0 px-2 text-[13px]"
+                        value={employeeSettingsDraft.start}
+                        step={900}
+                        onChange={(e) => {
+                          setEmployeeSettingsDraft((prev) => ({ ...prev, start: e.target.value }));
+                          setEmployeeSettingsDirty(true);
+                          setEmployeeSettingsError("");
+                        }}
+                      />
+                    </div>
+                    <div>
+                      <label className="mb-1 block text-[11px] font-semibold uppercase tracking-[0.08em] text-slate-500">
+                        End
+                      </label>
+                      <input
+                        type="time"
+                        className="input time-input-no-icon h-8 w-full min-w-0 px-2 text-[13px]"
+                        value={employeeSettingsDraft.end}
+                        step={900}
+                        onChange={(e) => {
+                          setEmployeeSettingsDraft((prev) => ({ ...prev, end: e.target.value }));
+                          setEmployeeSettingsDirty(true);
+                          setEmployeeSettingsError("");
+                        }}
+                      />
+                    </div>
                   </div>
                   {employeeSettingsError && (
                     <p className="mt-2 text-[11px] text-red-600">{employeeSettingsError}</p>
                   )}
-                  <div className="mt-3 flex items-center gap-2">
-                    <button className="btn h-8 px-3 text-[12px]" onClick={applyEmployeeSettings}>
-                      Save Times
-                    </button>
+                  <div className="mt-3 grid grid-cols-2 gap-2">
                     <button className="btn h-8 px-3 text-[12px]" onClick={clearEmployeeSettingsOverride}>
                       Use Default
                     </button>
+                    <button
+                      className="btn h-8 justify-center gap-1 border-red-200 bg-red-50 text-[12px] text-red-700 hover:bg-red-100"
+                      onClick={() => {
+                        setEmployeeSettingsId(null);
+                        setEmployeeSettingsDirty(false);
+                        setEmployeeSettingsError("");
+                        removeEmployee(h.id);
+                      }}
+                    >
+                      <Trash2 className="h-3.5 w-3.5" />
+                      Remove
+                    </button>
                   </div>
-                  <button
-                    className="btn mt-2 h-8 w-full justify-center gap-1 border-red-200 text-[12px] text-red-700 hover:bg-red-50"
-                    onClick={() => {
-                      setEmployeeSettingsId(null);
-                      setEmployeeSettingsError("");
-                      removeEmployee(h.id);
-                    }}
-                  >
-                    <Trash2 className="h-3.5 w-3.5" />
-                    Remove Employee
-                  </button>
                 </div>
               )}
             </div>

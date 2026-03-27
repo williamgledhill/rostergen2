@@ -150,6 +150,12 @@ input[type="checkbox"]::after {
 .grid-outer { position:relative; }
 .grid > div { border-color: var(--border); }
 
+.time-input-no-icon::-webkit-calendar-picker-indicator,
+.time-input-no-icon::-webkit-clear-button,
+.time-input-no-icon::-webkit-inner-spin-button {
+  display: none;
+}
+
 @media (max-width: 640px) {
   :root {
     --timew: 112px;
