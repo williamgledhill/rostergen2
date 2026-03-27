@@ -496,11 +496,11 @@ export default function Grid({
     setSelected(undefined);
   }, [people, rosterDate, initialEmployees, applyRosterState]);
 
-  const removeEmployee = useCallback((id: string | number) => {
+  const removeEmployee = useCallback((id: string | number, options?: { skipConfirm?: boolean }) => {
     const prevEmployees = employeesRef.current;
     const idx = prevEmployees.findIndex((e) => e.id === id);
     if (idx === -1) return;
-    if (!confirm("Remove this employee from the roster?")) return;
+    if (!options?.skipConfirm && !confirm("Remove this employee from the roster?")) return;
     const colToRemove = idx + 2;
     const nextEmployees = prevEmployees.filter((e) => e.id !== id);
     const nextTasks = tasksRef.current
@@ -512,6 +512,16 @@ export default function Grid({
       setEmployeeSettingsError("");
     }
   }, [applyRosterState, employeeSettingsId]);
+
+  const removeEmployeeFromPicker = useCallback((person: Person) => {
+    const target = employeesRef.current.find(
+      (employee) =>
+        String(employee.id) === String(person.id) ||
+        employee.name.trim().toLowerCase() === person.name.trim().toLowerCase()
+    );
+    if (!target) return;
+    removeEmployee(target.id, { skipConfirm: true });
+  }, [removeEmployee]);
 
   const autofill = useCallback(() => {
     if (!employees.length) {
@@ -1474,16 +1484,15 @@ export default function Grid({
             >
               <div className="flex items-start justify-between border-b border-[var(--border)] px-5 py-4">
                 <div>
-                  <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-500">People</p>
-                  <h2 className="mt-1 text-[22px] font-semibold leading-tight text-slate-800">Add employee</h2>
-                  <p className="mt-1 text-sm text-slate-600">Pick from saved people.</p>
+                  <h2 className="text-[30px] font-semibold leading-[1.1] text-slate-800">Add employee</h2>
+                  <p className="mt-2 text-sm text-slate-600">Pick from saved people.</p>
                 </div>
                 <button
-                  className="btn h-8 w-8 p-0 text-slate-500 hover:text-slate-700"
+                  className="grid h-10 w-10 place-items-center rounded-[12px] border border-[var(--border)] bg-[var(--surface-subtle)] text-slate-600 transition hover:bg-white hover:text-slate-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#7283f5]/45"
                   onClick={() => setAddOpen(false)}
                   aria-label="Close add employee dialog"
                 >
-                  <X className="h-4 w-4" />
+                  <X className="h-[18px] w-[18px]" />
                 </button>
               </div>
 
@@ -1505,7 +1514,7 @@ export default function Grid({
                     onChange={(event) => setEmployeePickerQuery(event.target.value)}
                     placeholder="Search by name or email"
                     autoFocus
-                    className="input h-10 w-full pr-3 pl-9 text-[14px]"
+                    className="h-10 w-full rounded-[var(--radius-md)] border border-[var(--border)] bg-white pl-10 pr-3 text-[14px] text-slate-900 shadow-[0_1px_0_rgba(15,23,42,0.02)] outline-none transition focus:border-[rgba(52,77,232,0.45)] focus:ring-2 focus:ring-[rgba(52,77,232,0.14)]"
                   />
                 </div>
 
@@ -1521,37 +1530,43 @@ export default function Grid({
                           selectedEmployeeIds.has(String(person.id)) ||
                           selectedEmployeeNames.has(person.name.trim().toLowerCase());
                         return (
-                          <button
+                          <div
                             key={person.id}
-                            disabled={alreadyAdded}
                             className={`flex w-full items-center justify-between gap-3 px-3 py-2.5 text-left transition ${
                               alreadyAdded
-                                ? "cursor-not-allowed bg-slate-50/70 text-slate-400"
-                                : "hover:bg-[#f8faff] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#7283f5]/40"
+                                ? "bg-emerald-50/45"
+                                : "hover:bg-[#f8faff]"
                             }`}
-                            onClick={() => {
-                              addEmployee(person);
-                              setAddOpen(false);
-                            }}
                           >
                             <span className="min-w-0">
-                              <span className={`block truncate text-[14px] font-semibold ${alreadyAdded ? "text-slate-500" : "text-slate-800"}`}>
+                              <span className="block truncate text-[14px] font-semibold text-slate-800">
                                 {person.name}
                               </span>
-                              <span className="block truncate text-[12px] text-slate-500">
-                                {person.email || "No email on file"}
-                              </span>
+                              {person.email && <span className="block truncate text-[12px] text-slate-500">{person.email}</span>}
                             </span>
-                            <span
-                              className={`shrink-0 rounded-full border px-2 py-0.5 text-[11px] font-semibold ${
-                                alreadyAdded
-                                  ? "border-slate-200 bg-slate-100 text-slate-500"
-                                  : "border-[#c9d4ff] bg-[#eef2ff] text-[#3f53d5]"
-                              }`}
-                            >
-                              {alreadyAdded ? "Added" : "Add"}
-                            </span>
-                          </button>
+                            {alreadyAdded ? (
+                              <div className="shrink-0 flex items-center gap-2">
+                                <span className="rounded-full border border-emerald-300 bg-emerald-100 px-3 py-1 text-[12px] font-semibold text-emerald-800">
+                                  Added
+                                </span>
+                                <button
+                                  type="button"
+                                  onClick={() => removeEmployeeFromPicker(person)}
+                                  className="rounded-full border border-rose-300 bg-rose-100 px-3 py-1 text-[12px] font-semibold text-rose-700 transition hover:bg-rose-200 hover:text-rose-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-300/70"
+                                >
+                                  Remove
+                                </button>
+                              </div>
+                            ) : (
+                              <button
+                                type="button"
+                                onClick={() => addEmployee(person)}
+                                className="shrink-0 rounded-full border border-[#4f58ef] bg-[#4f58ef] px-3 py-1 text-[12px] font-semibold text-white transition hover:bg-[#434cdf] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#7283f5]/50"
+                              >
+                                Add
+                              </button>
+                            )}
+                          </div>
                         );
                       })}
                     </div>
