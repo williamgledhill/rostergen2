@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useRouter, useParams } from "next/navigation";
 import { ArrowLeft, Copy, PencilLine, Save, Trash2 } from "lucide-react";
 import {
@@ -24,6 +24,13 @@ const DAY_ROWS: { key: DayKey; label: string }[] = [
 ];
 
 type PersonEditor = Omit<Person, "fortnight"> & { fortnight: FortnightSchedule };
+type WeekKey = "weekA" | "weekB";
+type WeekOption = { key: WeekKey; label: string };
+
+const WEEK_OPTIONS: WeekOption[] = [
+  { key: "weekA", label: "Week A" },
+  { key: "weekB", label: "Week B" },
+];
 
 function formatTitle(name: string) {
   return `${name}'s default hours`;
@@ -46,13 +53,58 @@ function toEditorPerson(raw: Person): PersonEditor {
   };
 }
 
+function WeekDayEditor({
+  label,
+  schedule,
+  onToggle,
+  onChangeStart,
+  onChangeEnd,
+}: {
+  label: string;
+  schedule: DaySchedule;
+  onToggle: () => void;
+  onChangeStart: (value: string) => void;
+  onChangeEnd: (value: string) => void;
+}) {
+  return (
+    <div className="rounded-[10px] border border-[var(--border)] bg-[var(--surface-subtle)] px-2 py-2">
+      <div className="mb-1.5 flex items-center justify-between gap-2">
+        <label className="inline-flex items-center gap-2 text-[12px] font-semibold text-slate-700">
+          <input type="checkbox" checked={schedule.enabled} onChange={onToggle} />
+          {label}
+        </label>
+        <span className={`text-[11px] font-semibold ${schedule.enabled ? "text-emerald-700" : "text-slate-500"}`}>
+          {schedule.enabled ? "Working" : "Off"}
+        </span>
+      </div>
+
+      <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-1.5">
+        <input
+          type="time"
+          className="input time-input-no-icon h-8 w-full min-w-0 px-2 text-[13px]"
+          value={schedule.start}
+          onChange={(event) => onChangeStart(event.target.value)}
+          disabled={!schedule.enabled}
+        />
+        <span className="text-xs text-slate-500">to</span>
+        <input
+          type="time"
+          className="input time-input-no-icon h-8 w-full min-w-0 px-2 text-[13px]"
+          value={schedule.end}
+          onChange={(event) => onChangeEnd(event.target.value)}
+          disabled={!schedule.enabled}
+        />
+      </div>
+    </div>
+  );
+}
+
 export default function PersonDetail() {
   const routeParams = useParams<{ id: string }>();
   const id = routeParams?.id;
 
   const [person, setPerson] = useState<PersonEditor | null>(null);
   const [loading, setLoading] = useState(true);
-  const [activeWeek, setActiveWeek] = useState<FortnightWeekKey>("weekA");
   const [saving, setSaving] = useState(false);
   const [notice, setNotice] = useState("");
   const router = useRouter();
@@ -84,20 +136,17 @@ export default function PersonDetail() {
     };
   }, [id]);
 
-  const activeWeekLabel = activeWeek === "weekA" ? "Week A" : "Week B";
-  const copyTarget = activeWeek === "weekA" ? "Week B" : "Week A";
-
-  function updateDay(day: DayKey, patch: Partial<DaySchedule>) {
+  function updateDay(week: WeekKey, day: DayKey, patch: Partial<DaySchedule>) {
     setPerson((prev) => {
       if (!prev) return prev;
-      const current = prev.fortnight[activeWeek][day];
+      const current = prev.fortnight[week][day];
       const nextDay = { ...current, ...patch };
       return {
         ...prev,
         fortnight: {
           ...prev.fortnight,
-          [activeWeek]: {
-            ...prev.fortnight[activeWeek],
+          [week]: {
+            ...prev.fortnight[week],
             [day]: nextDay,
           },
         },
@@ -106,19 +155,18 @@ export default function PersonDetail() {
     setNotice("");
   }
 
-  function copyWeekToOther() {
+  function copyWeek(from: WeekKey, to: WeekKey) {
     setPerson((prev) => {
       if (!prev) return prev;
-      const targetWeek: FortnightWeekKey = activeWeek === "weekA" ? "weekB" : "weekA";
       return {
         ...prev,
         fortnight: {
           ...prev.fortnight,
-          [targetWeek]: cloneWeek(prev.fortnight[activeWeek]),
+          [to]: cloneWeek(prev.fortnight[from]),
         },
       };
     });
-    setNotice(`${activeWeekLabel} copied to ${copyTarget}.`);
+    setNotice(`${from === "weekA" ? "Week A" : "Week B"} copied to ${to === "weekA" ? "Week A" : "Week B"}.`);
   }
 
   async function save() {
@@ -170,8 +218,6 @@ export default function PersonDetail() {
     setNotice("");
   }
 
-  const currentWeekSchedule = useMemo(() => person?.fortnight[activeWeek] ?? null, [person, activeWeek]);
-
   if (loading) {
     return (
       <div className="w-full px-1 py-2 sm:px-2 sm:py-3 md:px-3 md:py-4">
@@ -180,7 +226,7 @@ export default function PersonDetail() {
     );
   }
 
-  if (!id || !person || !currentWeekSchedule) {
+  if (!id || !person) {
     return (
       <div className="w-full px-1 py-2 sm:px-2 sm:py-3 md:px-3 md:py-4">
         <div className="card p-4">
@@ -229,16 +275,16 @@ export default function PersonDetail() {
 
         <div className="card overflow-hidden">
           <div className="border-b border-[var(--border)] bg-[var(--surface-subtle)] px-4 py-3">
-            <div className="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
+            <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
               <div>
                 <h2 className="text-lg font-semibold">Fortnight Schedule</h2>
-                <p className="text-sm text-slate-600">Week A and Week B alternate every 7 days from cycle start.</p>
+                <p className="text-sm text-slate-600">Set both weeks in one view. Weeks alternate every 7 days.</p>
               </div>
               <div className="flex flex-wrap items-center gap-2">
                 <label className="text-xs font-semibold uppercase tracking-[0.1em] text-slate-500">Cycle start</label>
                 <input
                   type="date"
-                  className="input h-9 text-[13px]"
+                  className="input h-9 w-[150px] text-[13px]"
                   value={person.fortnight.anchorDate}
                   onChange={(event) => {
                     const value = event.target.value;
@@ -256,76 +302,48 @@ export default function PersonDetail() {
                     setNotice("");
                   }}
                 />
-
-                <div className="inline-flex overflow-hidden rounded-[10px] border border-[var(--border)] bg-white">
-                  <button
-                    className={`h-9 px-3 text-sm font-semibold ${activeWeek === "weekA" ? "bg-[var(--accent)] text-white" : "text-slate-700 hover:bg-slate-50"}`}
-                    onClick={() => setActiveWeek("weekA")}
-                  >
-                    Week A
-                  </button>
-                  <button
-                    className={`h-9 border-l border-[var(--border)] px-3 text-sm font-semibold ${activeWeek === "weekB" ? "bg-[var(--accent)] text-white" : "text-slate-700 hover:bg-slate-50"}`}
-                    onClick={() => setActiveWeek("weekB")}
-                  >
-                    Week B
-                  </button>
-                </div>
-
-                <button className="btn h-9" onClick={copyWeekToOther}>
+                <button className="btn h-9 whitespace-nowrap" onClick={() => copyWeek("weekA", "weekB")}>
                   <Copy className="h-4 w-4" />
-                  Copy to {copyTarget}
+                  Copy A to B
+                </button>
+                <button className="btn h-9 whitespace-nowrap" onClick={() => copyWeek("weekB", "weekA")}>
+                  <Copy className="h-4 w-4" />
+                  Copy B to A
                 </button>
               </div>
             </div>
           </div>
 
-          <div className="overflow-x-auto">
-            <table className="table-clean min-w-[760px]">
-              <thead>
-                <tr>
-                  <th className="w-[190px]">Day</th>
-                  <th className="w-[120px] text-center">Working</th>
-                  <th className="w-[170px] text-center">Start</th>
-                  <th className="w-[170px] text-center">End</th>
-                </tr>
-              </thead>
-              <tbody>
-                {DAY_ROWS.map(({ key, label }) => {
-                  const sched = currentWeekSchedule[key];
-                  return (
-                    <tr key={key}>
-                      <td className="font-semibold text-slate-800">{label}</td>
-                      <td className="text-center">
-                        <input
-                          type="checkbox"
-                          checked={sched.enabled}
-                          onChange={() => updateDay(key, { enabled: !sched.enabled })}
+          <div className="p-3 sm:p-4">
+            <div className="hidden grid-cols-[130px_1fr_1fr] gap-2 px-1 pb-1 text-xs font-semibold uppercase tracking-[0.08em] text-slate-500 md:grid">
+              <div>Day</div>
+              {WEEK_OPTIONS.map((week) => (
+                <div key={week.key}>{week.label}</div>
+              ))}
+            </div>
+
+            <div className="space-y-2">
+              {DAY_ROWS.map(({ key, label }) => (
+                <div key={key} className="rounded-[10px] border border-[var(--border)] bg-white px-2 py-2 sm:px-3">
+                  <div className="grid gap-2 md:grid-cols-[130px_1fr_1fr] md:items-center">
+                    <div className="px-1 text-[15px] font-semibold text-slate-800">{label}</div>
+                    {WEEK_OPTIONS.map((week) => {
+                      const sched = person.fortnight[week.key][key];
+                      return (
+                        <WeekDayEditor
+                          key={`${key}-${week.key}`}
+                          label={week.label}
+                          schedule={sched}
+                          onToggle={() => updateDay(week.key, key, { enabled: !sched.enabled })}
+                          onChangeStart={(value) => updateDay(week.key, key, { start: value })}
+                          onChangeEnd={(value) => updateDay(week.key, key, { end: value })}
                         />
-                      </td>
-                      <td className="text-center">
-                        <input
-                          type="time"
-                          className="input h-9 w-[140px] text-sm"
-                          value={sched.start}
-                          onChange={(event) => updateDay(key, { start: event.target.value })}
-                          disabled={!sched.enabled}
-                        />
-                      </td>
-                      <td className="text-center">
-                        <input
-                          type="time"
-                          className="input h-9 w-[140px] text-sm"
-                          value={sched.end}
-                          onChange={(event) => updateDay(key, { end: event.target.value })}
-                          disabled={!sched.enabled}
-                        />
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
+                      );
+                    })}
+                  </div>
+                </div>
+              ))}
+            </div>
           </div>
         </div>
       </div>
