@@ -3,7 +3,7 @@ import React, { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Plus, X } from "lucide-react";
-import { ALL_DAYS, Person, defaultSchedule } from "@/lib/people";
+import { ALL_DAYS, type DayKey, Person, defaultSchedule } from "@/lib/people";
 
 export default function PeopleList() {
   const [people, setPeople] = useState<Person[]>([]);
@@ -11,7 +11,7 @@ export default function PeopleList() {
   const [form, setForm] = useState<Person>({ id: "", name: "", email: "", schedule: defaultSchedule([]) });
   const router = useRouter();
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
-  const dayRows = [
+  const dayRows: { key: DayKey; label: string }[] = [
     { key: "Mon", label: "Monday" },
     { key: "Tue", label: "Tuesday" },
     { key: "Wed", label: "Wednesday" },
@@ -37,11 +37,18 @@ export default function PeopleList() {
   }, []);
 
   const summaries = people.map((p) => {
+    const fortnightDiff = p.fortnight
+      ? ALL_DAYS.some((day) => {
+          const a = p.fortnight!.weekA[day];
+          const b = p.fortnight!.weekB[day];
+          return a.enabled !== b.enabled || a.start !== b.start || a.end !== b.end;
+        })
+      : false;
     const activeDays = ALL_DAYS.filter((d) => p.schedule[d]?.enabled);
     return {
       id: p.id,
       name: p.name,
-      days: activeDays.length ? activeDays.join(", ") : "No default days",
+      days: fortnightDiff ? "Fortnight pattern" : activeDays.length ? activeDays.join(", ") : "No default days",
     };
   });
 
@@ -57,7 +64,7 @@ export default function PeopleList() {
     openModal();
   }
 
-  function updateDay(day: string, patch: Partial<{ enabled: boolean; start: string; end: string }>) {
+  function updateDay(day: DayKey, patch: Partial<{ enabled: boolean; start: string; end: string }>) {
     setForm((prev) => ({
       ...prev,
       schedule: {

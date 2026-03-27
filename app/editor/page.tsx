@@ -5,7 +5,7 @@ import { useSearchParams } from "next/navigation";
 import React, { useEffect, useMemo, useState } from "react";
 import { formatLocalId, formatFullDay } from "@/lib/dateUtils";
 import { DEFAULT_SETTINGS } from "@/lib/settingsDefaults";
-import { Person } from "@/lib/people";
+import { Person, getDayScheduleForDate } from "@/lib/people";
 
 function downloadXLS(html: string) {
   const blob = new Blob([html], { type: "application/vnd.ms-excel;charset=utf-8;" });
@@ -69,9 +69,8 @@ export default function Page() {
   }, []);
 
   function workingPeopleForDate(date: Date, list: Person[]) {
-    const dow = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"][date.getDay()];
     return list
-      .filter((p) => p.schedule?.[dow]?.enabled)
+      .filter((p) => getDayScheduleForDate(p, date).enabled)
       .map((p) => ({ id: p.id, name: p.name }));
   }
 

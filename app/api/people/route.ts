@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { enforceSameOrigin, requireSession } from "@/lib/apiAuth";
 import { ALL_DAYS } from "@/lib/people";
 import { z } from "zod";
+import type { Person } from "@/lib/people";
 
 const timeSchema = z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/);
 const dayScheduleSchema = z.object({
@@ -9,16 +10,24 @@ const dayScheduleSchema = z.object({
   start: timeSchema,
   end: timeSchema,
 });
+const weeklyScheduleSchema = z.object(
+  ALL_DAYS.reduce(
+    (shape, day) => ({ ...shape, [day]: dayScheduleSchema }),
+    {} as Record<string, typeof dayScheduleSchema>
+  )
+);
 const personPayloadSchema = z.object({
   id: z.string().trim().min(1).max(120),
   name: z.string().trim().min(1).max(120),
   email: z.union([z.literal(""), z.string().email().max(320)]).optional(),
-  schedule: z.object(
-    ALL_DAYS.reduce(
-      (shape, day) => ({ ...shape, [day]: dayScheduleSchema }),
-      {} as Record<string, typeof dayScheduleSchema>
-    )
-  ),
+  schedule: weeklyScheduleSchema,
+  fortnight: z
+    .object({
+      anchorDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+      weekA: weeklyScheduleSchema,
+      weekB: weeklyScheduleSchema,
+    })
+    .optional(),
 });
 
 export async function GET(req: Request) {
@@ -49,7 +58,21 @@ export async function POST(req: Request) {
     if (!parsed.success) {
       return NextResponse.json({ error: "Invalid payload" }, { status: 400 });
     }
-    const person = upsertPerson(parsed.data);
+    const payload = parsed.data;
+    const personToSave: Person = {
+      id: payload.id,
+      name: payload.name,
+      email: payload.email,
+      schedule: payload.schedule as Person["schedule"],
+      fortnight: payload.fortnight
+        ? {
+            anchorDate: payload.fortnight.anchorDate,
+            weekA: payload.fortnight.weekA as Person["schedule"],
+            weekB: payload.fortnight.weekB as Person["schedule"],
+          }
+        : undefined,
+    };
+    const person = upsertPerson(personToSave);
     return NextResponse.json(person);
   } catch (err) {
     console.error(err);

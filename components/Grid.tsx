@@ -4,7 +4,7 @@ import { X, Settings2, Trash2, Search } from "lucide-react";
 import Block from "@/components/Block";
 import Modal from "@/components/Modal";
 import { TaskTemplate, defaultTaskTemplates } from "@/lib/taskTemplates";
-import type { Person } from "@/lib/people";
+import { getDayScheduleForDate, type Person } from "@/lib/people";
 
 type Employee = { id: string | number; name: string; startTime?: string; endTime?: string };
 type GridTask = {
@@ -370,7 +370,6 @@ export default function Grid({
     () => employees.map((e, idx) => ({ id: e.id, name: e.name, startTime: e.startTime, endTime: e.endTime, col: idx + 2 })),
     [employees]
   );
-  const dayKeyLabel = DAY_KEYS[rosterDate.getDay()];
   const peopleById = useMemo(() => new Map(people.map((p) => [String(p.id), p])), [people]);
   const peopleByName = useMemo(
     () => new Map(people.map((p) => [p.name.toLowerCase(), p])),
@@ -406,7 +405,7 @@ export default function Grid({
     const person =
       peopleById.get(String(emp.id)) ||
       peopleByName.get(String(emp.name || "").toLowerCase());
-    const sched = person?.schedule?.[dayKeyLabel];
+    const sched = person ? getDayScheduleForDate(person, rosterDate) : null;
     if (sched?.enabled) {
       return { start: sched.start, end: sched.end, isOff: false, isOverride: false };
     }
@@ -501,8 +500,7 @@ export default function Grid({
   }, [applyRosterState]);
 
   const resetRoster = useCallback(() => {
-    const dow = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"][rosterDate.getDay()];
-    const working = people.filter((p) => p.schedule?.[dow]?.enabled);
+    const working = people.filter((p) => getDayScheduleForDate(p, rosterDate).enabled);
     const nextEmps = (working.length ? working : []).map((p) => ({ id: p.id, name: p.name }));
     applyRosterState(nextEmps.length ? nextEmps : initialEmployees, []);
     setSelected(undefined);
@@ -601,7 +599,7 @@ export default function Grid({
       const person =
         peopleById.get(String(emp.id)) ||
         peopleByName.get(String(emp.name || "").toLowerCase());
-      const sched = person?.schedule?.[dayKey];
+      const sched = person ? getDayScheduleForDate(person, rosterDate) : null;
       if (!sched?.enabled) {
         if (person) {
           employeeWindows.set(emp.id, null);
