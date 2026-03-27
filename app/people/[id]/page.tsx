@@ -8,7 +8,6 @@ import {
   type DayKey,
   type DaySchedule,
   type FortnightSchedule,
-  type FortnightWeekKey,
   type Person,
   ensureFortnightSchedule,
 } from "@/lib/people";
@@ -242,33 +241,31 @@ export default function PersonDetail() {
   return (
     <div className="w-full px-1 py-2 sm:px-2 sm:py-3 md:px-3 md:py-4">
       <div className="space-y-4">
-        <div className="rounded-[12px] border border-[var(--border)] bg-[var(--surface-subtle)] p-3 sm:p-4">
-          <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
-            <div>
-              <h1 className="text-2xl font-semibold">{formatTitle(person.name)}</h1>
-              <p className="text-sm text-slate-600">Adjust a fortnight schedule for {person.name}.</p>
-            </div>
-            <div className="flex flex-wrap items-center gap-2">
-              <button className="btn" onClick={() => router.push("/people")}>
-                <ArrowLeft className="h-4 w-4" />
-                Back
-              </button>
-              <button className="btn" onClick={renamePerson}>
-                <PencilLine className="h-4 w-4" />
-                Rename
-              </button>
-              <button
-                className="inline-flex h-[34px] items-center justify-center gap-2 rounded-[var(--radius-md)] border border-red-300 bg-white px-3 text-[13px] font-medium text-red-700 transition hover:bg-red-600 hover:text-white"
-                onClick={removePerson}
-              >
-                <Trash2 className="h-4 w-4" />
-                Delete
-              </button>
-              <button className="btn btn-primary" onClick={save} disabled={saving}>
-                <Save className="h-4 w-4" />
-                {saving ? "Saving..." : "Save"}
-              </button>
-            </div>
+        <div className="flex w-full flex-col gap-2">
+          <div className="flex flex-col leading-tight">
+            <h1 className="break-words text-[clamp(1.2rem,5vw,1.95rem)] font-semibold leading-tight">{formatTitle(person.name)}</h1>
+            <p className="text-sm text-slate-600">Adjust a fortnight schedule for {person.name}.</p>
+          </div>
+          <div className="flex flex-wrap items-center gap-2">
+            <button className="btn" onClick={() => router.push("/people")}>
+              <ArrowLeft className="h-4 w-4" />
+              Back
+            </button>
+            <button className="btn" onClick={renamePerson}>
+              <PencilLine className="h-4 w-4" />
+              Rename
+            </button>
+            <button
+              className="inline-flex h-[34px] items-center justify-center gap-2 rounded-[var(--radius-md)] border border-red-300 bg-white px-3 text-[13px] font-medium text-red-700 transition hover:bg-red-600 hover:text-white"
+              onClick={removePerson}
+            >
+              <Trash2 className="h-4 w-4" />
+              Delete
+            </button>
+            <button className="btn btn-primary" onClick={save} disabled={saving}>
+              <Save className="h-4 w-4" />
+              {saving ? "Saving..." : "Save"}
+            </button>
           </div>
           {notice && <p className="mt-2 text-sm text-slate-600">{notice}</p>}
         </div>
