@@ -4,7 +4,6 @@ import React, { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
   ArrowLeft,
-  ArrowRight,
   Mail,
 } from "lucide-react";
 
@@ -166,9 +165,21 @@ export default function SignupPage() {
   return (
     <div className="min-h-screen bg-[#f8fafc] px-4 py-10 sm:px-6">
       <section className="mx-auto w-full max-w-[520px] rounded-2xl border border-[#e2e8f0] bg-white px-6 py-8 shadow-[0_18px_48px_rgba(15,23,42,0.08)] sm:px-8 sm:py-10">
+        <div className="mb-4">
+          <button
+            type="button"
+            onClick={() => router.push("/")}
+            className="inline-flex items-center gap-1.5 text-sm font-medium text-[#52607a] transition hover:text-[#2f3a52]"
+          >
+            <ArrowLeft className="h-4 w-4" />
+            Back
+          </button>
+        </div>
+
         <div className="text-center">
           <p className="text-xs font-semibold uppercase tracking-[0.14em] text-[#64748b]">Roster Planner</p>
-          <h1 className="mt-3 text-[2.2rem] font-semibold leading-[1.12] tracking-tight text-[#0f172a]">Log in</h1>
+          <h1 className="mt-3 text-[2.2rem] font-semibold leading-[1.12] tracking-tight text-[#0f172a]">Welcome back</h1>
+          <p className="mt-2 text-sm text-[#64748b]">Log in to continue</p>
         </div>
 
             <div className="mt-8 space-y-5">
@@ -216,10 +227,9 @@ export default function SignupPage() {
                   <button
                     type="submit"
                     disabled={loading}
-                    className="mx-auto flex h-11 w-[182px] items-center justify-center gap-2 rounded-[4px] border border-[#4f58ef] bg-[#4f58ef] px-4 text-[1.05rem] font-semibold text-white shadow-[0_6px_14px_rgba(71,84,232,0.32)] transition hover:bg-[#434cdf] disabled:cursor-not-allowed disabled:opacity-70"
+                    className="mx-auto flex h-11 w-[182px] items-center justify-center rounded-[6px] border border-[#c8d1e3] bg-white px-4 text-[0.98rem] font-semibold text-[#1f2937] transition hover:bg-[#f8fafc] disabled:cursor-not-allowed disabled:opacity-70"
                   >
-                    <ArrowRight className="h-[18px] w-[18px]" />
-                    Let&apos;s Go
+                    Continue
                   </button>
                 </form>
               ) : (
@@ -278,19 +288,17 @@ export default function SignupPage() {
                         setError("");
                         setFlowStep("email");
                       }}
-                      className="btn h-11 min-w-[110px]"
+                      className="inline-flex h-11 min-w-[110px] items-center justify-center rounded-[6px] border border-[#c8d1e3] bg-white px-4 text-sm font-semibold text-[#1f2937] transition hover:bg-[#f8fafc]"
                     >
-                      <ArrowLeft className="h-4 w-4" />
                       Back
                     </button>
 
                     <button
                       type="submit"
                       disabled={loading || !selectedEditor}
-                      className="flex h-11 flex-1 items-center justify-center gap-2 rounded-[4px] border border-[#4f58ef] bg-[#4f58ef] px-4 text-sm font-semibold text-white shadow-[0_6px_14px_rgba(71,84,232,0.32)] transition hover:bg-[#434cdf] disabled:cursor-not-allowed disabled:opacity-70"
+                      className="flex h-11 flex-1 items-center justify-center rounded-[6px] border border-[#c8d1e3] bg-white px-4 text-sm font-semibold text-[#1f2937] transition hover:bg-[#f8fafc] disabled:cursor-not-allowed disabled:opacity-70"
                     >
-                      Continue to editor
-                      <ArrowRight className="h-4 w-4" />
+                      Log in
                     </button>
                   </div>
                 </form>
