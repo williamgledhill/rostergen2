@@ -120,8 +120,8 @@ export default function SignupPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#fcfbf8]">
-      <header className="px-5 py-5 sm:px-8 sm:py-6">
+    <div className="flex min-h-screen flex-col bg-[#fcfbf8]">
+      <header className="px-4 py-4 sm:px-8 sm:py-6">
         <div className="mx-auto flex w-full max-w-6xl items-center justify-between gap-4">
           <Link
             href="/"
@@ -130,7 +130,7 @@ export default function SignupPage() {
             Roster Generator
           </Link>
 
-          <div className="flex items-center gap-2 text-sm text-[#4b5563]">
+          <div className="flex flex-wrap items-center justify-end gap-x-2 gap-y-1 text-sm text-[#4b5563]">
             <span className="hidden sm:inline">Don&apos;t have an account?</span>
             <a
               href="mailto:admin@rosterplanner.app?subject=Sign%20up%20for%20Roster%20Generator"
@@ -142,10 +142,10 @@ export default function SignupPage() {
         </div>
       </header>
 
-      <main className="flex min-h-[calc(100vh-84px)] items-center justify-center px-5 pb-12 pt-6">
+      <main className="flex flex-1 items-center justify-center px-4 pb-10 pt-8 sm:px-5 sm:pb-12 sm:pt-6">
         <section className="w-full max-w-[420px]">
           <div className="text-center">
-            <h1 className="text-[2.25rem] font-semibold tracking-[-0.04em] text-[#111827] sm:text-[2.65rem]">
+            <h1 className="text-[2rem] font-semibold tracking-[-0.04em] text-[#111827] sm:text-[2.65rem]">
               Welcome back
             </h1>
             <p className="mt-3 text-[0.98rem] leading-7 text-[#6b7280]">
@@ -153,7 +153,7 @@ export default function SignupPage() {
             </p>
           </div>
 
-          <form className="mt-10 space-y-4" onSubmit={handleLogin}>
+          <form className="mt-8 space-y-4 sm:mt-10" onSubmit={handleLogin}>
             <div>
               <label htmlFor="email" className="sr-only">
                 Email
@@ -165,7 +165,7 @@ export default function SignupPage() {
                 value={email}
                 onChange={(event) => setEmail(event.target.value)}
                 disabled={isDisabled}
-                className="h-14 w-full rounded-[18px] border border-[#ece7dc] bg-[#f3f2ef] px-5 text-[15px] text-[#111827] outline-none transition placeholder:text-[#6b7280] focus:border-[#d7c675] focus:bg-white focus:ring-4 focus:ring-[#f4da70]/25"
+                className="h-[52px] w-full rounded-[18px] border border-[#d7dfeb] bg-[#f3f2ef] px-4 text-[15px] text-[#111827] outline-none transition placeholder:text-[#6b7280] focus:border-[rgba(52,77,232,0.45)] focus:bg-white focus:ring-4 focus:ring-[rgba(52,77,232,0.14)] sm:h-14 sm:px-5"
                 placeholder="Email"
               />
             </div>
@@ -181,7 +181,7 @@ export default function SignupPage() {
                 value={password}
                 onChange={(event) => setPassword(event.target.value)}
                 disabled={isDisabled}
-                className="h-14 w-full rounded-[18px] border border-[#ece7dc] bg-[#f3f2ef] px-5 pr-14 text-[15px] text-[#111827] outline-none transition placeholder:text-[#6b7280] focus:border-[#d7c675] focus:bg-white focus:ring-4 focus:ring-[#f4da70]/25"
+                className="h-[52px] w-full rounded-[18px] border border-[#d7dfeb] bg-[#f3f2ef] px-4 pr-12 text-[15px] text-[#111827] outline-none transition placeholder:text-[#6b7280] focus:border-[rgba(52,77,232,0.45)] focus:bg-white focus:ring-4 focus:ring-[rgba(52,77,232,0.14)] sm:h-14 sm:px-5 sm:pr-14"
                 placeholder="Password"
               />
               <button
@@ -201,7 +201,7 @@ export default function SignupPage() {
             <button
               type="submit"
               disabled={isDisabled}
-              className="inline-flex h-14 w-full items-center justify-center gap-2 rounded-full bg-[#ffd52f] px-5 text-[1rem] font-semibold text-[#111827] transition hover:bg-[#f2cb2a] disabled:cursor-not-allowed disabled:opacity-70"
+              className="inline-flex h-[52px] w-full items-center justify-center gap-2 rounded-full border border-[var(--accent)] bg-[var(--accent)] px-5 text-[1rem] font-semibold text-white transition hover:bg-[var(--accent-strong)] hover:border-[var(--accent-strong)] disabled:cursor-not-allowed disabled:opacity-70 sm:h-14"
             >
               {submitting ? (
                 <>
@@ -230,6 +230,16 @@ export default function SignupPage() {
           </form>
         </section>
       </main>
+
+      <footer className="px-4 pb-6 pt-2 sm:px-8 sm:pb-8">
+        <div className="mx-auto flex w-full max-w-6xl flex-col items-center justify-center gap-1 text-center text-xs text-[#9aa1ad] sm:flex-row sm:gap-3">
+          <span>Powered by Roster Generator</span>
+          <span className="hidden sm:inline text-[#c2c8d1]">•</span>
+          <a href="#" className="transition hover:text-[#6b7280]">
+            Terms of Use
+          </a>
+        </div>
+      </footer>
     </div>
   );
 }
