@@ -5,13 +5,7 @@ import { useRouter } from "next/navigation";
 import {
   ArrowLeft,
   ArrowRight,
-  CalendarCheck2,
-  ClipboardCheck,
-  FolderOpen,
   Mail,
-  MessageSquare,
-  ShieldCheck,
-  UserCircle2,
 } from "lucide-react";
 
 type Editor = { id: string; name: string; isAdmin?: boolean };
@@ -170,65 +164,14 @@ export default function SignupPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#f2f2f4]">
-      <div className="grid min-h-screen grid-cols-1 lg:grid-cols-2">
-        <section className="relative isolate overflow-hidden bg-[linear-gradient(180deg,#3839e9_0%,#2a2ca9_58%,#1f227f_100%)] text-white">
-          <div className="pointer-events-none absolute inset-0">
-            <div className="absolute -left-28 top-24 h-72 w-72 rounded-full bg-white/10 blur-3xl" />
-            <div className="absolute right-[-110px] top-1/3 h-80 w-80 rounded-full bg-[#7685ff]/20 blur-3xl" />
-            <div className="absolute bottom-[-140px] left-1/2 h-80 w-80 -translate-x-1/2 rounded-full bg-[#a2b0ff]/15 blur-3xl" />
-          </div>
+    <div className="min-h-screen bg-[#f8fafc] px-4 py-10 sm:px-6">
+      <section className="mx-auto w-full max-w-[520px] rounded-2xl border border-[#e2e8f0] bg-white px-6 py-8 shadow-[0_18px_48px_rgba(15,23,42,0.08)] sm:px-8 sm:py-10">
+        <div className="text-center">
+          <p className="text-xs font-semibold uppercase tracking-[0.14em] text-[#64748b]">Roster Planner</p>
+          <h1 className="mt-3 text-[2.2rem] font-semibold leading-[1.12] tracking-tight text-[#0f172a]">Log in</h1>
+        </div>
 
-          <div className="relative mx-auto flex h-full w-full max-w-[720px] flex-col px-8 py-10 sm:px-12 sm:py-12">
-            <div className="flex items-center gap-3 text-white">
-              <div className="grid h-12 w-12 place-items-center rounded-xl bg-white/14 shadow-lg ring-1 ring-white/35 backdrop-blur-sm">
-                <ClipboardCheck className="h-7 w-7" strokeWidth={2.2} />
-              </div>
-              <span className="text-[2.6rem] font-semibold tracking-tight">Roster Planner</span>
-            </div>
-
-            <div className="relative mx-auto flex w-full max-w-[460px] flex-1 items-center justify-center">
-              <div className="absolute left-[50%] top-[53%] h-36 w-72 -translate-x-1/2 -translate-y-1/2 rounded-[22px] border border-white/15 bg-[#3947cf]/45 stack-shadow" />
-              <div className="absolute left-[50%] top-[47%] h-36 w-72 -translate-x-1/2 -translate-y-1/2 rounded-[22px] border border-white/15 bg-[#7788ff]/45 stack-shadow" />
-              <div className="absolute left-[50%] top-[41%] h-36 w-72 -translate-x-1/2 -translate-y-1/2 rounded-[22px] border border-white/20 bg-[#9aa8ff]/45 stack-shadow" />
-
-              <div className="rise-in absolute left-[50%] top-[29%] flex h-44 w-56 -translate-x-1/2 -translate-y-1/2 flex-col rounded-[28px] border border-white/25 bg-[#4d58f1]/80 p-5 shadow-2xl backdrop-blur-sm">
-                <div className="flex items-center justify-between text-white/90">
-                  <UserCircle2 className="h-8 w-8" />
-                  <ShieldCheck className="h-5 w-5" />
-                </div>
-                <div className="mt-6 h-3 w-24 rounded-full bg-white/35" />
-                <div className="mt-3 h-3 w-16 rounded-full bg-white/30" />
-                <div className="mt-5 flex h-12 items-center justify-center rounded-xl bg-white/80 text-[#3d49d4] shadow">
-                  <ClipboardCheck className="h-8 w-8" />
-                </div>
-              </div>
-
-              <div className="float-slow absolute left-10 top-28 grid h-11 w-11 place-items-center rounded-xl bg-[#f95b72] text-white shadow-lg">
-                <CalendarCheck2 className="h-5 w-5" />
-              </div>
-              <div className="float-fast absolute right-9 top-24 grid h-11 w-11 place-items-center rounded-xl bg-[#8f84ff] text-white shadow-lg">
-                <MessageSquare className="h-5 w-5" />
-              </div>
-              <div className="float-slow absolute right-14 top-[52%] grid h-11 w-11 place-items-center rounded-xl bg-[#ff8f2f] text-white shadow-lg">
-                <FolderOpen className="h-5 w-5" />
-              </div>
-            </div>
-
-            <div className="pb-5 text-center">
-              <h2 className="text-[2.85rem] font-semibold tracking-tight">Run smoother shifts.</h2>
-              <p className="mx-auto mt-3 max-w-[550px] text-lg text-white/90">
-                Built to save planning time and keep every handover clear.
-              </p>
-            </div>
-          </div>
-        </section>
-
-        <section className="flex items-center justify-center px-6 py-12 sm:px-10">
-          <div className="w-full max-w-[390px]">
-            <h1 className="text-[3rem] font-semibold leading-[1.12] tracking-tight text-[#0f172a]">Log in to Roster Planner</h1>
-
-            <div className="mt-10 space-y-5">
+            <div className="mt-8 space-y-5">
               {flowStep === "email" ? (
                 <form className="space-y-5" onSubmit={handleBeginFlow}>
                   <div className="relative">
@@ -359,64 +302,7 @@ export default function SignupPage() {
 
               {error && <p className="text-sm text-rose-600">{error}</p>}
             </div>
-          </div>
-        </section>
-      </div>
-
-      <style jsx>{`
-        .stack-shadow {
-          box-shadow: 0 18px 32px rgba(12, 21, 88, 0.33);
-        }
-
-        .rise-in {
-          animation: riseIn 650ms cubic-bezier(0.22, 1, 0.36, 1);
-        }
-
-        .float-slow {
-          animation: floatSlow 6.8s ease-in-out infinite;
-        }
-
-        .float-fast {
-          animation: floatFast 4.6s ease-in-out infinite;
-        }
-
-        @keyframes riseIn {
-          from {
-            opacity: 0;
-            transform: translate(-50%, -46%);
-          }
-          to {
-            opacity: 1;
-            transform: translate(-50%, -50%);
-          }
-        }
-
-        @keyframes floatSlow {
-          0%,
-          100% {
-            transform: translateY(0px);
-          }
-          50% {
-            transform: translateY(-10px);
-          }
-        }
-
-        @keyframes floatFast {
-          0%,
-          100% {
-            transform: translateY(-3px);
-          }
-          50% {
-            transform: translateY(9px);
-          }
-        }
-
-        @media (max-width: 1023px) {
-          section:first-child {
-            min-height: 46vh;
-          }
-        }
-      `}</style>
+      </section>
     </div>
   );
 }
