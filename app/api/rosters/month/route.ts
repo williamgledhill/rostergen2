@@ -41,7 +41,7 @@ export async function GET(req: Request) {
     const month = searchParams.get("month");
     if (!month) return NextResponse.json({ error: "Missing month" }, { status: 400 });
     if (!parseMonth(month)) return NextResponse.json({ error: "Invalid month" }, { status: 400 });
-    const rosters = getRostersForMonth(month, 5000);
+    const rosters = await getRostersForMonth(month, 5000);
     return NextResponse.json(rosters);
   } catch (err) {
     console.error(err);

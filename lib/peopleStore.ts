@@ -1,49 +1,87 @@
-import fs from "fs";
-import path from "path";
-import { Person, seedPeople } from "./people";
+import { prisma } from "./prisma";
+import { ALL_DAYS, type DaySchedule, type Person } from "./people";
+import { ensureAppPersistenceSeeded } from "./appPersistenceSeed";
 
-const DATA_DIR = path.join(process.cwd(), "data");
-const DATA_FILE = path.join(DATA_DIR, "people.json");
-
-function ensureDataFile() {
-  if (!fs.existsSync(DATA_DIR)) fs.mkdirSync(DATA_DIR, { recursive: true });
-  if (!fs.existsSync(DATA_FILE)) fs.writeFileSync(DATA_FILE, JSON.stringify(seedPeople, null, 2), "utf-8");
+function normalizeDaySchedule(input: any): DaySchedule {
+  return {
+    enabled: Boolean(input?.enabled),
+    start: typeof input?.start === "string" ? input.start : "09:00",
+    end: typeof input?.end === "string" ? input.end : "17:00",
+  };
 }
 
-export function loadPeople(): Person[] {
-  try {
-    ensureDataFile();
-    const raw = fs.readFileSync(DATA_FILE, "utf-8");
-    const parsed = JSON.parse(raw) as Person[];
-    return parsed;
-  } catch {
-    return seedPeople;
-  }
+function normalizeWeeklySchedule(input: any): Person["schedule"] {
+  const schedule = {} as Person["schedule"];
+  ALL_DAYS.forEach((day) => {
+    schedule[day] = normalizeDaySchedule(input?.[day]);
+  });
+  return schedule;
 }
 
-export function savePeople(people: Person[]) {
-  ensureDataFile();
-  fs.writeFileSync(DATA_FILE, JSON.stringify(people, null, 2), "utf-8");
+function normalizePerson(record: {
+  id: string;
+  name: string;
+  email: string | null;
+  schedule: unknown;
+  fortnight: unknown;
+}): Person {
+  const fortnight =
+    record.fortnight && typeof record.fortnight === "object"
+      ? {
+          anchorDate:
+            typeof (record.fortnight as any).anchorDate === "string"
+              ? (record.fortnight as any).anchorDate
+              : "2026-01-05",
+          weekA: normalizeWeeklySchedule((record.fortnight as any).weekA),
+          weekB: normalizeWeeklySchedule((record.fortnight as any).weekB),
+        }
+      : undefined;
+
+  return {
+    id: record.id,
+    name: record.name,
+    email: record.email || undefined,
+    schedule: normalizeWeeklySchedule(record.schedule),
+    ...(fortnight ? { fortnight } : {}),
+  };
 }
 
-export function getPeople(): Person[] {
-  return loadPeople();
+export async function getPeople(): Promise<Person[]> {
+  await ensureAppPersistenceSeeded();
+  const people = await prisma.appPerson.findMany({ orderBy: { name: "asc" } });
+  return people.map(normalizePerson);
 }
 
-export function getPerson(id: string): Person | null {
-  return loadPeople().find(p => p.id === id) ?? null;
+export async function getPerson(id: string): Promise<Person | null> {
+  await ensureAppPersistenceSeeded();
+  const person = await prisma.appPerson.findUnique({ where: { id } });
+  return person ? normalizePerson(person) : null;
 }
 
-export function upsertPerson(person: Person) {
-  const all = loadPeople();
-  const idx = all.findIndex(p => p.id === person.id);
-  if (idx >= 0) all[idx] = person;
-  else all.push(person);
-  savePeople(all);
-  return person;
+export async function upsertPerson(person: Person): Promise<Person> {
+  await ensureAppPersistenceSeeded();
+
+  const saved = await prisma.appPerson.upsert({
+    where: { id: person.id },
+    update: {
+      name: person.name,
+      email: person.email || null,
+      schedule: person.schedule as any,
+      fortnight: person.fortnight ? (person.fortnight as any) : undefined,
+    },
+    create: {
+      id: person.id,
+      name: person.name,
+      email: person.email || null,
+      schedule: person.schedule as any,
+      ...(person.fortnight ? { fortnight: person.fortnight as any } : {}),
+    },
+  });
+
+  return normalizePerson(saved);
 }
 
-export function deletePerson(id: string) {
-  const all = loadPeople().filter(p => p.id !== id);
-  savePeople(all);
+export async function deletePerson(id: string): Promise<void> {
+  await ensureAppPersistenceSeeded();
+  await prisma.appPerson.delete({ where: { id } }).catch(() => undefined);
 }

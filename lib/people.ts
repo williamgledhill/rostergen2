@@ -119,22 +119,26 @@ export const seedPeople: Person[] = [
 const isServer = typeof window === "undefined";
 let serverStore: any = null;
 if (isServer) {
-  // eslint-disable-next-line @typescript-eslint/no-var-requires
-  serverStore = require("./peopleStore");
+  try {
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
+    serverStore = require("./peopleStore");
+  } catch {
+    serverStore = null;
+  }
 }
 
 export const getPeople = isServer
-  ? (serverStore?.getPeople as () => Person[])
+  ? ((serverStore?.getPeople as (() => Person[]) | undefined) ?? (() => seedPeople))
   : () => seedPeople;
 
 export const getPerson = isServer
-  ? (serverStore?.getPerson as (id: string) => Person | null)
+  ? ((serverStore?.getPerson as ((id: string) => Person | null) | undefined) ?? ((id: string) => seedPeople.find(p => p.id === id) ?? null))
   : (id: string) => seedPeople.find(p => p.id === id) ?? null;
 
 export const upsertPerson = isServer
-  ? (serverStore?.upsertPerson as (p: Person) => Person)
+  ? ((serverStore?.upsertPerson as ((p: Person) => Person) | undefined) ?? ((p: Person) => p))
   : (p: Person) => p;
 
 export const deletePerson = isServer
-  ? (serverStore?.deletePerson as (id: string) => void)
+  ? ((serverStore?.deletePerson as ((id: string) => void) | undefined) ?? ((_id: string) => {}))
   : (_id: string) => {};

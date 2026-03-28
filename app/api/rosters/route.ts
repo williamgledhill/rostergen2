@@ -36,12 +36,12 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Invalid hours range" }, { status: 400 });
     }
 
-    const existing = getRosterById(date);
+    const existing = await getRosterById(date);
 
     const tours = tasks.filter((t: any) => String(t.type).toLowerCase() === "tour").length;
     const people = employees.length;
 
-    saveRosterEntry({
+    await saveRosterEntry({
       ...(existing || {
         id: date,
         title: formatFullDay(parsed),
@@ -76,7 +76,7 @@ export async function GET(req: Request) {
     if (!date) return NextResponse.json({ error: "Missing date" }, { status: 400 });
     const parsed = parseLocalId(date);
     if (!parsed) return NextResponse.json({ error: "Invalid date" }, { status: 400 });
-    const roster = getRosterById(date);
+    const roster = await getRosterById(date);
     if (!roster) return NextResponse.json({ error: "Not found" }, { status: 404 });
     return NextResponse.json(roster);
   } catch (err) {

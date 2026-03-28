@@ -1,16 +1,6 @@
-import fs from "fs";
-import path from "path";
+import { prisma } from "./prisma";
+import { ensureAppPersistenceSeeded } from "./appPersistenceSeed";
 import { DAY_KEYS, DEFAULT_SETTINGS, AppSettings, DayKey, DayHours } from "./settingsDefaults";
-
-const DATA_DIR = path.join(process.cwd(), "data");
-const DATA_FILE = path.join(DATA_DIR, "settings.json");
-
-function ensureDataFile() {
-  if (!fs.existsSync(DATA_DIR)) fs.mkdirSync(DATA_DIR, { recursive: true });
-  if (!fs.existsSync(DATA_FILE)) {
-    fs.writeFileSync(DATA_FILE, JSON.stringify(DEFAULT_SETTINGS, null, 2), "utf-8");
-  }
-}
 
 function isValidTime(value: unknown): value is string {
   if (typeof value !== "string") return false;
@@ -43,26 +33,29 @@ function normalizeUpcomingDays(input: unknown): number {
   return rounded;
 }
 
-export function getSettings(): AppSettings {
-  try {
-    ensureDataFile();
-    const raw = fs.readFileSync(DATA_FILE, "utf-8");
-    const parsed = JSON.parse(raw);
-    return {
-      hoursByDay: normalizeHoursByDay(parsed?.hoursByDay),
-      upcomingDays: normalizeUpcomingDays(parsed?.upcomingDays),
-    };
-  } catch {
-    return DEFAULT_SETTINGS;
-  }
+export async function getSettings(): Promise<AppSettings> {
+  await ensureAppPersistenceSeeded();
+
+  const record = await prisma.appSettings.findUnique({ where: { id: "default" } });
+  return {
+    hoursByDay: normalizeHoursByDay(record?.hoursByDay),
+    upcomingDays: normalizeUpcomingDays(record?.upcomingDays),
+  };
 }
 
-export function saveSettings(input: AppSettings): AppSettings {
+export async function saveSettings(input: AppSettings): Promise<AppSettings> {
+  await ensureAppPersistenceSeeded();
+
   const normalized = {
     hoursByDay: normalizeHoursByDay(input?.hoursByDay),
     upcomingDays: normalizeUpcomingDays(input?.upcomingDays),
   };
-  ensureDataFile();
-  fs.writeFileSync(DATA_FILE, JSON.stringify(normalized, null, 2), "utf-8");
+
+  await prisma.appSettings.upsert({
+    where: { id: "default" },
+    update: normalized,
+    create: { id: "default", ...normalized },
+  });
+
   return normalized;
 }

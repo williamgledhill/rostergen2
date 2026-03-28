@@ -1,16 +1,6 @@
-import fs from "fs";
-import path from "path";
+import { prisma } from "./prisma";
+import { ensureAppPersistenceSeeded } from "./appPersistenceSeed";
 import { defaultTaskTemplates, TaskTemplate, slugifyName } from "./taskTemplates";
-
-const DATA_DIR = path.join(process.cwd(), "data");
-const DATA_FILE = path.join(DATA_DIR, "taskTemplates.json");
-
-function ensureDataFile() {
-  if (!fs.existsSync(DATA_DIR)) fs.mkdirSync(DATA_DIR, { recursive: true });
-  if (!fs.existsSync(DATA_FILE)) {
-    fs.writeFileSync(DATA_FILE, JSON.stringify(defaultTaskTemplates, null, 2), "utf-8");
-  }
-}
 
 function applyDefaults(t: TaskTemplate): TaskTemplate {
   const base = defaultTaskTemplates.find((d) => d.id === t.id);
@@ -80,21 +70,52 @@ function applyDefaults(t: TaskTemplate): TaskTemplate {
   };
 }
 
-export function getTaskTemplates(): TaskTemplate[] {
-  try {
-    ensureDataFile();
-    const raw = fs.readFileSync(DATA_FILE, "utf-8");
-    const parsed = JSON.parse(raw) as TaskTemplate[];
-    const list = Array.isArray(parsed) && parsed.length ? parsed.map(applyDefaults) : defaultTaskTemplates;
-    fs.writeFileSync(DATA_FILE, JSON.stringify(list, null, 2), "utf-8");
-    return list;
-  } catch {
-    return defaultTaskTemplates;
-  }
+function mapTemplate(record: any): TaskTemplate {
+  return applyDefaults({
+    id: record.id,
+    name: record.name,
+    description: record.description || "",
+    category: record.category || undefined,
+    color: record.color || undefined,
+    mustManned: record.mustManned,
+    autogenStart: record.autogenStart || "",
+    autogenEnd: record.autogenEnd || "",
+    regularDays: Array.isArray(record.regularDays) ? record.regularDays : [],
+    regularTimes: Array.isArray(record.regularTimes) ? record.regularTimes : [],
+    regularTimesByDay:
+      record.regularTimesByDay && typeof record.regularTimesByDay === "object"
+        ? record.regularTimesByDay
+        : {},
+    regularDayWindows:
+      record.regularDayWindows && typeof record.regularDayWindows === "object"
+        ? record.regularDayWindows
+        : {},
+    minPerEmployeePerDay: record.minPerEmployeePerDay,
+    maxPerEmployeePerDay: record.maxPerEmployeePerDay,
+    durationMinutes: record.durationMinutes,
+    maxConsecutiveMinutes: record.maxConsecutiveMinutes,
+    waitingMinutes: record.waitingMinutes,
+    packingMinutes: record.packingMinutes,
+    limitPerDay: record.limitPerDay,
+    enabled: record.enabled,
+  });
 }
 
-export function addTaskTemplate(input: { name: string; description?: string; category?: string; color?: string }): TaskTemplate {
-  const templates = getTaskTemplates();
+export async function getTaskTemplates(): Promise<TaskTemplate[]> {
+  await ensureAppPersistenceSeeded();
+  const templates = await prisma.appTaskTemplate.findMany({ orderBy: { name: "asc" } });
+  return templates.map(mapTemplate);
+}
+
+export async function addTaskTemplate(input: {
+  name: string;
+  description?: string;
+  category?: string;
+  color?: string;
+}): Promise<TaskTemplate> {
+  await ensureAppPersistenceSeeded();
+
+  const templates = await prisma.appTaskTemplate.findMany({ select: { id: true } });
   const baseSlug = slugifyName(input.name);
   let slug = baseSlug;
   let counter = 1;
@@ -102,55 +123,85 @@ export function addTaskTemplate(input: { name: string; description?: string; cat
     counter += 1;
     slug = `${baseSlug}-${counter}`;
   }
-  const newTemplate: TaskTemplate = {
-    id: slug,
-    name: input.name.trim(),
-    description: input.description?.trim() || "No description yet.",
-    category: input.category?.trim() || "Custom",
-    color: input.color?.trim() || "#e2e8f0",
-    mustManned: false,
-    autogenStart: "",
-    autogenEnd: "",
-    regularDays: [],
-    regularTimes: [],
-    regularTimesByDay: {},
-    regularDayWindows: {},
-    minPerEmployeePerDay: 0,
-    maxPerEmployeePerDay: 0,
-    durationMinutes: 0,
-    maxConsecutiveMinutes: 0,
-    waitingMinutes: 0,
-    packingMinutes: 0,
-    limitPerDay: 0,
-    enabled: true,
-  };
-  const next = [...templates, newTemplate];
-  ensureDataFile();
-  fs.writeFileSync(DATA_FILE, JSON.stringify(next, null, 2), "utf-8");
-  return newTemplate;
-}
 
-export function updateTaskTemplate(id: string, input: Partial<TaskTemplate>): TaskTemplate | null {
-  const templates = getTaskTemplates();
-  const idx = templates.findIndex((t) => t.id === id);
-  if (idx === -1) return null;
-  const merged: TaskTemplate = applyDefaults({
-    ...templates[idx],
-    ...input,
-    id,
+  const created = await prisma.appTaskTemplate.create({
+    data: {
+      id: slug,
+      name: input.name.trim(),
+      description: input.description?.trim() || "No description yet.",
+      category: input.category?.trim() || "Custom",
+      color: input.color?.trim() || "#e2e8f0",
+      mustManned: false,
+      autogenStart: "",
+      autogenEnd: "",
+      regularDays: [],
+      regularTimes: [],
+      regularTimesByDay: {},
+      regularDayWindows: {},
+      minPerEmployeePerDay: 0,
+      maxPerEmployeePerDay: 0,
+      durationMinutes: 0,
+      maxConsecutiveMinutes: 0,
+      waitingMinutes: 0,
+      packingMinutes: 0,
+      limitPerDay: 0,
+      enabled: true,
+    },
   });
-  const next = [...templates];
-  next[idx] = merged;
-  ensureDataFile();
-  fs.writeFileSync(DATA_FILE, JSON.stringify(next, null, 2), "utf-8");
-  return merged;
+
+  return mapTemplate(created);
 }
 
-export function deleteTaskTemplate(id: string): boolean {
-  const templates = getTaskTemplates();
-  const next = templates.filter((t) => t.id !== id);
-  if (next.length === templates.length) return false;
-  ensureDataFile();
-  fs.writeFileSync(DATA_FILE, JSON.stringify(next, null, 2), "utf-8");
-  return true;
+export async function updateTaskTemplate(
+  id: string,
+  input: Partial<TaskTemplate>
+): Promise<TaskTemplate | null> {
+  await ensureAppPersistenceSeeded();
+
+  const existing = await prisma.appTaskTemplate.findUnique({ where: { id } });
+  if (!existing) return null;
+
+  const updated = await prisma.appTaskTemplate.update({
+    where: { id },
+    data: {
+      ...(input.name !== undefined ? { name: input.name } : {}),
+      ...(input.description !== undefined ? { description: input.description } : {}),
+      ...(input.category !== undefined ? { category: input.category || null } : {}),
+      ...(input.color !== undefined ? { color: input.color || null } : {}),
+      ...(input.mustManned !== undefined ? { mustManned: input.mustManned } : {}),
+      ...(input.autogenStart !== undefined ? { autogenStart: input.autogenStart || null } : {}),
+      ...(input.autogenEnd !== undefined ? { autogenEnd: input.autogenEnd || null } : {}),
+      ...(input.regularDays !== undefined ? { regularDays: input.regularDays } : {}),
+      ...(input.regularTimes !== undefined ? { regularTimes: input.regularTimes } : {}),
+      ...(input.regularTimesByDay !== undefined
+        ? { regularTimesByDay: input.regularTimesByDay || {} }
+        : {}),
+      ...(input.regularDayWindows !== undefined
+        ? { regularDayWindows: input.regularDayWindows || {} }
+        : {}),
+      ...(input.minPerEmployeePerDay !== undefined
+        ? { minPerEmployeePerDay: input.minPerEmployeePerDay }
+        : {}),
+      ...(input.maxPerEmployeePerDay !== undefined
+        ? { maxPerEmployeePerDay: input.maxPerEmployeePerDay }
+        : {}),
+      ...(input.durationMinutes !== undefined ? { durationMinutes: input.durationMinutes } : {}),
+      ...(input.maxConsecutiveMinutes !== undefined
+        ? { maxConsecutiveMinutes: input.maxConsecutiveMinutes }
+        : {}),
+      ...(input.waitingMinutes !== undefined ? { waitingMinutes: input.waitingMinutes } : {}),
+      ...(input.packingMinutes !== undefined ? { packingMinutes: input.packingMinutes } : {}),
+      ...(input.limitPerDay !== undefined ? { limitPerDay: input.limitPerDay } : {}),
+      ...(input.enabled !== undefined ? { enabled: input.enabled } : {}),
+    },
+  });
+
+  return mapTemplate(updated);
+}
+
+export async function deleteTaskTemplate(id: string): Promise<boolean> {
+  await ensureAppPersistenceSeeded();
+
+  const deleted = await prisma.appTaskTemplate.deleteMany({ where: { id } });
+  return deleted.count > 0;
 }

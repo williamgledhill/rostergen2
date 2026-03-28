@@ -21,7 +21,7 @@ export async function GET() {
   if (!auth.ok) return auth.response;
 
   try {
-    return NextResponse.json(getSettings());
+    return NextResponse.json(await getSettings());
   } catch (err: any) {
     return NextResponse.json({ error: err?.message || "Failed to load settings" }, { status: 500 });
   }
@@ -39,7 +39,7 @@ export async function PUT(request: Request) {
     if (!parsed.success) {
       return NextResponse.json({ error: "Invalid payload" }, { status: 400 });
     }
-    const saved = saveSettings(parsed.data);
+    const saved = await saveSettings(parsed.data);
     return NextResponse.json(saved);
   } catch (err: any) {
     return NextResponse.json({ error: err?.message || "Failed to save settings" }, { status: 500 });

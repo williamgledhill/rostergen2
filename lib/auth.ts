@@ -14,8 +14,7 @@ export type Account = {
   editors: AccountEditor[];
 };
 
-const DATA_DIR = path.join(process.cwd(), "data");
-const DATA_FILE = path.join(DATA_DIR, "accounts.json");
+const DATA_FILE = path.join(process.cwd(), "data", "accounts.json");
 
 const DEFAULT_ACCOUNTS: Account[] = [
   {
@@ -30,29 +29,29 @@ const DEFAULT_ACCOUNTS: Account[] = [
   },
 ];
 
-function ensureAccountsFile() {
-  if (!fs.existsSync(DATA_DIR)) fs.mkdirSync(DATA_DIR, { recursive: true });
-  if (!fs.existsSync(DATA_FILE)) {
-    fs.writeFileSync(DATA_FILE, JSON.stringify({ accounts: DEFAULT_ACCOUNTS }, null, 2), "utf-8");
-  }
+function normalizeAccounts(input: unknown): Account[] {
+  const list = Array.isArray((input as any)?.accounts) ? (input as any).accounts : input;
+  const baseList = Array.isArray(list) && list.length ? list : DEFAULT_ACCOUNTS;
+  return baseList.map((acct: any) => ({
+    id: String(acct.id),
+    name: String(acct.name),
+    company: String(acct.company || "Roster Generator"),
+    editors: Array.isArray(acct.editors)
+      ? acct.editors.map((editor: any) => ({
+          id: String(editor.id),
+          name: String(editor.name),
+          isAdmin:
+            typeof editor.isAdmin === "boolean" ? editor.isAdmin : editor.role === "admin",
+        }))
+      : [],
+  }));
 }
 
 export function getAccounts(): Account[] {
   try {
-    ensureAccountsFile();
+    if (!fs.existsSync(DATA_FILE)) return DEFAULT_ACCOUNTS;
     const raw = fs.readFileSync(DATA_FILE, "utf-8");
-    const parsed = JSON.parse(raw) as { accounts?: Account[] };
-    const baseList = Array.isArray(parsed?.accounts) && parsed.accounts.length ? parsed.accounts : DEFAULT_ACCOUNTS;
-    const normalized = baseList.map((acct) => ({
-      ...acct,
-      editors: (acct.editors || []).map((editor: any) => ({
-        id: editor.id,
-        name: editor.name,
-        isAdmin: typeof editor.isAdmin === "boolean" ? editor.isAdmin : editor.role === "admin",
-      })),
-    }));
-    fs.writeFileSync(DATA_FILE, JSON.stringify({ accounts: normalized }, null, 2), "utf-8");
-    return normalized;
+    return normalizeAccounts(JSON.parse(raw));
   } catch {
     return DEFAULT_ACCOUNTS;
   }

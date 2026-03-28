@@ -58,7 +58,7 @@ export async function GET(request: Request) {
 
   const { searchParams } = new URL(request.url);
   const id = searchParams.get("id");
-  const templates = getTaskTemplates();
+  const templates = await getTaskTemplates();
   if (id) {
     const match = templates.find((t) => t.id === id);
     if (!match) return NextResponse.json({ error: "Not found" }, { status: 404 });
@@ -79,7 +79,7 @@ export async function POST(request: Request) {
     if (!parsed.success) {
       return NextResponse.json({ error: "Invalid payload" }, { status: 400 });
     }
-    const created = addTaskTemplate({
+    const created = await addTaskTemplate({
       name: parsed.data.name,
       description: parsed.data.description,
       category: parsed.data.category,
@@ -125,7 +125,7 @@ export async function PUT(request: Request) {
       limitPerDay: parsed.data.limitPerDay,
       enabled: parsed.data.enabled,
     };
-    const updated = updateTaskTemplate(id, payload);
+    const updated = await updateTaskTemplate(id, payload);
     if (!updated) return NextResponse.json({ error: "Template not found" }, { status: 404 });
     return NextResponse.json(updated);
   } catch (err: any) {
@@ -146,7 +146,7 @@ export async function DELETE(request: Request) {
     if (!id) {
       return NextResponse.json({ error: "id is required" }, { status: 400 });
     }
-    const deleted = deleteTaskTemplate(id);
+    const deleted = await deleteTaskTemplate(id);
     if (!deleted) return NextResponse.json({ error: "Template not found" }, { status: 404 });
     return NextResponse.json({ ok: true });
   } catch (err: any) {

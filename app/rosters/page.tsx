@@ -6,9 +6,9 @@ import { getSettings } from "@/lib/settings";
 
 export const dynamic = "force-dynamic";
 
-export default function Page() {
-  const settings = getSettings();
-  const rosters = getUpcomingRosters(settings.upcomingDays);
+export default async function Page() {
+  const settings = await getSettings();
+  const rosters = await getUpcomingRosters(settings.upcomingDays);
 
   return (
     <div className="w-full py-3 px-3">

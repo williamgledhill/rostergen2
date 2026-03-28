@@ -38,11 +38,11 @@ export async function GET(req: Request) {
   const { searchParams } = new URL(req.url);
   const id = searchParams.get("id");
   if (id) {
-    const person = getPerson(id);
+    const person = await getPerson(id);
     if (!person) return NextResponse.json({ error: "Not found" }, { status: 404 });
     return NextResponse.json(person);
   }
-  return NextResponse.json(getPeople());
+  return NextResponse.json(await getPeople());
 }
 
 export async function POST(req: Request) {
@@ -72,7 +72,7 @@ export async function POST(req: Request) {
           }
         : undefined,
     };
-    const person = upsertPerson(personToSave);
+    const person = await upsertPerson(personToSave);
     return NextResponse.json(person);
   } catch (err) {
     console.error(err);
@@ -92,7 +92,7 @@ export async function DELETE(req: Request) {
     const { searchParams } = new URL(req.url);
     const id = searchParams.get("id");
     if (!id) return NextResponse.json({ error: "Missing id" }, { status: 400 });
-    deletePerson(id);
+    await deletePerson(id);
     return NextResponse.json({ ok: true });
   } catch (err) {
     console.error(err);

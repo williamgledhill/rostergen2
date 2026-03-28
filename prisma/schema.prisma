@@ -43,3 +43,64 @@ model Task {
   @@index([employeeId])
   @@index([start, end])
 }
+
+model AppPerson {
+  id        String   @id
+  name      String
+  email     String?
+  schedule  Json
+  fortnight Json?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model AppTaskTemplate {
+  id                     String   @id
+  name                   String
+  description            String   @default("")
+  category               String?
+  color                  String?
+  mustManned             Boolean  @default(false)
+  autogenStart           String?
+  autogenEnd             String?
+  regularDays            Json?
+  regularTimes           Json?
+  regularTimesByDay      Json?
+  regularDayWindows      Json?
+  minPerEmployeePerDay   Int      @default(0)
+  maxPerEmployeePerDay   Int      @default(0)
+  durationMinutes        Int      @default(0)
+  maxConsecutiveMinutes  Int      @default(0)
+  waitingMinutes         Int      @default(0)
+  packingMinutes         Int      @default(0)
+  limitPerDay            Int      @default(0)
+  enabled                Boolean  @default(true)
+  createdAt              DateTime @default(now())
+  updatedAt              DateTime @updatedAt
+}
+
+model AppSettings {
+  id          String   @id
+  hoursByDay  Json
+  upcomingDays Int     @default(7)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model AppRoster {
+  id           String   @id
+  date         DateTime @unique
+  title        String
+  status       String   @default("Draft")
+  updatedLabel String   @default("-")
+  tours        Int      @default(0)
+  people       Int      @default(0)
+  employees    Json?
+  tasks        Json?
+  hoursStart   String?
+  hoursEnd     String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@index([date])
+}
