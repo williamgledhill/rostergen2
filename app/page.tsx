@@ -1,7 +1,6 @@
 import Link from "next/link";
 import { ArrowRight } from "lucide-react";
 import { Inter } from "next/font/google";
-import LandingSoftwareDemo from "@/components/LandingSoftwareDemo";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -76,9 +75,11 @@ export default function HomePage() {
             <div className="pointer-events-none absolute -left-16 top-10 h-36 w-36 rounded-full bg-[var(--accent-soft)] blur-3xl" />
             <div className="pointer-events-none absolute -right-14 bottom-8 h-40 w-40 rounded-full bg-[#d9e2ff] blur-3xl" />
 
-            <div className="relative">
-              <LandingSoftwareDemo />
-            </div>
+            <img
+              src="/demo-panel-static.png"
+              alt="Roster editor software demo"
+              className="relative w-full rounded-[18px] border border-[#ccd6eb]"
+            />
           </div>
         </section>
       </main>
