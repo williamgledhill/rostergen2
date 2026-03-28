@@ -36,45 +36,45 @@ function defaultEmailForEditor(editor: Editor) {
 function variantClasses(variant: VariantKey) {
   if (variant === "v2") {
     return {
-      page: "min-h-screen bg-[#f5f7fb] px-4 py-10 sm:px-6",
-      card: "mx-auto w-full max-w-[560px] overflow-hidden rounded-2xl border border-[#dce4f2] bg-white shadow-[0_22px_56px_rgba(15,23,42,0.10)]",
-      header: "bg-[#eef3ff] px-6 py-5 sm:px-8",
-      body: "px-6 py-7 sm:px-8 sm:py-8",
-      title: "text-[2.2rem] font-semibold leading-[1.1] text-[#0f172a]",
+      page: "min-h-screen bg-white px-4 py-8 sm:px-6",
+      card: "mx-auto w-full max-w-[620px]",
+      titleWrap: "text-left",
+      title: "text-[2rem] font-semibold leading-[1.1] text-[#0f172a]",
       subtitle: "mt-2 text-sm text-[#64748b]",
-      primary: "mx-auto flex h-11 w-[190px] items-center justify-center rounded-md border border-[#c8d1e3] bg-white px-4 text-[0.98rem] font-semibold text-[#1f2937] transition hover:bg-[#f8fafc] disabled:cursor-not-allowed disabled:opacity-70",
-      secondary: "inline-flex h-11 min-w-[110px] items-center justify-center rounded-md border border-[#c8d1e3] bg-white px-4 text-sm font-semibold text-[#1f2937] transition hover:bg-[#f8fafc]",
+      primary: "w-full sm:w-[200px] h-11 rounded-[8px] border border-[#4653ea] bg-[#4653ea] text-[0.98rem] font-semibold text-white transition hover:bg-[#3e4ad6] disabled:cursor-not-allowed disabled:opacity-70",
+      secondary: "inline-flex h-11 min-w-[110px] items-center justify-center rounded-[8px] border border-[#c8d1e3] bg-white px-4 text-sm font-semibold text-[#1f2937] transition hover:bg-[#f8fafc]",
       textBtn: "inline-flex items-center gap-1.5 text-sm font-medium text-[#52607a] transition hover:text-[#2f3a52]",
       quickOption: "flex w-full items-center justify-between rounded-[8px] border border-[#d8e0ef] bg-white px-3 py-2 text-left transition hover:border-[#a9b9da] hover:bg-[#f7f9ff] disabled:cursor-not-allowed disabled:opacity-60",
+      emailInput: "h-14 w-full rounded-[8px] border border-[#d7dfeb] bg-white px-3 pb-1 pt-5 pr-12 text-[15px] text-slate-900 outline-none transition focus:border-[#6074ff] focus:ring-2 focus:ring-[#6074ff]/20",
     };
   }
 
   if (variant === "v3") {
     return {
-      page: "min-h-screen bg-[#f1f5f9] px-4 py-10 sm:px-6",
-      card: "mx-auto w-full max-w-[560px] rounded-xl border border-[#d9e0ec] bg-white shadow-[0_14px_38px_rgba(15,23,42,0.08)]",
-      header: "px-6 pt-7 sm:px-8",
-      body: "px-6 pb-7 pt-5 sm:px-8 sm:pb-8",
-      title: "text-[2rem] font-semibold leading-[1.1] text-[#0f172a]",
-      subtitle: "mt-2 text-sm text-[#64748b]",
-      primary: "mx-auto flex h-11 w-[190px] items-center justify-center rounded-[6px] border border-[#b9c6db] bg-white px-4 text-[0.98rem] font-semibold text-[#111827] transition hover:bg-[#f8fafc] disabled:cursor-not-allowed disabled:opacity-70",
-      secondary: "inline-flex h-11 min-w-[110px] items-center justify-center rounded-[6px] border border-[#b9c6db] bg-white px-4 text-sm font-semibold text-[#111827] transition hover:bg-[#f8fafc]",
-      textBtn: "inline-flex items-center gap-1.5 text-sm font-medium text-[#4b5d7a] transition hover:text-[#26334a]",
-      quickOption: "flex w-full items-center justify-between rounded-[8px] border border-[#d5dceb] bg-white px-3 py-2 text-left transition hover:border-[#a3b4d0] hover:bg-[#f7f9fc] disabled:cursor-not-allowed disabled:opacity-60",
+      page: "min-h-screen bg-white px-4 py-8 sm:px-6",
+      card: "mx-auto w-full max-w-[560px]",
+      titleWrap: "text-center",
+      title: "text-[2.1rem] font-bold leading-[1.08] text-[#0f172a]",
+      subtitle: "mt-2 text-sm text-[#52607a]",
+      primary: "w-full sm:w-[200px] h-11 rounded-[6px] border border-[#111827] bg-[#111827] text-[0.98rem] font-semibold text-white transition hover:bg-[#1f2937] disabled:cursor-not-allowed disabled:opacity-70",
+      secondary: "inline-flex h-11 min-w-[110px] items-center justify-center rounded-[6px] border border-[#cdd5e2] bg-white px-4 text-sm font-semibold text-[#1f2937] transition hover:bg-[#f8fafc]",
+      textBtn: "inline-flex items-center gap-1.5 text-sm font-medium text-[#41506b] transition hover:text-[#1f2937]",
+      quickOption: "flex w-full items-center justify-between rounded-[6px] border border-[#d5dceb] bg-white px-3 py-2 text-left transition hover:border-[#8fa2c7] hover:bg-[#f8fafc] disabled:cursor-not-allowed disabled:opacity-60",
+      emailInput: "h-14 w-full rounded-[6px] border border-[#d2d9e7] bg-white px-3 pb-1 pt-5 pr-12 text-[15px] text-slate-900 outline-none transition focus:border-[#111827] focus:ring-2 focus:ring-[#111827]/10",
     };
   }
 
   return {
-    page: "min-h-screen bg-[#f8fafc] px-4 py-10 sm:px-6",
-    card: "mx-auto w-full max-w-[560px] rounded-2xl border border-[#e2e8f0] bg-white px-6 py-8 shadow-[0_18px_48px_rgba(15,23,42,0.08)] sm:px-8 sm:py-10",
-    header: "",
-    body: "",
+    page: "min-h-screen bg-white px-4 py-8 sm:px-6",
+    card: "mx-auto w-full max-w-[560px]",
+    titleWrap: "text-center",
     title: "text-[2.2rem] font-semibold leading-[1.12] text-[#0f172a]",
     subtitle: "mt-2 text-sm text-[#64748b]",
-    primary: "mx-auto flex h-11 w-[190px] items-center justify-center rounded-[6px] border border-[#c8d1e3] bg-white px-4 text-[0.98rem] font-semibold text-[#1f2937] transition hover:bg-[#f8fafc] disabled:cursor-not-allowed disabled:opacity-70",
+    primary: "w-full sm:w-[200px] h-11 rounded-[6px] border border-[#4f58ef] bg-[#4f58ef] text-[0.98rem] font-semibold text-white transition hover:bg-[#434bd7] disabled:cursor-not-allowed disabled:opacity-70",
     secondary: "inline-flex h-11 min-w-[110px] items-center justify-center rounded-[6px] border border-[#c8d1e3] bg-white px-4 text-sm font-semibold text-[#1f2937] transition hover:bg-[#f8fafc]",
     textBtn: "inline-flex items-center gap-1.5 text-sm font-medium text-[#52607a] transition hover:text-[#2f3a52]",
     quickOption: "flex w-full items-center justify-between rounded-[8px] border border-slate-200 bg-white px-3 py-2 text-left transition hover:border-[#8e9af8] hover:bg-[#f7f8ff] disabled:cursor-not-allowed disabled:opacity-60",
+    emailInput: "h-14 w-full rounded-[6px] border border-[#d7dfeb] bg-white px-3 pb-1 pt-5 pr-12 text-[15px] text-slate-900 outline-none transition focus:border-[#6074ff] focus:ring-2 focus:ring-[#6074ff]/20",
   };
 }
 
@@ -245,24 +245,22 @@ export default function SignupPage() {
       </div>
 
       <section className={classes.card}>
-        <div className={classes.header || undefined}>
-          <button
-            type="button"
-            onClick={() => router.push("/")}
-            className={classes.textBtn}
-          >
-            <ArrowLeft className="h-4 w-4" />
-            Back
-          </button>
+        <button
+          type="button"
+          onClick={() => router.push("/")}
+          className={classes.textBtn}
+        >
+          <ArrowLeft className="h-4 w-4" />
+          Back
+        </button>
 
-          <div className="mt-4 text-center">
-            <p className="text-xs font-semibold uppercase tracking-[0.14em] text-[#64748b]">Roster Planner</p>
-            <h1 className={`mt-3 ${classes.title}`}>Welcome back</h1>
-            <p className={classes.subtitle}>Log in to continue</p>
-          </div>
+        <div className={`mt-4 ${classes.titleWrap}`}>
+          <p className="text-xs font-semibold uppercase tracking-[0.14em] text-[#64748b]">Roster Planner</p>
+          <h1 className={`mt-3 ${classes.title}`}>Welcome back</h1>
+          <p className={classes.subtitle}>Log in to continue</p>
         </div>
 
-        <div className={`${classes.body} ${classes.header ? "" : "mt-8"}`}>
+        <div className="mt-8">
           {flowStep === "email" ? (
             <form className="space-y-5" onSubmit={handleBeginFlow}>
               <div className="relative">
@@ -276,7 +274,7 @@ export default function SignupPage() {
                   value={email}
                   onChange={(event) => setEmail(event.target.value)}
                   disabled={loading}
-                  className="h-14 w-full rounded-[4px] border border-[#e6e6e6] border-b-[#ea6a7b] bg-[#e9e9ea] px-3 pb-1 pt-5 pr-12 text-[15px] text-slate-900 shadow-[inset_0_1px_0_rgba(255,255,255,0.35)] outline-none transition focus:border-[#6074ff] focus:ring-2 focus:ring-[#6074ff]/20"
+                  className={classes.emailInput}
                 />
                 <Mail className="pointer-events-none absolute right-3 top-1/2 h-[18px] w-[18px] -translate-y-1/2 text-slate-500" />
               </div>
@@ -304,9 +302,11 @@ export default function SignupPage() {
                 </div>
               )}
 
-              <button type="submit" disabled={loading} className={classes.primary}>
-                Continue
-              </button>
+              <div className="flex justify-center sm:justify-start">
+                <button type="submit" disabled={loading} className={classes.primary}>
+                  Continue
+                </button>
+              </div>
             </form>
           ) : (
             <form className="space-y-4" onSubmit={handleLogin}>
