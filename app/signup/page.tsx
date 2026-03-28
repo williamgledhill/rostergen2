@@ -143,9 +143,9 @@ export default function SignupPage() {
       </header>
 
       <main className="flex flex-1 items-center justify-center px-4 pb-10 pt-8 sm:px-5 sm:pb-12 sm:pt-6">
-        <section className="w-full max-w-[420px]">
+        <section className="w-full max-w-[360px] sm:max-w-[380px]">
           <div className="text-center">
-            <h1 className="text-[2rem] font-semibold tracking-[-0.04em] text-[#111827] sm:text-[2.65rem]">
+            <h1 className="text-[1.9rem] font-semibold tracking-[-0.04em] text-[#111827] sm:text-[2.35rem]">
               Welcome back
             </h1>
             <p className="mt-3 text-[0.98rem] leading-7 text-[#6b7280]">
@@ -153,7 +153,7 @@ export default function SignupPage() {
             </p>
           </div>
 
-          <form className="mt-8 space-y-4 sm:mt-10" onSubmit={handleLogin}>
+          <form className="mt-7 space-y-4 sm:mt-8" onSubmit={handleLogin}>
             <div>
               <label htmlFor="email" className="sr-only">
                 Email
@@ -165,7 +165,7 @@ export default function SignupPage() {
                 value={email}
                 onChange={(event) => setEmail(event.target.value)}
                 disabled={isDisabled}
-                className="h-[52px] w-full rounded-[18px] border border-[#d7dfeb] bg-[#f3f2ef] px-4 text-[15px] text-[#111827] outline-none transition placeholder:text-[#6b7280] focus:border-[rgba(52,77,232,0.45)] focus:bg-white focus:ring-4 focus:ring-[rgba(52,77,232,0.14)] sm:h-14 sm:px-5"
+                className="h-[50px] w-full rounded-[14px] border border-[#d5dcf2] bg-white px-4 text-[15px] text-[#111827] outline-none transition placeholder:text-[#8b93a7] focus:border-[rgba(52,77,232,0.55)] focus:ring-2 focus:ring-[rgba(52,77,232,0.18)] sm:h-[52px]"
                 placeholder="Email"
               />
             </div>
@@ -181,14 +181,14 @@ export default function SignupPage() {
                 value={password}
                 onChange={(event) => setPassword(event.target.value)}
                 disabled={isDisabled}
-                className="h-[52px] w-full rounded-[18px] border border-[#d7dfeb] bg-[#f3f2ef] px-4 pr-12 text-[15px] text-[#111827] outline-none transition placeholder:text-[#6b7280] focus:border-[rgba(52,77,232,0.45)] focus:bg-white focus:ring-4 focus:ring-[rgba(52,77,232,0.14)] sm:h-14 sm:px-5 sm:pr-14"
+                className="h-[50px] w-full rounded-[14px] border border-[#d5dcf2] bg-white px-4 pr-12 text-[15px] text-[#111827] outline-none transition placeholder:text-[#8b93a7] focus:border-[rgba(52,77,232,0.55)] focus:ring-2 focus:ring-[rgba(52,77,232,0.18)] sm:h-[52px]"
                 placeholder="Password"
               />
               <button
                 type="button"
                 aria-label={showPassword ? "Hide password" : "Show password"}
                 onClick={() => setShowPassword((current) => !current)}
-                className="absolute right-3 top-1/2 inline-flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-full text-[#6b7280] transition hover:bg-black/5 hover:text-[#111827]"
+                className="absolute right-3 top-1/2 inline-flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-md text-[#6b7280] transition hover:bg-black/5 hover:text-[#111827]"
               >
                 {showPassword ? (
                   <EyeOff className="h-[17px] w-[17px]" />
@@ -201,7 +201,7 @@ export default function SignupPage() {
             <button
               type="submit"
               disabled={isDisabled}
-              className="inline-flex h-[52px] w-full items-center justify-center gap-2 rounded-full border border-[var(--accent)] bg-[var(--accent)] px-5 text-[1rem] font-semibold text-white transition hover:bg-[var(--accent-strong)] hover:border-[var(--accent-strong)] disabled:cursor-not-allowed disabled:opacity-70 sm:h-14"
+              className="inline-flex h-[50px] w-full items-center justify-center gap-2 rounded-[14px] border border-[var(--accent)] bg-[var(--accent)] px-5 text-[1rem] font-semibold text-white transition hover:bg-[var(--accent-strong)] hover:border-[var(--accent-strong)] disabled:cursor-not-allowed disabled:opacity-70 sm:h-[52px]"
             >
               {submitting ? (
                 <>
