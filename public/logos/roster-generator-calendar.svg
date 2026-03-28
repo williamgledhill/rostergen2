@@ -1,0 +1,11 @@
+<svg width="456" height="96" viewBox="0 0 456 96" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect x="8" y="12" width="72" height="72" rx="18" fill="#F7F3E8" stroke="#16263F" stroke-width="4"/>
+  <rect x="8" y="12" width="72" height="20" rx="10" fill="#16263F"/>
+  <rect x="22" y="40" width="12" height="12" rx="3" fill="#F6C665"/>
+  <rect x="39" y="40" width="12" height="12" rx="3" fill="#D7E1F2"/>
+  <rect x="56" y="40" width="12" height="12" rx="3" fill="#D7E1F2"/>
+  <rect x="22" y="57" width="12" height="12" rx="3" fill="#D7E1F2"/>
+  <path d="M41 61L48 68L64 52" stroke="#16263F" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+  <text x="96" y="49" fill="#16263F" font-family="Space Grotesk, DM Sans, Arial, sans-serif" font-size="34" font-weight="700">Roster Generator</text>
+  <text x="96" y="72" fill="#55637A" font-family="DM Sans, Arial, sans-serif" font-size="14" font-weight="500" letter-spacing="0.04em">SHIFT PLANNING SOFTWARE</text>
+</svg>

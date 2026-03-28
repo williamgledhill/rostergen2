@@ -1,0 +1,8 @@
+<svg width="456" height="96" viewBox="0 0 456 96" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect x="12" y="16" width="48" height="48" rx="10" fill="#F7F3E8" stroke="#16263F" stroke-width="3"/>
+  <rect x="12" y="16" width="48" height="14" rx="7" fill="#16263F"/>
+  <path d="M66 50C66 62.1503 56.1503 72 44 72C36.6008 72 30.0408 68.3505 26.0388 62.7491" stroke="#F6C665" stroke-width="6" stroke-linecap="round"/>
+  <path d="M21 57L27 63L19 68" stroke="#F6C665" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+  <text x="96" y="49" fill="#16263F" font-family="Space Grotesk, DM Sans, Arial, sans-serif" font-size="34" font-weight="700">Roster Generator</text>
+  <text x="96" y="72" fill="#55637A" font-family="DM Sans, Arial, sans-serif" font-size="14" font-weight="500" letter-spacing="0.04em">RECURRING MONTHLY ROSTERS</text>
+</svg>

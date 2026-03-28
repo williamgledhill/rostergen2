@@ -8,7 +8,7 @@ import {
   ShieldCheck,
   Sparkles,
 } from "lucide-react";
-import { DM_Sans, Space_Grotesk } from "next/font/google";
+import { DM_Sans, Poppins, Space_Grotesk } from "next/font/google";
 
 const dmSans = DM_Sans({
   subsets: ["latin"],
@@ -19,6 +19,12 @@ const dmSans = DM_Sans({
 const spaceGrotesk = Space_Grotesk({
   subsets: ["latin"],
   weight: ["500", "600", "700"],
+  display: "swap",
+});
+
+const poppins = Poppins({
+  subsets: ["latin"],
+  weight: ["600", "700"],
   display: "swap",
 });
 
@@ -67,30 +73,41 @@ const workflow = [
 export default function HomePage() {
   return (
     <div className={`${dmSans.className} min-h-screen bg-[#f7f3e8] text-[#1f2733]`}>
-      <header className="mx-auto flex w-full max-w-6xl items-center justify-between px-6 py-6 sm:px-10">
-        <Link href="/" className="text-base font-bold tracking-[0.08em] text-[#18202f] uppercase">
-          Roster Planner
-        </Link>
-
-        <nav className="hidden items-center gap-8 text-sm font-medium text-[#49556b] md:flex">
-          <a href="#features" className="transition hover:text-[#18202f]">
-            Features
-          </a>
-          <a href="#workflow" className="transition hover:text-[#18202f]">
-            Workflow
-          </a>
-          <a href="#pricing" className="transition hover:text-[#18202f]">
-            Pricing
-          </a>
-        </nav>
-
-        <div className="flex items-center gap-3">
+      <header className="sticky top-0 z-50 border-b border-[#e2e7f0] bg-white">
+        <div className="mx-auto flex w-full max-w-6xl items-center justify-between px-6 py-4 sm:px-10">
           <Link
-            href="/signup"
-            className="inline-flex h-10 items-center rounded-full border border-[#d8d0bf] bg-white px-5 text-sm font-semibold text-[#253043] transition hover:border-[#c7bcaa] hover:bg-[#fffdf8]"
+            href="/"
+            className={`${poppins.className} inline-flex items-center text-[1.85rem] font-semibold tracking-[-0.02em] text-[#1b2a44]`}
           >
-            Sign in
+            Roster Generator
           </Link>
+
+          <nav className="hidden items-center gap-8 text-[1.05rem] font-medium text-[#31435f] lg:flex">
+            <a href="#features" className="transition hover:text-[#1b2a44]">
+              Features
+            </a>
+            <a href="#benefits" className="transition hover:text-[#1b2a44]">
+              Benefits
+            </a>
+            <a href="#integrations" className="transition hover:text-[#1b2a44]">
+              Integrations
+            </a>
+          </nav>
+
+          <div className="flex items-center gap-2.5 sm:gap-4">
+            <Link
+              href="/signup"
+              className="inline-flex h-10 items-center px-2 text-[1.05rem] font-semibold text-[#3349ff] transition hover:text-[#2037f7]"
+            >
+              Login
+            </Link>
+            <a
+              href="#demo"
+              className="inline-flex h-12 items-center rounded-xl border border-[#3349ff] px-6 text-[1.05rem] font-semibold text-[#3349ff] transition hover:bg-[#f4f6ff]"
+            >
+              Get demo
+            </a>
+          </div>
         </div>
       </header>
 
@@ -208,7 +225,7 @@ export default function HomePage() {
           </div>
         </section>
 
-        <section id="workflow" className="mt-16 rounded-3xl border border-[#e4dac7] bg-white px-6 py-8 sm:px-8 sm:py-10">
+        <section id="benefits" className="mt-16 rounded-3xl border border-[#e4dac7] bg-white px-6 py-8 sm:px-8 sm:py-10">
           <h2 className={`${spaceGrotesk.className} text-3xl font-semibold text-[#101827]`}>
             Simple workflow from draft to publish
           </h2>
@@ -224,6 +241,22 @@ export default function HomePage() {
                 </h3>
                 <p className="mt-2 text-sm leading-relaxed text-[#4c596e]">{step.detail}</p>
               </article>
+            ))}
+          </div>
+        </section>
+
+        <section id="integrations" className="mt-16 rounded-3xl border border-[#e4dac7] bg-[#fffdfa] px-6 py-8 sm:px-8 sm:py-10">
+          <h2 className={`${spaceGrotesk.className} text-3xl font-semibold text-[#101827]`}>
+            Integrations that fit your stack
+          </h2>
+          <p className="mt-3 max-w-2xl text-[#4c596e]">
+            Connect roster data with tools your operations team already uses.
+          </p>
+          <div className="mt-7 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+            {["Next.js", "Prisma", "PostgreSQL", "CSV Export"].map((item) => (
+              <div key={item} className="rounded-xl border border-[#e6dcc9] bg-white px-4 py-3 text-sm font-semibold text-[#27374f]">
+                {item}
+              </div>
             ))}
           </div>
         </section>
@@ -252,7 +285,7 @@ export default function HomePage() {
           </div>
         </section>
 
-        <section className="mt-16 rounded-3xl border border-[#e4dac7] bg-white px-6 py-9 text-center sm:px-8 sm:py-11">
+        <section id="demo" className="mt-16 rounded-3xl border border-[#e4dac7] bg-white px-6 py-9 text-center sm:px-8 sm:py-11">
           <h2 className={`${spaceGrotesk.className} text-3xl font-semibold text-[#101827]`}>
             Ready to simplify your next roster?
           </h2>
