@@ -1,429 +1,280 @@
-"use client";
-
-import React, { useEffect, useMemo, useState } from "react";
-import { useRouter } from "next/navigation";
+import Link from "next/link";
 import {
-  ArrowLeft,
   ArrowRight,
-  CalendarCheck2,
-  ClipboardCheck,
-  FolderOpen,
-  Mail,
-  MessageSquare,
+  CalendarClock,
+  CheckCheck,
+  ClipboardList,
+  Download,
   ShieldCheck,
-  UserCircle2,
+  Sparkles,
 } from "lucide-react";
-import { Poppins } from "next/font/google";
+import { DM_Sans, Space_Grotesk } from "next/font/google";
 
-const poppins = Poppins({
+const dmSans = DM_Sans({
   subsets: ["latin"],
-  weight: ["400", "500", "600", "700"],
+  weight: ["400", "500", "700"],
   display: "swap",
 });
 
-type Editor = { id: string; name: string; isAdmin?: boolean };
-type Account = { id: string; name: string; company: string; editors: Editor[] };
-type FlowStep = "email" | "picker";
-type QuickLoginOption = {
-  accountId: string;
-  editorId: string;
-  editorName: string;
-  accountLabel: string;
-  email: string;
-};
+const spaceGrotesk = Space_Grotesk({
+  subsets: ["latin"],
+  weight: ["500", "600", "700"],
+  display: "swap",
+});
 
-const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const features = [
+  {
+    title: "Plan once, reuse every month",
+    detail:
+      "Save repeating shifts and templates so your next roster starts 80% done.",
+    icon: CalendarClock,
+  },
+  {
+    title: "Keep everyone in sync",
+    detail:
+      "Task, people, and day views stay connected so handovers are clear and fast.",
+    icon: ClipboardList,
+  },
+  {
+    title: "Export when you need it",
+    detail:
+      "Download clean roster outputs for operations, reporting, or compliance checks.",
+    icon: Download,
+  },
+  {
+    title: "Built-in access controls",
+    detail:
+      "Editor and admin permissions keep updates safe without slowing your team down.",
+    icon: ShieldCheck,
+  },
+];
 
-function toSlugToken(value: string) {
-  const normalized = value
-    .toLowerCase()
-    .trim()
-    .replace(/[^a-z0-9]+/g, ".")
-    .replace(/(^\.+|\.+$)/g, "");
-  return normalized || "editor";
-}
-
-function defaultEmailForEditor(editor: Editor) {
-  return `${toSlugToken(editor.id || editor.name)}@rostergenerator.com`;
-}
+const workflow = [
+  {
+    title: "Choose a month",
+    detail: "Start from a blank board or use your saved template.",
+  },
+  {
+    title: "Assign people and tasks",
+    detail: "Drop tasks into shifts and quickly rebalance your coverage.",
+  },
+  {
+    title: "Publish and iterate",
+    detail: "Update in minutes as availability changes across the month.",
+  },
+];
 
 export default function HomePage() {
-  const router = useRouter();
-  const [accounts, setAccounts] = useState<Account[]>([]);
-  const [selectedAccount, setSelectedAccount] = useState("");
-  const [selectedEditor, setSelectedEditor] = useState("");
-  const [email, setEmail] = useState("");
-  const [flowStep, setFlowStep] = useState<FlowStep>("email");
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
-
-  useEffect(() => {
-    fetch("/api/auth/session")
-      .then((res) => (res.ok ? res.json() : { session: null }))
-      .then((data) => {
-        if (data?.session) {
-          router.replace("/editor");
-        }
-      })
-      .catch(() => null);
-  }, [router]);
-
-  useEffect(() => {
-    let active = true;
-    fetch("/api/auth/accounts")
-      .then((res) => (res.ok ? res.json() : []))
-      .then((data) => {
-        if (!active) return;
-        const list = Array.isArray(data) ? data : [];
-        setAccounts(list);
-        const firstAccount = list[0];
-        if (firstAccount) {
-          setSelectedAccount(firstAccount.id);
-          const firstEditor = firstAccount.editors?.[0];
-          if (firstEditor) {
-            setSelectedEditor(firstEditor.id);
-            setEmail((current) => current || defaultEmailForEditor(firstEditor));
-          }
-        }
-      })
-      .finally(() => {
-        if (active) setLoading(false);
-      });
-
-    return () => {
-      active = false;
-    };
-  }, []);
-
-  const activeAccount = useMemo(
-    () => accounts.find((account) => account.id === selectedAccount) || accounts[0],
-    [accounts, selectedAccount]
-  );
-
-  const activeEditor = useMemo(
-    () => activeAccount?.editors?.find((editor) => editor.id === selectedEditor) || null,
-    [activeAccount, selectedEditor]
-  );
-  const quickLoginOptions = useMemo<QuickLoginOption[]>(
-    () =>
-      accounts
-        .flatMap((account) =>
-          (account.editors || []).map((editor) => ({
-            accountId: account.id,
-            editorId: editor.id,
-            editorName: editor.name,
-            accountLabel: `${account.name} (${account.company})`,
-            email: defaultEmailForEditor(editor),
-          }))
-        )
-        .slice(0, 5),
-    [accounts]
-  );
-
-  useEffect(() => {
-    if (!activeAccount) return;
-    if (!activeAccount.editors?.some((editor) => editor.id === selectedEditor)) {
-      setSelectedEditor(activeAccount.editors?.[0]?.id || "");
-    }
-  }, [activeAccount, selectedEditor]);
-
-  function handleBeginFlow(event: React.FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    setError("");
-
-    const trimmed = email.trim();
-    if (!trimmed) {
-      setError("Enter your email to continue.");
-      return;
-    }
-    if (!EMAIL_REGEX.test(trimmed)) {
-      setError("Enter a valid email address.");
-      return;
-    }
-
-    setEmail(trimmed);
-    setFlowStep("picker");
-  }
-
-  function handleApplyQuickOption(option: QuickLoginOption) {
-    setError("");
-    setEmail(option.email);
-    setSelectedAccount(option.accountId);
-    setSelectedEditor(option.editorId);
-    setFlowStep("picker");
-  }
-
-  async function handleLogin(event: React.FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    setError("");
-
-    if (!activeAccount || !selectedEditor) {
-      setError("Select an account and editor to continue.");
-      return;
-    }
-
-    try {
-      const res = await fetch("/api/auth/session", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ accountId: activeAccount.id, editorId: selectedEditor }),
-      });
-
-      if (!res.ok) throw new Error("Login failed");
-      router.push("/editor");
-    } catch {
-      setError("Could not start a session. Please try again.");
-    }
-  }
-
   return (
-    <div className={`${poppins.className} min-h-screen bg-[#f2f2f4]`}>
-      <div className="grid min-h-screen grid-cols-1 lg:grid-cols-2">
-        <section className="relative isolate overflow-hidden bg-[linear-gradient(180deg,#3839e9_0%,#2a2ca9_58%,#1f227f_100%)] text-white">
-          <div className="pointer-events-none absolute inset-0">
-            <div className="absolute -left-28 top-24 h-72 w-72 rounded-full bg-white/10 blur-3xl" />
-            <div className="absolute right-[-110px] top-1/3 h-80 w-80 rounded-full bg-[#7685ff]/20 blur-3xl" />
-            <div className="absolute bottom-[-140px] left-1/2 h-80 w-80 -translate-x-1/2 rounded-full bg-[#a2b0ff]/15 blur-3xl" />
+    <div className={`${dmSans.className} min-h-screen bg-[#f7f3e8] text-[#1f2733]`}>
+      <header className="mx-auto flex w-full max-w-6xl items-center justify-between px-6 py-6 sm:px-10">
+        <Link href="/" className="text-base font-bold tracking-[0.08em] text-[#18202f] uppercase">
+          Roster Planner
+        </Link>
+
+        <nav className="hidden items-center gap-8 text-sm font-medium text-[#49556b] md:flex">
+          <a href="#features" className="transition hover:text-[#18202f]">
+            Features
+          </a>
+          <a href="#workflow" className="transition hover:text-[#18202f]">
+            Workflow
+          </a>
+          <a href="#pricing" className="transition hover:text-[#18202f]">
+            Pricing
+          </a>
+        </nav>
+
+        <div className="flex items-center gap-3">
+          <Link
+            href="/signup"
+            className="inline-flex h-10 items-center rounded-full border border-[#d8d0bf] bg-white px-5 text-sm font-semibold text-[#253043] transition hover:border-[#c7bcaa] hover:bg-[#fffdf8]"
+          >
+            Sign in
+          </Link>
+        </div>
+      </header>
+
+      <main className="mx-auto w-full max-w-6xl px-6 pb-20 sm:px-10">
+        <section className="grid gap-12 rounded-[30px] bg-[linear-gradient(140deg,#fffdf8_0%,#fff5d9_60%,#f5efe0_100%)] px-7 py-10 shadow-[0_30px_70px_rgba(39,34,23,0.1)] lg:grid-cols-[1.1fr_0.9fr] lg:gap-10 lg:px-12 lg:py-14">
+          <div className="hero-copy-animate">
+            <div className="inline-flex items-center gap-2 rounded-full border border-[#e8dfcd] bg-white/90 px-3 py-1 text-xs font-semibold uppercase tracking-[0.1em] text-[#516078]">
+              <Sparkles className="h-3.5 w-3.5" />
+              Straightforward rostering software
+            </div>
+
+            <h1
+              className={`${spaceGrotesk.className} mt-5 text-[2.2rem] font-semibold leading-[1.06] text-[#101827] sm:text-[3rem] lg:text-[3.35rem]`}
+            >
+              Build accurate staff rosters in minutes.
+            </h1>
+
+            <p className="mt-5 max-w-xl text-[1.05rem] leading-relaxed text-[#465267] sm:text-lg">
+              Roster Planner gives operations teams one clear place to schedule people, shifts, and tasks without spreadsheet overhead.
+            </p>
+
+            <div className="mt-8 flex flex-wrap items-center gap-3">
+              <Link
+                href="/signup"
+                className="inline-flex h-11 items-center gap-2 rounded-full bg-[#16263f] px-6 text-sm font-semibold text-white transition hover:bg-[#0f1e34]"
+              >
+                Start for free
+                <ArrowRight className="h-4 w-4" />
+              </Link>
+              <a
+                href="#features"
+                className="inline-flex h-11 items-center rounded-full border border-[#d0c8b7] px-6 text-sm font-semibold text-[#253043] transition hover:border-[#bcb19d] hover:bg-white"
+              >
+                See features
+              </a>
+            </div>
+
+            <div className="mt-9 grid gap-3 text-sm text-[#3b4658] sm:grid-cols-3">
+              <div className="rounded-2xl border border-[#ebe1ce] bg-white/80 px-4 py-3">
+                <p className="text-xl font-bold text-[#111827]">5 min</p>
+                <p className="mt-1 text-xs uppercase tracking-[0.08em]">Average setup time</p>
+              </div>
+              <div className="rounded-2xl border border-[#ebe1ce] bg-white/80 px-4 py-3">
+                <p className="text-xl font-bold text-[#111827]">1 place</p>
+                <p className="mt-1 text-xs uppercase tracking-[0.08em]">People, shifts, tasks</p>
+              </div>
+              <div className="rounded-2xl border border-[#ebe1ce] bg-white/80 px-4 py-3">
+                <p className="text-xl font-bold text-[#111827]">0 clutter</p>
+                <p className="mt-1 text-xs uppercase tracking-[0.08em]">Clear daily view</p>
+              </div>
+            </div>
           </div>
 
-          <div className="relative mx-auto flex h-full w-full max-w-[720px] flex-col px-8 py-10 sm:px-12 sm:py-12">
-            <div className="flex items-center gap-3 text-white">
-              <div className="grid h-12 w-12 place-items-center rounded-xl bg-white/14 shadow-lg ring-1 ring-white/35 backdrop-blur-sm">
-                <ClipboardCheck className="h-7 w-7" strokeWidth={2.2} />
+          <div className="relative overflow-hidden rounded-[24px] border border-[#eadfca] bg-[#14243d] px-5 py-6 text-white sm:px-7 sm:py-7">
+            <div className="absolute -right-16 -top-20 h-40 w-40 rounded-full bg-[#f6c665]/25 blur-3xl" />
+            <div className="absolute -left-10 bottom-0 h-44 w-44 rounded-full bg-[#61b5a0]/20 blur-3xl" />
+
+            <div className="relative space-y-4">
+              <div className="flex items-center justify-between rounded-xl border border-white/20 bg-white/10 px-4 py-2">
+                <p className="text-sm font-semibold">March 2026 Roster</p>
+                <span className="rounded-full bg-white/20 px-2 py-1 text-[10px] font-bold uppercase tracking-[0.08em]">
+                  Live
+                </span>
               </div>
-              <span className="text-[2.6rem] font-semibold tracking-tight">Roster Generator</span>
-            </div>
 
-            <div className="relative mx-auto flex w-full max-w-[460px] flex-1 items-center justify-center">
-              <div className="absolute left-[50%] top-[53%] h-36 w-72 -translate-x-1/2 -translate-y-1/2 rounded-[22px] border border-white/15 bg-[#3947cf]/45 stack-shadow" />
-              <div className="absolute left-[50%] top-[47%] h-36 w-72 -translate-x-1/2 -translate-y-1/2 rounded-[22px] border border-white/15 bg-[#7788ff]/45 stack-shadow" />
-              <div className="absolute left-[50%] top-[41%] h-36 w-72 -translate-x-1/2 -translate-y-1/2 rounded-[22px] border border-white/20 bg-[#9aa8ff]/45 stack-shadow" />
-
-              <div className="rise-in absolute left-[50%] top-[29%] flex h-44 w-56 -translate-x-1/2 -translate-y-1/2 flex-col rounded-[28px] border border-white/25 bg-[#4d58f1]/80 p-5 shadow-2xl backdrop-blur-sm">
-                <div className="flex items-center justify-between text-white/90">
-                  <UserCircle2 className="h-8 w-8" />
-                  <ShieldCheck className="h-5 w-5" />
+              <div className="grid gap-2">
+                <div className="row-slide-animate rounded-xl border border-[#2e4b6f] bg-[#1d3252] p-3">
+                  <p className="text-xs uppercase tracking-[0.1em] text-[#a8bfd9]">Morning</p>
+                  <p className="mt-1 text-sm font-semibold">Front Desk, Gallery Prep, Tours</p>
                 </div>
-                <div className="mt-6 h-3 w-24 rounded-full bg-white/35" />
-                <div className="mt-3 h-3 w-16 rounded-full bg-white/30" />
-                <div className="mt-5 flex h-12 items-center justify-center rounded-xl bg-white/80 text-[#3d49d4] shadow">
-                  <ClipboardCheck className="h-8 w-8" />
+                <div className="row-slide-animate rounded-xl border border-[#2e4b6f] bg-[#1d3252] p-3" style={{ animationDelay: "320ms" }}>
+                  <p className="text-xs uppercase tracking-[0.1em] text-[#a8bfd9]">Midday</p>
+                  <p className="mt-1 text-sm font-semibold">Cashier Rotation, Break Coverage</p>
+                </div>
+                <div className="row-slide-animate rounded-xl border border-[#2e4b6f] bg-[#1d3252] p-3" style={{ animationDelay: "430ms" }}>
+                  <p className="text-xs uppercase tracking-[0.1em] text-[#a8bfd9]">Afternoon</p>
+                  <p className="mt-1 text-sm font-semibold">Tours, Cleaning, Close Checklist</p>
                 </div>
               </div>
 
-              <div className="float-slow absolute left-10 top-28 grid h-11 w-11 place-items-center rounded-xl bg-[#f95b72] text-white shadow-lg">
-                <CalendarCheck2 className="h-5 w-5" />
+              <div className="rounded-xl border border-[#385b84] bg-[#1a2f4e] px-4 py-3">
+                <p className="flex items-center gap-2 text-sm font-medium text-[#d2deec]">
+                  <CheckCheck className="h-4 w-4 text-[#8ce3bd]" />
+                  No shift conflicts detected
+                </p>
               </div>
-              <div className="float-fast absolute right-9 top-24 grid h-11 w-11 place-items-center rounded-xl bg-[#8f84ff] text-white shadow-lg">
-                <MessageSquare className="h-5 w-5" />
-              </div>
-              <div className="float-slow absolute right-14 top-[52%] grid h-11 w-11 place-items-center rounded-xl bg-[#ff8f2f] text-white shadow-lg">
-                <FolderOpen className="h-5 w-5" />
-              </div>
-            </div>
-
-            <div className="pb-5 text-center">
-              <h2 className="text-[2.85rem] font-semibold tracking-tight">Run great activities!</h2>
-              <p className="mx-auto mt-3 max-w-[550px] text-lg text-white/90">
-                Designed to help save time, improve communication and much more.
-              </p>
             </div>
           </div>
         </section>
 
-        <section className="flex items-center justify-center px-6 py-12 sm:px-10">
-          <div className="w-full max-w-[390px]">
-            <h1 className="text-[3rem] font-semibold leading-[1.12] tracking-tight text-[#0f172a]">Log in to Roster Generator</h1>
+        <section id="features" className="mt-16">
+          <h2 className={`${spaceGrotesk.className} text-3xl font-semibold text-[#101827]`}>
+            Everything you need, nothing you do not
+          </h2>
+          <p className="mt-3 max-w-2xl text-[#4c596e]">
+            Built for teams that want clean scheduling workflows, clear ownership, and faster monthly planning.
+          </p>
 
-            <div className="mt-10 space-y-5">
-              {flowStep === "email" ? (
-                <form className="space-y-5" onSubmit={handleBeginFlow}>
-                  <div className="relative">
-                    <label htmlFor="email" className="pointer-events-none absolute left-3 top-2 text-[11px] font-semibold tracking-[0.02em] text-[#f16f80]">
-                      Email*
-                    </label>
-                    <input
-                      id="email"
-                      type="email"
-                      autoComplete="email"
-                      value={email}
-                      onChange={(event) => setEmail(event.target.value)}
-                      disabled={loading}
-                      className="h-14 w-full rounded-[4px] border border-[#e6e6e6] border-b-[#ea6a7b] bg-[#e9e9ea] px-3 pb-1 pt-5 pr-12 text-[15px] text-slate-900 shadow-[inset_0_1px_0_rgba(255,255,255,0.35)] outline-none transition focus:border-[#6074ff] focus:ring-2 focus:ring-[#6074ff]/20"
-                    />
-                    <Mail className="pointer-events-none absolute right-3 top-1/2 h-[18px] w-[18px] -translate-y-1/2 text-slate-500" />
-                  </div>
+          <div className="mt-8 grid gap-4 md:grid-cols-2">
+            {features.map(({ title, detail, icon: Icon }, index) => (
+              <article
+                key={title}
+                className="feature-card-animate rounded-2xl border border-[#e6dcc9] bg-[#fffdf8] p-5"
+                style={{ animationDelay: `${120 + index * 90}ms` }}
+              >
+                <span className="inline-flex h-10 w-10 items-center justify-center rounded-xl bg-[#f8f0de] text-[#253043]">
+                  <Icon className="h-5 w-5" />
+                </span>
+                <h3 className={`${spaceGrotesk.className} mt-4 text-xl font-semibold text-[#132033]`}>
+                  {title}
+                </h3>
+                <p className="mt-2 text-sm leading-relaxed text-[#4c596e]">{detail}</p>
+              </article>
+            ))}
+          </div>
+        </section>
 
-                  {quickLoginOptions.length > 0 && (
-                    <div className="space-y-2">
-                      <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-500">Quick autofill options</p>
-                      <div className="grid gap-2">
-                        {quickLoginOptions.map((option) => (
-                          <button
-                            key={`${option.accountId}:${option.editorId}`}
-                            type="button"
-                            disabled={loading}
-                            onClick={() => handleApplyQuickOption(option)}
-                            className="flex w-full items-center justify-between rounded-[8px] border border-slate-200 bg-white px-3 py-2 text-left transition hover:border-[#8e9af8] hover:bg-[#f7f8ff] disabled:cursor-not-allowed disabled:opacity-60"
-                          >
-                            <span className="min-w-0 pr-2">
-                              <span className="block truncate text-[13px] font-semibold text-slate-800">{option.editorName}</span>
-                              <span className="block truncate text-[11px] text-slate-500">{option.accountLabel}</span>
-                            </span>
-                            <span className="truncate text-[11px] font-medium text-[#4d58f1]">{option.email}</span>
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-                  )}
+        <section id="workflow" className="mt-16 rounded-3xl border border-[#e4dac7] bg-white px-6 py-8 sm:px-8 sm:py-10">
+          <h2 className={`${spaceGrotesk.className} text-3xl font-semibold text-[#101827]`}>
+            Simple workflow from draft to publish
+          </h2>
 
-                  <button
-                    type="submit"
-                    disabled={loading}
-                    className="mx-auto flex h-11 w-[182px] items-center justify-center gap-2 rounded-[4px] border border-[#4f58ef] bg-[#4f58ef] px-4 text-[1.05rem] font-semibold text-white shadow-[0_6px_14px_rgba(71,84,232,0.32)] transition hover:bg-[#434cdf] disabled:cursor-not-allowed disabled:opacity-70"
-                  >
-                    <ArrowRight className="h-[18px] w-[18px]" />
-                    Let&apos;s Go
-                  </button>
-                </form>
-              ) : (
-                <form className="space-y-4" onSubmit={handleLogin}>
-                  <div className="rounded-[10px] border border-slate-200 bg-white px-3 py-2">
-                    <p className="text-[11px] uppercase tracking-[0.18em] text-slate-400">Email</p>
-                    <p className="truncate text-sm font-medium text-slate-700">{email}</p>
-                  </div>
+          <div className="mt-7 grid gap-5 md:grid-cols-3">
+            {workflow.map((step, index) => (
+              <article key={step.title} className="rounded-2xl border border-[#ece3d2] bg-[#fffdfa] p-5">
+                <p className="text-xs font-semibold uppercase tracking-[0.1em] text-[#6f7d95]">
+                  Step {index + 1}
+                </p>
+                <h3 className={`${spaceGrotesk.className} mt-3 text-xl font-semibold text-[#132033]`}>
+                  {step.title}
+                </h3>
+                <p className="mt-2 text-sm leading-relaxed text-[#4c596e]">{step.detail}</p>
+              </article>
+            ))}
+          </div>
+        </section>
 
-                  <div className="space-y-1">
-                    <label htmlFor="account" className="text-sm font-semibold text-slate-700">
-                      Account
-                    </label>
-                    <select
-                      id="account"
-                      className="input h-11 w-full text-sm"
-                      value={activeAccount?.id || ""}
-                      onChange={(event) => setSelectedAccount(event.target.value)}
-                      disabled={loading || accounts.length === 0}
-                    >
-                      {accounts.map((account) => (
-                        <option key={account.id} value={account.id}>
-                          {account.name} ({account.company})
-                        </option>
-                      ))}
-                    </select>
-                  </div>
+        <section id="pricing" className="mt-16 grid gap-4 rounded-3xl bg-[#13233a] px-6 py-8 text-white sm:px-8 sm:py-10 md:grid-cols-2 md:gap-6">
+          <div>
+            <h2 className={`${spaceGrotesk.className} text-3xl font-semibold`}>
+              Pricing that stays predictable
+            </h2>
+            <p className="mt-3 max-w-md text-sm leading-relaxed text-[#c7d6e9]">
+              Start free and move to a paid plan only when your team needs advanced admin controls and higher usage limits.
+            </p>
+          </div>
 
-                  <div className="space-y-1">
-                    <label htmlFor="editor" className="text-sm font-semibold text-slate-700">
-                      Editor
-                    </label>
-                    <select
-                      id="editor"
-                      className="input h-11 w-full text-sm"
-                      value={selectedEditor}
-                      onChange={(event) => setSelectedEditor(event.target.value)}
-                      disabled={loading || !activeAccount}
-                    >
-                      {(activeAccount?.editors || []).map((editor) => (
-                        <option key={editor.id} value={editor.id}>
-                          {editor.name}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-
-                  {activeEditor?.isAdmin && (
-                    <p className="text-xs text-slate-500">Admin access is enabled for this editor.</p>
-                  )}
-
-                  <div className="flex items-center gap-3 pt-1">
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setError("");
-                        setFlowStep("email");
-                      }}
-                      className="btn h-11 min-w-[110px]"
-                    >
-                      <ArrowLeft className="h-4 w-4" />
-                      Back
-                    </button>
-
-                    <button
-                      type="submit"
-                      disabled={loading || !selectedEditor}
-                      className="flex h-11 flex-1 items-center justify-center gap-2 rounded-[4px] border border-[#4f58ef] bg-[#4f58ef] px-4 text-sm font-semibold text-white shadow-[0_6px_14px_rgba(71,84,232,0.32)] transition hover:bg-[#434cdf] disabled:cursor-not-allowed disabled:opacity-70"
-                    >
-                      Continue to editor
-                      <ArrowRight className="h-4 w-4" />
-                    </button>
-                  </div>
-                </form>
-              )}
-
-              {!loading && accounts.length === 0 && (
-                <p className="text-sm text-rose-600">No accounts are available in this environment.</p>
-              )}
-
-              {error && <p className="text-sm text-rose-600">{error}</p>}
+          <div className="grid gap-3">
+            <div className="rounded-2xl border border-white/20 bg-white/10 px-5 py-4">
+              <p className="text-sm font-semibold uppercase tracking-[0.1em] text-[#bed0e7]">Starter</p>
+              <p className="mt-2 text-2xl font-bold">$0</p>
+              <p className="mt-1 text-sm text-[#d8e3f1]">Up to 3 editors, monthly roster planning included</p>
+            </div>
+            <div className="rounded-2xl border border-[#f7d486] bg-[#f6c665] px-5 py-4 text-[#1d2430]">
+              <p className="text-sm font-semibold uppercase tracking-[0.1em]">Operations Pro</p>
+              <p className="mt-2 text-2xl font-bold">$29 / month</p>
+              <p className="mt-1 text-sm">Unlimited editors, advanced admin controls, priority support</p>
             </div>
           </div>
         </section>
-      </div>
 
-      <style jsx>{`
-        .stack-shadow {
-          box-shadow: 0 18px 32px rgba(12, 21, 88, 0.33);
-        }
+        <section className="mt-16 rounded-3xl border border-[#e4dac7] bg-white px-6 py-9 text-center sm:px-8 sm:py-11">
+          <h2 className={`${spaceGrotesk.className} text-3xl font-semibold text-[#101827]`}>
+            Ready to simplify your next roster?
+          </h2>
+          <p className="mx-auto mt-3 max-w-xl text-sm leading-relaxed text-[#4c596e] sm:text-base">
+            Create an account and publish your first schedule in one sitting.
+          </p>
+          <div className="mt-7 flex flex-wrap justify-center gap-3">
+            <Link
+              href="/signup"
+              className="inline-flex h-11 items-center gap-2 rounded-full bg-[#16263f] px-6 text-sm font-semibold text-white transition hover:bg-[#0f1e34]"
+            >
+              Open Roster Planner
+              <ArrowRight className="h-4 w-4" />
+            </Link>
+          </div>
+        </section>
+      </main>
 
-        .rise-in {
-          animation: riseIn 650ms cubic-bezier(0.22, 1, 0.36, 1);
-        }
+      <footer className="border-t border-[#e5dcc8] px-6 py-6 text-center text-xs font-medium uppercase tracking-[0.1em] text-[#5f6c82] sm:px-10">
+        Roster Planner
+      </footer>
 
-        .float-slow {
-          animation: floatSlow 6.8s ease-in-out infinite;
-        }
-
-        .float-fast {
-          animation: floatFast 4.6s ease-in-out infinite;
-        }
-
-        @keyframes riseIn {
-          from {
-            opacity: 0;
-            transform: translate(-50%, -46%);
-          }
-          to {
-            opacity: 1;
-            transform: translate(-50%, -50%);
-          }
-        }
-
-        @keyframes floatSlow {
-          0%,
-          100% {
-            transform: translateY(0px);
-          }
-          50% {
-            transform: translateY(-10px);
-          }
-        }
-
-        @keyframes floatFast {
-          0%,
-          100% {
-            transform: translateY(-3px);
-          }
-          50% {
-            transform: translateY(9px);
-          }
-        }
-
-        @media (max-width: 1023px) {
-          section:first-child {
-            min-height: 46vh;
-          }
-        }
-      `}</style>
     </div>
   );
 }

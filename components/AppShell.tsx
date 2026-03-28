@@ -26,14 +26,14 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
       .then((data) => {
         if (!active) return;
         if (!data?.session) {
-          router.replace("/");
+          router.replace("/signup");
           return;
         }
         setAuthReady(true);
       })
       .catch(() => {
         if (!active) return;
-        router.replace("/");
+        router.replace("/signup");
       });
     return () => {
       active = false;
