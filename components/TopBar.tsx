@@ -94,7 +94,7 @@ export default function TopBar({
                 <Redo2 className="w-4 h-4" /> Redo
               </button>
               <button className="btn h-9 w-full justify-center whitespace-nowrap text-[13px] sm:w-auto" onClick={handleAddEmployee}>
-                <Plus className="w-4 h-4" /> Add Employee
+                <Plus className="w-4 h-4" /> Add person
               </button>
               <button className="btn h-9 w-full justify-center whitespace-nowrap text-[13px] sm:w-auto" onClick={handleAutofill}>
                 <Sparkles className="w-4 h-4" /> Autofill

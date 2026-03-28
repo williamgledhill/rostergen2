@@ -13,13 +13,6 @@ import {
   ShieldCheck,
   UserCircle2,
 } from "lucide-react";
-import { Poppins } from "next/font/google";
-
-const poppins = Poppins({
-  subsets: ["latin"],
-  weight: ["400", "500", "600", "700"],
-  display: "swap",
-});
 
 type Editor = { id: string; name: string; isAdmin?: boolean };
 type Account = { id: string; name: string; company: string; editors: Editor[] };
@@ -177,7 +170,7 @@ export default function SignupPage() {
   }
 
   return (
-    <div className={`${poppins.className} min-h-screen bg-[#f2f2f4]`}>
+    <div className="min-h-screen bg-[#f2f2f4]">
       <div className="grid min-h-screen grid-cols-1 lg:grid-cols-2">
         <section className="relative isolate overflow-hidden bg-[linear-gradient(180deg,#3839e9_0%,#2a2ca9_58%,#1f227f_100%)] text-white">
           <div className="pointer-events-none absolute inset-0">

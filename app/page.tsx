@@ -8,23 +8,11 @@ import {
   ShieldCheck,
   Sparkles,
 } from "lucide-react";
-import { DM_Sans, Poppins, Space_Grotesk } from "next/font/google";
+import { Inter } from "next/font/google";
 
-const dmSans = DM_Sans({
+const inter = Inter({
   subsets: ["latin"],
-  weight: ["400", "500", "700"],
-  display: "swap",
-});
-
-const spaceGrotesk = Space_Grotesk({
-  subsets: ["latin"],
-  weight: ["500", "600", "700"],
-  display: "swap",
-});
-
-const poppins = Poppins({
-  subsets: ["latin"],
-  weight: ["600", "700"],
+  weight: ["400", "500", "600", "700"],
   display: "swap",
 });
 
@@ -72,12 +60,12 @@ const workflow = [
 
 export default function HomePage() {
   return (
-    <div className={`${dmSans.className} min-h-screen bg-[#f7f3e8] text-[#1f2733]`}>
+    <div className={`${inter.className} min-h-screen bg-[#f7f3e8] text-[#1f2733]`}>
       <header className="sticky top-0 z-50 border-b border-[#e2e7f0] bg-white">
         <div className="mx-auto flex w-full max-w-6xl items-center justify-between px-6 py-4 sm:px-10">
           <Link
             href="/"
-            className={`${poppins.className} inline-flex items-center text-[1.85rem] font-semibold tracking-[-0.02em] text-[#1b2a44]`}
+            className="inline-flex items-center text-[1.85rem] font-semibold tracking-[-0.02em] text-[#1b2a44]"
           >
             Roster Generator
           </Link>
@@ -119,9 +107,7 @@ export default function HomePage() {
               Straightforward rostering software
             </div>
 
-            <h1
-              className={`${spaceGrotesk.className} mt-5 text-[2.2rem] font-semibold leading-[1.06] text-[#101827] sm:text-[3rem] lg:text-[3.35rem]`}
-            >
+            <h1 className="mt-5 text-[2.2rem] font-semibold leading-[1.06] text-[#101827] sm:text-[3rem] lg:text-[3.35rem]">
               Build accurate staff rosters in minutes.
             </h1>
 
@@ -199,7 +185,7 @@ export default function HomePage() {
         </section>
 
         <section id="features" className="mt-16">
-          <h2 className={`${spaceGrotesk.className} text-3xl font-semibold text-[#101827]`}>
+          <h2 className="text-3xl font-semibold text-[#101827]">
             Everything you need, nothing you do not
           </h2>
           <p className="mt-3 max-w-2xl text-[#4c596e]">
@@ -216,7 +202,7 @@ export default function HomePage() {
                 <span className="inline-flex h-10 w-10 items-center justify-center rounded-xl bg-[#f8f0de] text-[#253043]">
                   <Icon className="h-5 w-5" />
                 </span>
-                <h3 className={`${spaceGrotesk.className} mt-4 text-xl font-semibold text-[#132033]`}>
+                <h3 className="mt-4 text-xl font-semibold text-[#132033]">
                   {title}
                 </h3>
                 <p className="mt-2 text-sm leading-relaxed text-[#4c596e]">{detail}</p>
@@ -226,7 +212,7 @@ export default function HomePage() {
         </section>
 
         <section id="benefits" className="mt-16 rounded-3xl border border-[#e4dac7] bg-white px-6 py-8 sm:px-8 sm:py-10">
-          <h2 className={`${spaceGrotesk.className} text-3xl font-semibold text-[#101827]`}>
+          <h2 className="text-3xl font-semibold text-[#101827]">
             Simple workflow from draft to publish
           </h2>
 
@@ -236,7 +222,7 @@ export default function HomePage() {
                 <p className="text-xs font-semibold uppercase tracking-[0.1em] text-[#6f7d95]">
                   Step {index + 1}
                 </p>
-                <h3 className={`${spaceGrotesk.className} mt-3 text-xl font-semibold text-[#132033]`}>
+                <h3 className="mt-3 text-xl font-semibold text-[#132033]">
                   {step.title}
                 </h3>
                 <p className="mt-2 text-sm leading-relaxed text-[#4c596e]">{step.detail}</p>
@@ -246,7 +232,7 @@ export default function HomePage() {
         </section>
 
         <section id="integrations" className="mt-16 rounded-3xl border border-[#e4dac7] bg-[#fffdfa] px-6 py-8 sm:px-8 sm:py-10">
-          <h2 className={`${spaceGrotesk.className} text-3xl font-semibold text-[#101827]`}>
+          <h2 className="text-3xl font-semibold text-[#101827]">
             Integrations that fit your stack
           </h2>
           <p className="mt-3 max-w-2xl text-[#4c596e]">
@@ -263,7 +249,7 @@ export default function HomePage() {
 
         <section id="pricing" className="mt-16 grid gap-4 rounded-3xl bg-[#13233a] px-6 py-8 text-white sm:px-8 sm:py-10 md:grid-cols-2 md:gap-6">
           <div>
-            <h2 className={`${spaceGrotesk.className} text-3xl font-semibold`}>
+            <h2 className="text-3xl font-semibold">
               Pricing that stays predictable
             </h2>
             <p className="mt-3 max-w-md text-sm leading-relaxed text-[#c7d6e9]">
@@ -286,7 +272,7 @@ export default function HomePage() {
         </section>
 
         <section id="demo" className="mt-16 rounded-3xl border border-[#e4dac7] bg-white px-6 py-9 text-center sm:px-8 sm:py-11">
-          <h2 className={`${spaceGrotesk.className} text-3xl font-semibold text-[#101827]`}>
+          <h2 className="text-3xl font-semibold text-[#101827]">
             Ready to simplify your next roster?
           </h2>
           <p className="mx-auto mt-3 max-w-xl text-sm leading-relaxed text-[#4c596e] sm:text-base">
