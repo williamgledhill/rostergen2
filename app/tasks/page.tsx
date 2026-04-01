@@ -2,13 +2,14 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Plus } from "lucide-react";
-import { TaskTemplate, defaultTaskTemplates } from "@/lib/taskTemplates";
+import { TaskTemplate } from "@/lib/taskTemplates";
 
 const WEEKDAYS = ["Mon", "Tue", "Wed", "Thu", "Fri"];
 const WEEKENDS = ["Sat", "Sun"];
 
 export default function TasksPage() {
-  const [tasks, setTasks] = useState<TaskTemplate[]>(defaultTaskTemplates);
+  const [tasks, setTasks] = useState<TaskTemplate[]>([]);
+  const [loading, setLoading] = useState(true);
   const router = useRouter();
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const selectAllRef = useRef<HTMLInputElement | null>(null);
@@ -68,11 +69,11 @@ export default function TasksPage() {
         if (!res.ok) throw new Error("Failed");
         const data = await res.json();
         if (!active) return;
-        if (Array.isArray(data) && data.length) {
-          setTasks(data);
-        }
+        setTasks(Array.isArray(data) ? data : []);
       } catch (err) {
         console.error(err);
+      } finally {
+        if (active) setLoading(false);
       }
     }
     load();
@@ -181,7 +182,12 @@ export default function TasksPage() {
                     </td>
                   </tr>
                 ))}
-                {summaries.length === 0 && (
+                {loading && summaries.length === 0 && (
+                  <tr>
+                    <td colSpan={4} className="py-6 text-center text-slate-600">Loading tasks...</td>
+                  </tr>
+                )}
+                {!loading && summaries.length === 0 && (
                   <tr>
                     <td colSpan={4} className="py-6 text-center text-slate-600">No tasks yet. Add one to get started.</td>
                   </tr>

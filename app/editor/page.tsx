@@ -30,24 +30,28 @@ function EditorPageContent() {
   const dayLabel = useMemo(() => formatFullDay(selectedDate), [selectedDate]);
   const dayKey = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"][selectedDate.getDay()];
 
-  const fallbackEmployees = [
-    { id: 1, name: "John" },
-    { id: 2, name: "Robert" },
-    { id: 3, name: "Mary" },
-  ];
-  const fallbackTasks: any[] = [];
-
   const [loaded, setLoaded] = useState<{ employees: any[]; tasks: any[]; hoursStart?: string; hoursEnd?: string } | null>(null);
   const [people, setPeople] = useState<Person[]>([]);
+  const [peopleReady, setPeopleReady] = useState(false);
   const [settings, setSettings] = useState(DEFAULT_SETTINGS);
   const [hours, setHours] = useState<{ start: string; end: string }>(DEFAULT_SETTINGS.hoursByDay.Mon);
   const [hoursTouched, setHoursTouched] = useState(false);
 
   useEffect(() => {
+    setSelectedDate(initialDate ?? new Date());
+  }, [initialDate]);
+
+  useEffect(() => {
     fetch("/api/people")
       .then((res) => (res.ok ? res.json() : []))
-      .then(setPeople)
-      .catch(() => setPeople([]));
+      .then((data) => {
+        setPeople(Array.isArray(data) ? data : []);
+        setPeopleReady(true);
+      })
+      .catch(() => {
+        setPeople([]);
+        setPeopleReady(true);
+      });
   }, []);
 
   useEffect(() => {
@@ -88,19 +92,17 @@ function EditorPageContent() {
     let active = true;
     async function load() {
       if (!rosterDateId) return;
+      if (active) setLoaded(null);
       try {
         const res = await fetch(`/api/rosters?date=${rosterDateId}`);
         if (res.ok) {
           const data = await res.json();
           if (!active) return;
           const baseEmployees = Array.isArray(data?.employees) ? data.employees : [];
-          const derivedEmployees = baseEmployees.length
-            ? baseEmployees
-            : workingPeopleForDate(selectedDate, people);
-          const synced = syncEmployeesWithPeople(derivedEmployees.length ? derivedEmployees : fallbackEmployees, people);
+          const synced = syncEmployeesWithPeople(baseEmployees, people);
           setLoaded({
             employees: synced,
-            tasks: Array.isArray(data?.tasks) ? data.tasks : fallbackTasks,
+            tasks: Array.isArray(data?.tasks) ? data.tasks : [],
             hoursStart: typeof data?.hoursStart === "string" ? data.hoursStart : undefined,
             hoursEnd: typeof data?.hoursEnd === "string" ? data.hoursEnd : undefined,
           });
@@ -109,17 +111,17 @@ function EditorPageContent() {
       } catch (err) {
         console.error(err);
       }
-      if (active) {
+      if (active && peopleReady) {
         const derivedEmployees = workingPeopleForDate(selectedDate, people);
-        const synced = syncEmployeesWithPeople(derivedEmployees.length ? derivedEmployees : fallbackEmployees, people);
-        setLoaded({ employees: synced, tasks: fallbackTasks });
+        const synced = syncEmployeesWithPeople(derivedEmployees, people);
+        setLoaded({ employees: synced, tasks: [] });
       }
     }
     load();
     return () => {
       active = false;
     };
-  }, [rosterDateId, selectedDate, people]);
+  }, [rosterDateId, selectedDate, people, peopleReady]);
 
   const defaultHoursForDay = settings.hoursByDay[dayKey as keyof typeof settings.hoursByDay] || DEFAULT_SETTINGS.hoursByDay.Mon;
 
@@ -134,8 +136,8 @@ function EditorPageContent() {
     setHours({ start, end });
   }, [loaded?.hoursStart, loaded?.hoursEnd, defaultHoursForDay.start, defaultHoursForDay.end, hoursTouched]);
 
-  const employees = loaded?.employees ?? fallbackEmployees;
-  const tasks = loaded?.tasks ?? fallbackTasks;
+  const employees = loaded?.employees ?? null;
+  const tasks = loaded?.tasks ?? [];
 
   return (
     <div className="w-full px-1 py-2 sm:px-2 sm:py-3 md:px-3 md:py-4">
@@ -166,15 +168,22 @@ function EditorPageContent() {
           />
         </div>
 
-        <Grid
-          employees={employees}
-          initialTasks={tasks}
-          rosterDateId={rosterDateId}
-          rosterDate={selectedDate}
-          hoursStart={hours.start}
-          hoursEnd={hours.end}
-          onExportXLS={downloadXLS}
-        />
+        {!employees ? (
+          <div className="w-full rounded-lg border border-[var(--border)] bg-white px-4 py-6 text-sm text-slate-600 shadow-sm">
+            Loading roster...
+          </div>
+        ) : (
+          <Grid
+            employees={employees}
+            initialTasks={tasks}
+            rosterDateId={rosterDateId}
+            rosterDate={selectedDate}
+            hoursStart={hours.start}
+            hoursEnd={hours.end}
+            onExportXLS={downloadXLS}
+            people={people}
+          />
+        )}
       </div>
     </div>
   );

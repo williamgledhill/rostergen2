@@ -24,6 +24,8 @@ type SeedRoster = {
 
 const DATA_DIR = path.join(process.cwd(), "data");
 const DEFAULT_ANCHOR_DATE = "2026-01-05";
+const runtimeSeedEnabled =
+  process.env.APP_RUNTIME_SEED === "true" || process.env.NODE_ENV !== "production";
 let seedPromise: Promise<void> | null = null;
 
 async function readJsonFile<T>(fileName: string): Promise<T | null> {
@@ -332,6 +334,7 @@ async function seedRostersIfNeeded() {
 }
 
 export async function ensureAppPersistenceSeeded() {
+  if (!runtimeSeedEnabled) return;
   if (seedPromise) return seedPromise;
 
   seedPromise = (async () => {

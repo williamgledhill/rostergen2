@@ -128,6 +128,7 @@ export default function Grid({
   hoursStart,
   hoursEnd,
   onExportXLS,
+  people: initialPeople,
 }: {
   employees: Employee[];
   initialTasks: GridTask[];
@@ -136,6 +137,7 @@ export default function Grid({
   hoursStart?: string;
   hoursEnd?: string;
   onExportXLS: (html: string) => void;
+  people?: Person[];
 }) {
   const [employees, setEmployees] = useState<Employee[]>(initialEmployees);
   const [tasks, setTasks] = useState<GridTask[]>(initialTasks);
@@ -149,8 +151,8 @@ export default function Grid({
   const [modal, setModal] = useState<null | { col: number; row: number }>(null);
   const [addOpen, setAddOpen] = useState(false);
   const [employeePickerQuery, setEmployeePickerQuery] = useState("");
-  const [people, setPeople] = useState<Person[]>([]);
-  const [templates, setTemplates] = useState<TaskTemplate[]>(defaultTaskTemplates);
+  const [people, setPeople] = useState<Person[]>(initialPeople ?? []);
+  const [templates, setTemplates] = useState<TaskTemplate[]>([]);
 
   const containerRef = useRef<HTMLDivElement>(null);
   const employeeSettingsRef = useRef<HTMLDivElement>(null);
@@ -338,8 +340,15 @@ export default function Grid({
   }, [dayStartMin, maxRowEx]);
 
   useEffect(() => {
-    fetch("/api/people").then(res => res.ok ? res.json() : []).then(setPeople).catch(() => setPeople([]));
-  }, []);
+    if (initialPeople && initialPeople.length > 0) {
+      setPeople(initialPeople);
+      return;
+    }
+    fetch("/api/people")
+      .then((res) => (res.ok ? res.json() : []))
+      .then((data) => setPeople(Array.isArray(data) ? data : []))
+      .catch(() => setPeople([]));
+  }, [initialPeople]);
 
   useEffect(() => {
     let active = true;
@@ -349,9 +358,10 @@ export default function Grid({
         if (!res.ok) throw new Error("Failed");
         const data = await res.json();
         if (!active) return;
-        if (Array.isArray(data) && data.length) setTemplates(data);
+        setTemplates(Array.isArray(data) ? data : []);
       } catch (err) {
         console.error(err);
+        if (active) setTemplates([]);
       }
     }
     load();
@@ -1492,7 +1502,7 @@ export default function Grid({
         })}
       </div>
 
-      <Modal open={!!modal} onClose={closePicker} onPick={createFromPicker} />
+      <Modal open={!!modal} choices={templates} onClose={closePicker} onPick={createFromPicker} />
 
         {addOpen && (
           <div

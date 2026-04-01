@@ -4,6 +4,8 @@ import { ensureAppPersistenceSeeded } from "./appPersistenceSeed";
 import { defaultTaskTemplates, TaskTemplate, slugifyName } from "./taskTemplates";
 
 let defaultTemplateSyncPromise: Promise<void> | null = null;
+const runtimeTemplateSyncEnabled =
+  process.env.APP_RUNTIME_SEED === "true" || process.env.NODE_ENV !== "production";
 
 function applyDefaults(t: TaskTemplate): TaskTemplate {
   const base = defaultTaskTemplates.find((d) => d.id === t.id);
@@ -145,6 +147,7 @@ function toRelationRows(templateId: string, template: Partial<TaskTemplate>) {
 }
 
 async function ensureDefaultTaskTemplatesSynced() {
+  if (!runtimeTemplateSyncEnabled) return;
   if (defaultTemplateSyncPromise) return defaultTemplateSyncPromise;
 
   defaultTemplateSyncPromise = (async () => {
