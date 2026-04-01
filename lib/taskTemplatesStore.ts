@@ -52,6 +52,11 @@ function applyDefaults(t: TaskTemplate): TaskTemplate {
     : Number.isFinite(base?.limitPerDay)
       ? Number(base?.limitPerDay)
       : 0;
+  const maxConcurrentPerTimeslot = Number.isFinite(t.maxConcurrentPerTimeslot)
+    ? Number(t.maxConcurrentPerTimeslot)
+    : Number.isFinite(base?.maxConcurrentPerTimeslot)
+      ? Number(base?.maxConcurrentPerTimeslot)
+      : 0;
   const enabled = typeof t.enabled === "boolean" ? t.enabled : base?.enabled ?? true;
   return {
     ...base,
@@ -71,6 +76,7 @@ function applyDefaults(t: TaskTemplate): TaskTemplate {
     waitingMinutes,
     packingMinutes,
     limitPerDay,
+    maxConcurrentPerTimeslot,
     enabled,
   };
 }
@@ -102,6 +108,9 @@ function toTemplateCreateInput(template: TaskTemplate) {
     waitingMinutes: Number.isFinite(template.waitingMinutes) ? Number(template.waitingMinutes) : 0,
     packingMinutes: Number.isFinite(template.packingMinutes) ? Number(template.packingMinutes) : 0,
     limitPerDay: Number.isFinite(template.limitPerDay) ? Number(template.limitPerDay) : 0,
+    maxConcurrentPerTimeslot: Number.isFinite(template.maxConcurrentPerTimeslot)
+      ? Number(template.maxConcurrentPerTimeslot)
+      : 0,
     enabled: template.enabled !== false,
   };
 }
@@ -212,6 +221,7 @@ function mapLegacyTemplate(record: any): TaskTemplate {
     waitingMinutes: record.waitingMinutes,
     packingMinutes: record.packingMinutes,
     limitPerDay: record.limitPerDay,
+    maxConcurrentPerTimeslot: record.maxConcurrentPerTimeslot,
     enabled: record.enabled,
   });
 }
@@ -267,6 +277,7 @@ function mapTemplate(record: any): TaskTemplate {
     waitingMinutes: record.waitingMinutes,
     packingMinutes: record.packingMinutes,
     limitPerDay: record.limitPerDay,
+    maxConcurrentPerTimeslot: record.maxConcurrentPerTimeslot,
     enabled: record.enabled,
   });
 }
@@ -326,6 +337,7 @@ export async function addTaskTemplate(input: {
       waitingMinutes: 0,
       packingMinutes: 0,
       limitPerDay: 0,
+      maxConcurrentPerTimeslot: 0,
       enabled: true,
     },
   });
@@ -376,6 +388,9 @@ export async function updateTaskTemplate(
         ...(input.waitingMinutes !== undefined ? { waitingMinutes: input.waitingMinutes } : {}),
         ...(input.packingMinutes !== undefined ? { packingMinutes: input.packingMinutes } : {}),
         ...(input.limitPerDay !== undefined ? { limitPerDay: input.limitPerDay } : {}),
+        ...(input.maxConcurrentPerTimeslot !== undefined
+          ? { maxConcurrentPerTimeslot: input.maxConcurrentPerTimeslot }
+          : {}),
         ...(input.enabled !== undefined ? { enabled: input.enabled } : {}),
       },
     });

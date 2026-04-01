@@ -306,7 +306,7 @@ export default function TaskDetailClient({ id, initialTask }: { id: string; init
                   })}
                 </div>
               </div>
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 max-w-[720px]">
+              <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 max-w-[980px]">
                 <div>
                   <label className="block text-sm font-semibold mb-2">Minimum per employee per day</label>
                   <div className="flex items-center gap-3">
@@ -327,6 +327,27 @@ export default function TaskDetailClient({ id, initialTask }: { id: string; init
                     <input type="number" min={0} step={1} className="input w-[120px] text-[14px]" value={Number.isFinite(task.limitPerDay) ? task.limitPerDay : 0} onChange={(e) => setTask((t) => (t ? { ...t, limitPerDay: Math.max(0, Number(e.target.value || 0)) } : t))} />
                     <span className="text-[12px] text-slate-500">times</span>
                   </div>
+                </div>
+                <div>
+                  <label className="block text-sm font-semibold mb-2">Max overlapping at once</label>
+                  <div className="flex items-center gap-3">
+                    <input
+                      type="number"
+                      min={0}
+                      step={1}
+                      className="input w-[120px] text-[14px]"
+                      value={Number.isFinite(task.maxConcurrentPerTimeslot) ? task.maxConcurrentPerTimeslot : 0}
+                      onChange={(e) =>
+                        setTask((t) =>
+                          t ? { ...t, maxConcurrentPerTimeslot: Math.max(0, Number(e.target.value || 0)) } : t
+                        )
+                      }
+                    />
+                    <span className="text-[12px] text-slate-500">0 = no limit</span>
+                  </div>
+                  <p className="mt-2 max-w-[220px] text-[12px] text-slate-500">
+                    Set this to 1 to keep autofill from placing multiple people on this task at the same time.
+                  </p>
                 </div>
               </div>
             </div>

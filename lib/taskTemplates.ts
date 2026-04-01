@@ -18,6 +18,7 @@ export type TaskTemplate = {
   waitingMinutes?: number;
   packingMinutes?: number;
   limitPerDay?: number;
+  maxConcurrentPerTimeslot?: number;
   enabled?: boolean;
 };
 
@@ -69,6 +70,7 @@ export const defaultTaskTemplates: TaskTemplate[] = [
     category: "Support",
     color: "#E9D5FF",
     mustManned: false,
+    maxConcurrentPerTimeslot: 1,
   },
   {
     id: "tidy",

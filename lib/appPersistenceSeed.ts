@@ -200,6 +200,9 @@ async function seedTaskTemplatesIfNeeded() {
         ? Number(template.packingMinutes)
         : 0,
       limitPerDay: Number.isFinite(template.limitPerDay) ? Number(template.limitPerDay) : 0,
+      maxConcurrentPerTimeslot: Number.isFinite(template.maxConcurrentPerTimeslot)
+        ? Number(template.maxConcurrentPerTimeslot)
+        : 0,
       enabled: template.enabled !== false,
     })),
     skipDuplicates: true,

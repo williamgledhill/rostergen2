@@ -569,6 +569,7 @@ export default function Grid({
       mustManned: boolean;
       allowShrink: boolean;
       maxConsecutiveSpan: number;
+      maxConcurrentPerTimeslot: number;
     };
 
     const dayKey = DAY_KEYS[rosterDate.getDay()];
@@ -659,6 +660,27 @@ export default function Grid({
       return !list.some((t) => end > t.startRow && startRow < t.startRow + t.span);
     };
 
+    const exceedsConcurrentLimit = (
+      templateId: string,
+      startRow: number,
+      span: number,
+      maxConcurrentPerTimeslot: number
+    ) => {
+      if (!Number.isFinite(maxConcurrentPerTimeslot)) return false;
+      const endRow = startRow + span;
+      for (let row = startRow; row < endRow; row += 1) {
+        let active = 0;
+        for (const task of generated) {
+          if (task.type !== templateId) continue;
+          if (row < task.startRow + task.span && row + 1 > task.startRow) {
+            active += 1;
+            if (active >= maxConcurrentPerTimeslot) return true;
+          }
+        }
+      }
+      return false;
+    };
+
     const addTask = (meta: TemplateMeta, col: number, startRow: number, span: number, empId: string | number) => {
       const id = crypto.randomUUID?.() ?? String(Math.random());
       const label = meta.template.name || "Task";
@@ -729,6 +751,10 @@ export default function Grid({
         ? Math.max(1, Math.ceil(maxConsecutiveMinutes / 15))
         : 0;
       const limitPerDay = template.limitPerDay && template.limitPerDay > 0 ? template.limitPerDay : Number.POSITIVE_INFINITY;
+      const maxConcurrentPerTimeslot =
+        template.maxConcurrentPerTimeslot && template.maxConcurrentPerTimeslot > 0
+          ? template.maxConcurrentPerTimeslot
+          : Number.POSITIVE_INFINITY;
       const maxPerEmp = template.maxPerEmployeePerDay && template.maxPerEmployeePerDay > 0
         ? template.maxPerEmployeePerDay
         : Number.POSITIVE_INFINITY;
@@ -766,6 +792,7 @@ export default function Grid({
         mustManned: !!template.mustManned,
         allowShrink,
         maxConsecutiveSpan,
+        maxConcurrentPerTimeslot,
       };
     };
 
@@ -831,6 +858,7 @@ export default function Grid({
             if (getTotal(meta.id) >= limitPerDay) break;
             if (getEmpCount(meta.id, emp.id) >= maxPerEmp) break;
             if (!isFree(col, row, span, emp.id)) continue;
+            if (exceedsConcurrentLimit(meta.id, row, span, meta.maxConcurrentPerTimeslot)) continue;
             addTask(meta, col, row, span, emp.id);
             needed -= 1;
             if (needed <= 0) break;
@@ -858,7 +886,10 @@ export default function Grid({
         const picked = sortedEmployees.find((emp) => {
           if (getEmpCount(meta.id, emp.id) >= maxPerEmp) return false;
           const col = employeeColById.get(emp.id) ?? employees.findIndex((e) => e.id === emp.id) + 2;
-          return isFree(col, row, span, emp.id);
+          return (
+            isFree(col, row, span, emp.id) &&
+            !exceedsConcurrentLimit(meta.id, row, span, meta.maxConcurrentPerTimeslot)
+          );
         });
         if (!picked) continue;
         const col = employeeColById.get(picked.id) ?? employees.findIndex((e) => e.id === picked.id) + 2;
@@ -925,6 +956,7 @@ export default function Grid({
           }
           const span = getSpanForMeta(meta, row, endRow, options);
           if (!span) return null;
+          if (exceedsConcurrentLimit(meta.id, row, span, meta.maxConcurrentPerTimeslot)) return null;
           const exceedsConsecutive =
             meta.maxConsecutiveSpan > 0 &&
             getConsecutiveSpan(col, meta.id, row, span) > meta.maxConsecutiveSpan;
@@ -1348,7 +1380,7 @@ export default function Grid({
           gridAutoRows: "var(--rowh)",
         }}
       >
-        <div className="sticky left-0 z-40 rounded-tl-[12px] border-b border-r bg-[var(--surface-subtle)] px-3 py-1.5 text-center shadow-[inset_0_-1px_0_rgba(15,23,42,0.08)]">
+        <div className="sticky left-0 z-40 rounded-tl-[12px] border-b bg-[var(--surface-subtle)] px-3 py-1.5 text-center shadow-[inset_-1px_0_0_rgba(148,163,184,0.45),inset_0_-1px_0_rgba(15,23,42,0.08)]">
           <span className="text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-700">Time</span>
         </div>
         {employeeCols.map((h) => {
@@ -1460,7 +1492,7 @@ export default function Grid({
             <div
               key={`time-${r}`}
               ref={i === 0 ? firstTimeCellRef : undefined}
-              className="sticky left-0 z-10 border-b border-r bg-[#f8f9fc] px-2 py-2 text-center text-[12px] font-semibold tabular-nums text-slate-700"
+              className="sticky left-0 z-20 border-b bg-[#f8f9fc] px-2 py-2 text-center text-[12px] font-semibold tabular-nums text-slate-700 shadow-[inset_-1px_0_0_rgba(148,163,184,0.45)]"
             >
               {timeRangeForRow(r)}
             </div>

@@ -44,6 +44,7 @@ const updateTemplateSchema = z.object({
   waitingMinutes: boundedNumberSchema.optional(),
   packingMinutes: boundedNumberSchema.optional(),
   limitPerDay: boundedNumberSchema.optional(),
+  maxConcurrentPerTimeslot: boundedNumberSchema.optional(),
   enabled: z.boolean().optional(),
 });
 
@@ -122,6 +123,7 @@ export async function PUT(request: Request) {
       waitingMinutes: parsed.data.waitingMinutes,
       packingMinutes: parsed.data.packingMinutes,
       limitPerDay: parsed.data.limitPerDay,
+      maxConcurrentPerTimeslot: parsed.data.maxConcurrentPerTimeslot,
       enabled: parsed.data.enabled,
     };
     const updated = await updateTaskTemplate(id, payload);
