@@ -54,14 +54,9 @@ function toDayHourRows(hoursByDay: Record<DayKey, DayHours>) {
 export async function getSettings(): Promise<AppSettings> {
   await ensureAppPersistenceSeeded();
 
-  const record = await prisma.appSettings.findUnique({
-    where: { id: "default" },
-    include: { dayHours: true },
-  });
+  const record = await prisma.appSettings.findUnique({ where: { id: "default" } });
   return {
-    hoursByDay: record?.dayHours.length
-      ? rowsToHoursByDay(record.dayHours)
-      : normalizeHoursByDay(record?.hoursByDay),
+    hoursByDay: normalizeHoursByDay(record?.hoursByDay),
     upcomingDays: normalizeUpcomingDays(record?.upcomingDays),
   };
 }

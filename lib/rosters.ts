@@ -203,19 +203,9 @@ function toRosterTaskRows(rosterId: string, tasks: any[]) {
   }));
 }
 
-async function findManyRosters(args: Parameters<typeof prisma.appRoster.findMany>[0]) {
-  return prisma.appRoster.findMany({
-    ...args,
-    include: {
-      rosterEmployees: true,
-      rosterTasks: true,
-    },
-  });
-}
-
 export async function buildRosterList(limit?: number): Promise<RosterFile[]> {
   await ensureAppPersistenceSeeded();
-  const saved = (await findManyRosters({
+  const saved = (await prisma.appRoster.findMany({
     orderBy: { date: "asc" },
     ...(typeof limit === "number" ? { take: limit } : {}),
   })).map(mapRosterRecord);
@@ -238,14 +228,8 @@ export function formatRange(start: Date, end: Date) {
 
 export async function getRosterById(id: string): Promise<RosterFile | null> {
   await ensureAppPersistenceSeeded();
-  const roster = await prisma.appRoster.findUnique({
-    where: { id },
-    include: {
-      rosterEmployees: true,
-      rosterTasks: true,
-    },
-  });
-  return roster ? mapRosterRecord(roster) : null;
+  const roster = await prisma.appRoster.findUnique({ where: { id } });
+  return roster ? mapLegacyRosterRecord(roster) : null;
 }
 
 export async function getRosterMonths(limit = 200) {
@@ -272,7 +256,7 @@ export async function getRostersForMonth(month: string, limit = 200): Promise<Ro
   const start = new Date(year, monthNumber - 1, 1);
   const end = new Date(year, monthNumber, 1);
 
-  const rosters = await findManyRosters({
+  const rosters = await prisma.appRoster.findMany({
     where: {
       date: {
         gte: start,
@@ -284,7 +268,7 @@ export async function getRostersForMonth(month: string, limit = 200): Promise<Ro
   });
 
   return rosters
-    .map(mapRosterRecord)
+    .map(mapLegacyRosterRecord)
     .filter((r) => !isEmptyRoster(r))
     .slice(0, limit);
 }
@@ -330,7 +314,7 @@ export async function getUpcomingRosters(upcomingDays = 7): Promise<RosterFile[]
   const end = new Date(start);
   end.setDate(start.getDate() + dayCount);
 
-  const saved = await findManyRosters({
+  const saved = await prisma.appRoster.findMany({
     where: {
       date: {
         gte: start,
@@ -340,7 +324,7 @@ export async function getUpcomingRosters(upcomingDays = 7): Promise<RosterFile[]
     orderBy: { date: "asc" },
   });
 
-  return buildUpcomingRosterWindow(saved.map(mapRosterRecord), dayCount, start);
+  return buildUpcomingRosterWindow(saved.map(mapLegacyRosterRecord), dayCount, start);
 }
 
 export function formatMonthLabel(month: string) {

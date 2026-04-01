@@ -159,18 +159,16 @@ export async function getPeople(): Promise<Person[]> {
   await ensureAppPersistenceSeeded();
   const people = await prisma.appPerson.findMany({
     orderBy: { name: "asc" },
-    include: { daySchedules: true },
   });
-  return people.map(mapPerson);
+  return people.map(mapLegacyPerson);
 }
 
 export async function getPerson(id: string): Promise<Person | null> {
   await ensureAppPersistenceSeeded();
   const person = await prisma.appPerson.findUnique({
     where: { id },
-    include: { daySchedules: true },
   });
-  return person ? mapPerson(person) : null;
+  return person ? mapLegacyPerson(person) : null;
 }
 
 export async function upsertPerson(person: Person): Promise<Person> {

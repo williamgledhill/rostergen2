@@ -36,27 +36,22 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Invalid hours range" }, { status: 400 });
     }
 
-    const existing = await getRosterById(date);
-
     const tours = tasks.filter((t: any) => String(t.type).toLowerCase() === "tour").length;
     const people = employees.length;
 
     await saveRosterEntry({
-      ...(existing || {
-        id: date,
-        title: formatFullDay(parsed),
-        start: parsed,
-        end: parsed,
-        status: "Draft",
-        updated: new Date().toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }),
-      }),
+      id: date,
+      title: formatFullDay(parsed),
+      start: parsed,
+      end: parsed,
+      status: "Draft",
+      updated: new Date().toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }),
       employees,
       tasks,
       hoursStart,
       hoursEnd,
       tours,
       people,
-      updated: new Date().toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }),
     });
 
     return NextResponse.json({ ok: true });

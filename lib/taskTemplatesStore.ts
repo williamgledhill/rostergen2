@@ -276,13 +276,8 @@ export async function getTaskTemplates(): Promise<TaskTemplate[]> {
   await ensureDefaultTaskTemplatesSynced();
   const templates = await prisma.appTaskTemplate.findMany({
     orderBy: { name: "asc" },
-    include: {
-      regularDayRules: true,
-      timeSlots: true,
-      dayWindows: true,
-    },
   });
-  return templates.map(mapTemplate);
+  return templates.map(mapLegacyTemplate);
 }
 
 export async function addTaskTemplate(input: {
@@ -326,14 +321,9 @@ export async function addTaskTemplate(input: {
       limitPerDay: 0,
       enabled: true,
     },
-    include: {
-      regularDayRules: true,
-      timeSlots: true,
-      dayWindows: true,
-    },
   });
 
-  return mapTemplate(created);
+  return mapLegacyTemplate(created);
 }
 
 export async function updateTaskTemplate(
@@ -404,17 +394,10 @@ export async function updateTaskTemplate(
       await tx.appTaskTemplateDayWindow.createMany({ data: relations.dayWindows });
     }
 
-    return tx.appTaskTemplate.findUnique({
-      where: { id },
-      include: {
-        regularDayRules: true,
-        timeSlots: true,
-        dayWindows: true,
-      },
-    });
+    return tx.appTaskTemplate.findUnique({ where: { id } });
   });
 
-  return updated ? mapTemplate(updated) : null;
+  return updated ? mapLegacyTemplate(updated) : null;
 }
 
 export async function deleteTaskTemplate(id: string): Promise<boolean> {
