@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { addTaskTemplate, deleteTaskTemplate, getTaskTemplates, updateTaskTemplate } from "@/lib/taskTemplatesStore";
+import { addTaskTemplate, deleteTaskTemplate, getTaskTemplateById, getTaskTemplates, updateTaskTemplate } from "@/lib/taskTemplatesStore";
 import { enforceSameOrigin, requireSession } from "@/lib/apiAuth";
 import { z } from "zod";
 
@@ -58,13 +58,12 @@ export async function GET(request: Request) {
 
   const { searchParams } = new URL(request.url);
   const id = searchParams.get("id");
-  const templates = await getTaskTemplates();
   if (id) {
-    const match = templates.find((t) => t.id === id);
-    if (!match) return NextResponse.json({ error: "Not found" }, { status: 404 });
-    return NextResponse.json(match);
+    const template = await getTaskTemplateById(id);
+    if (!template) return NextResponse.json({ error: "Not found" }, { status: 404 });
+    return NextResponse.json(template);
   }
-  return NextResponse.json(templates);
+  return NextResponse.json(await getTaskTemplates());
 }
 
 export async function POST(request: Request) {

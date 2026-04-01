@@ -129,6 +129,7 @@ export default function Grid({
   hoursEnd,
   onExportXLS,
   people: initialPeople,
+  templates: initialTemplates,
 }: {
   employees: Employee[];
   initialTasks: GridTask[];
@@ -138,6 +139,7 @@ export default function Grid({
   hoursEnd?: string;
   onExportXLS: (html: string) => void;
   people?: Person[];
+  templates?: TaskTemplate[];
 }) {
   const [employees, setEmployees] = useState<Employee[]>(initialEmployees);
   const [tasks, setTasks] = useState<GridTask[]>(initialTasks);
@@ -152,7 +154,7 @@ export default function Grid({
   const [addOpen, setAddOpen] = useState(false);
   const [employeePickerQuery, setEmployeePickerQuery] = useState("");
   const [people, setPeople] = useState<Person[]>(initialPeople ?? []);
-  const [templates, setTemplates] = useState<TaskTemplate[]>([]);
+  const [templates, setTemplates] = useState<TaskTemplate[]>(initialTemplates ?? []);
 
   const containerRef = useRef<HTMLDivElement>(null);
   const employeeSettingsRef = useRef<HTMLDivElement>(null);
@@ -340,7 +342,7 @@ export default function Grid({
   }, [dayStartMin, maxRowEx]);
 
   useEffect(() => {
-    if (initialPeople && initialPeople.length > 0) {
+    if (initialPeople !== undefined) {
       setPeople(initialPeople);
       return;
     }
@@ -351,6 +353,10 @@ export default function Grid({
   }, [initialPeople]);
 
   useEffect(() => {
+    if (initialTemplates !== undefined) {
+      setTemplates(initialTemplates);
+      return;
+    }
     let active = true;
     async function load() {
       try {
@@ -366,7 +372,7 @@ export default function Grid({
     }
     load();
     return () => { active = false; };
-  }, []);
+  }, [initialTemplates]);
 
   const templateById = useMemo(() => {
     const map = new Map<string, TaskTemplate>();

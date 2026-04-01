@@ -280,6 +280,13 @@ export async function getTaskTemplates(): Promise<TaskTemplate[]> {
   return templates.map(mapLegacyTemplate);
 }
 
+export async function getTaskTemplateById(id: string): Promise<TaskTemplate | null> {
+  await ensureAppPersistenceSeeded();
+  await ensureDefaultTaskTemplatesSynced();
+  const template = await prisma.appTaskTemplate.findUnique({ where: { id } });
+  return template ? mapLegacyTemplate(template) : null;
+}
+
 export async function addTaskTemplate(input: {
   name: string;
   description?: string;
