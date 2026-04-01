@@ -28,10 +28,6 @@ export function proxy(request: NextRequest) {
     return NextResponse.redirect(redirectUrl);
   }
 
-  if (pathname.startsWith("/signup") && hasSessionCookie) {
-    return NextResponse.redirect(new URL("/editor", request.url));
-  }
-
   return NextResponse.next();
 }
 
