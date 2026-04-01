@@ -1,9 +1,16 @@
 import { afterAll, beforeEach, describe, expect, it } from "vitest";
-import { createSessionToken, SESSION_MAX_AGE_SECONDS, verifySessionToken } from "../lib/sessionToken";
+import {
+  createOpaqueAuthToken,
+  getLoginChallengeCookieOptions,
+  getSessionCookieOptions,
+  hashAuthToken,
+  LOGIN_CHALLENGE_MAX_AGE_SECONDS,
+  SESSION_MAX_AGE_SECONDS,
+} from "../lib/sessionToken";
 
 const ORIGINAL_SECRET = process.env.SESSION_SECRET;
 
-describe("session token signing", () => {
+describe("session token helpers", () => {
   beforeEach(() => {
     process.env.SESSION_SECRET = "test-session-secret-with-at-least-32-characters";
   });
@@ -13,46 +20,33 @@ describe("session token signing", () => {
     else delete process.env.SESSION_SECRET;
   });
 
-  it("creates and verifies a signed token", () => {
-    const now = Date.UTC(2026, 0, 1, 0, 0, 0);
-    const token = createSessionToken("mint", "admin", now);
-    const claims = verifySessionToken(token, now);
-    expect(claims).not.toBeNull();
-    expect(claims?.accountId).toBe("mint");
-    expect(claims?.editorId).toBe("admin");
+  it("creates opaque random tokens", () => {
+    const one = createOpaqueAuthToken();
+    const two = createOpaqueAuthToken();
+    expect(one).not.toBe(two);
+    expect(one.length).toBeGreaterThan(20);
   });
 
-  it("rejects tampered payloads", () => {
-    const now = Date.UTC(2026, 0, 1, 0, 0, 0);
-    const token = createSessionToken("mint", "editor-1", now);
-    const parts = token.split(".");
-    parts[1] = Buffer.from(
-      JSON.stringify({
-        accountId: "mint",
-        editorId: "admin",
-        iat: Math.floor(now / 1000),
-        exp: Math.floor(now / 1000) + SESSION_MAX_AGE_SECONDS,
-      }),
-      "utf-8"
-    ).toString("base64url");
-    const tampered = parts.join(".");
-    expect(verifySessionToken(tampered, now)).toBeNull();
+  it("hashes auth tokens deterministically", () => {
+    expect(hashAuthToken("abc")).toBe(hashAuthToken("abc"));
+    expect(hashAuthToken("abc")).not.toBe(hashAuthToken("xyz"));
   });
 
-  it("rejects expired tokens", () => {
-    const now = Date.UTC(2026, 0, 1, 0, 0, 0);
-    const issuedAt = now - (SESSION_MAX_AGE_SECONDS + 10) * 1000;
-    const token = createSessionToken("mint", "editor-1", issuedAt);
-    expect(verifySessionToken(token, now)).toBeNull();
+  it("uses strict cookie options for sessions", () => {
+    expect(getSessionCookieOptions()).toMatchObject({
+      httpOnly: true,
+      sameSite: "strict",
+      path: "/",
+      maxAge: SESSION_MAX_AGE_SECONDS,
+    });
   });
 
-  it("rejects tokens issued too far in the future", () => {
-    const now = Date.UTC(2026, 0, 1, 0, 0, 0);
-    const token = createSessionToken("mint", "editor-1", now + 5 * 60 * 1000);
-    expect(verifySessionToken(token, now)).toBeNull();
-  });
-
-  it("rejects unsupported legacy cookie formats", () => {
-    expect(verifySessionToken("mint|admin")).toBeNull();
+  it("uses strict cookie options for login challenges", () => {
+    expect(getLoginChallengeCookieOptions()).toMatchObject({
+      httpOnly: true,
+      sameSite: "strict",
+      path: "/",
+      maxAge: LOGIN_CHALLENGE_MAX_AGE_SECONDS,
+    });
   });
 });

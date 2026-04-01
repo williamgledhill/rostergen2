@@ -6,9 +6,8 @@ A production-ready starter that turns a static HTML roster into a full-stack app
 
 ```bash
 cp .env.example .env
-docker compose up -d db
 npm install
-npx prisma migrate dev --name init
+npx prisma migrate dev
 npm run dev
 ```
 
@@ -32,16 +31,17 @@ docker compose up --build
 
 ## Notes
 
-- API routes are available under `/api` for employees, rosters, and tasks.
+- API routes are available under `/api` for auth, employees, rosters, tasks, and settings.
 - The grid UI supports adding tasks via `+` slots and CSV export.
-- Wire up persistence by calling the API routes from the grid (left as an exercise to keep code concise).
 
 ## Security & Testing
 
-- Set `SESSION_SECRET` in production (minimum 32 characters).
+- Set `SESSION_SECRET` in production with a random value of at least 32 characters.
+- Set `APP_ENCRYPTION_KEY` in production to a base64-encoded 32 byte key for MFA secret encryption.
+- Set `APP_BOOTSTRAP_ADMIN_EMAIL` and `APP_BOOTSTRAP_ADMIN_PASSWORD` once to create the initial admin account, then remove or rotate them.
+- Enforce TLS for the production database connection string, for example `sslmode=require` with PostgreSQL.
 - Run tests with:
   ```bash
   npm test
   ```
 - The project includes a formal design document at `docs/software-design.md`.
-```

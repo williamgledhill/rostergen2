@@ -1,12 +1,17 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
-import { getAccountById, getEditor } from "@/lib/auth";
-import { enforceSameOrigin, getSessionContext } from "@/lib/apiAuth";
-import { createSessionToken, getSessionCookieOptions, SESSION_COOKIE_NAME } from "@/lib/sessionToken";
+import { authenticateUser, revokeSession } from "@/lib/auth";
+import { enforceSameOrigin, getRequestMeta, getSessionContext } from "@/lib/apiAuth";
+import {
+  getLoginChallengeCookieOptions,
+  getSessionCookieOptions,
+  LOGIN_CHALLENGE_COOKIE_NAME,
+  SESSION_COOKIE_NAME,
+} from "@/lib/sessionToken";
 
 const sessionRequestSchema = z.object({
-  accountId: z.string().trim().min(1).max(120),
-  editorId: z.string().trim().min(1).max(120),
+  email: z.string().trim().email().max(320),
+  password: z.string().min(1).max(512),
 });
 
 export async function GET() {
@@ -14,10 +19,12 @@ export async function GET() {
   if (!session) {
     return NextResponse.json({ session: null });
   }
+
   return NextResponse.json({
     session: {
-      account: { id: session.account.id, name: session.account.name, company: session.account.company },
-      editor: session.editor,
+      user: session.user,
+      expiresAt: session.expiresAt.toISOString(),
+      mfaSatisfiedAt: session.mfaSatisfiedAt?.toISOString() ?? null,
     },
   });
 }
@@ -31,21 +38,40 @@ export async function POST(request: Request) {
     if (!parsed.success) {
       return NextResponse.json({ error: "Invalid payload" }, { status: 400 });
     }
-    const { accountId, editorId } = parsed.data;
-    const account = getAccountById(accountId);
-    const editor = account ? getEditor(account.id, editorId) : null;
-    if (!account || !editor) {
-      return NextResponse.json({ error: "Invalid account or editor" }, { status: 400 });
+
+    const authResult = await authenticateUser(parsed.data.email, parsed.data.password, getRequestMeta(request));
+    if (!authResult) {
+      return NextResponse.json({ error: "Invalid credentials" }, { status: 401 });
     }
-    const res = NextResponse.json({
+
+    if (authResult.requiresTwoFactor) {
+      const response = NextResponse.json({
+        requiresTwoFactor: true,
+        user: {
+          email: authResult.user.email,
+          name: authResult.user.name,
+        },
+      });
+      response.cookies.set(
+        LOGIN_CHALLENGE_COOKIE_NAME,
+        authResult.challengeToken,
+        getLoginChallengeCookieOptions()
+      );
+      response.cookies.set(SESSION_COOKIE_NAME, "", { ...getSessionCookieOptions(), maxAge: 0 });
+      return response;
+    }
+
+    const response = NextResponse.json({
       session: {
-        account: { id: account.id, name: account.name, company: account.company },
-        editor,
+        user: authResult.user,
       },
     });
-    const cookieValue = createSessionToken(accountId, editorId);
-    res.cookies.set(SESSION_COOKIE_NAME, cookieValue, getSessionCookieOptions());
-    return res;
+    response.cookies.set(SESSION_COOKIE_NAME, authResult.sessionToken, getSessionCookieOptions());
+    response.cookies.set(LOGIN_CHALLENGE_COOKIE_NAME, "", {
+      ...getLoginChallengeCookieOptions(),
+      maxAge: 0,
+    });
+    return response;
   } catch (err: any) {
     return NextResponse.json({ error: err?.message || "Failed to create session" }, { status: 500 });
   }
@@ -55,7 +81,23 @@ export async function DELETE(request: Request) {
   const originError = enforceSameOrigin(request);
   if (originError) return originError;
 
-  const res = NextResponse.json({ ok: true });
-  res.cookies.set(SESSION_COOKIE_NAME, "", { ...getSessionCookieOptions(), maxAge: 0 });
-  return res;
+  const session = await getSessionContext();
+  const cookieHeader = request.headers.get("cookie") || "";
+  const rawToken = cookieHeader
+    .split(";")
+    .map((item) => item.trim())
+    .find((item) => item.startsWith(`${SESSION_COOKIE_NAME}=`))
+    ?.slice(SESSION_COOKIE_NAME.length + 1);
+
+  if (session && rawToken) {
+    await revokeSession(rawToken);
+  }
+
+  const response = NextResponse.json({ ok: true });
+  response.cookies.set(SESSION_COOKIE_NAME, "", { ...getSessionCookieOptions(), maxAge: 0 });
+  response.cookies.set(LOGIN_CHALLENGE_COOKIE_NAME, "", {
+    ...getLoginChallengeCookieOptions(),
+    maxAge: 0,
+  });
+  return response;
 }

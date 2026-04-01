@@ -3,10 +3,12 @@ import Link from "next/link";
 import RosterTable from "@/components/RosterTable";
 import { getUpcomingRosters } from "@/lib/rosters";
 import { getSettings } from "@/lib/settings";
+import { requirePageSession } from "@/lib/apiAuth";
 
 export const dynamic = "force-dynamic";
 
 export default async function Page() {
+  await requirePageSession();
   const settings = await getSettings();
   const rosters = await getUpcomingRosters(settings.upcomingDays);
 

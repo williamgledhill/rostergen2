@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 export default function GlobalTopBar() {
   const pathname = usePathname() || "/";
   const [profileOpen, setProfileOpen] = useState(false);
+  const [initials, setInitials] = useState("RG");
   const profileRef = useRef<HTMLDivElement>(null);
   const pageTitle = useMemo(() => {
     if (pathname.startsWith("/rosters")) return "Rosters";
@@ -23,6 +24,28 @@ export default function GlobalTopBar() {
     };
     document.addEventListener("mousedown", onClick);
     return () => document.removeEventListener("mousedown", onClick);
+  }, []);
+
+  useEffect(() => {
+    let active = true;
+    fetch("/api/auth/session")
+      .then((res) => (res.ok ? res.json() : { session: null }))
+      .then((data) => {
+        if (!active) return;
+        const name = data?.session?.user?.name;
+        if (typeof name !== "string" || !name.trim()) return;
+        const nextInitials = name
+          .trim()
+          .split(/\s+/)
+          .slice(0, 2)
+          .map((part: string) => part[0]?.toUpperCase() || "")
+          .join("");
+        if (nextInitials) setInitials(nextInitials);
+      })
+      .catch(() => null);
+    return () => {
+      active = false;
+    };
   }, []);
 
   async function handleLogout() {
@@ -44,11 +67,17 @@ export default function GlobalTopBar() {
             aria-label="Profile menu"
             aria-expanded={profileOpen}
           >
-            <span aria-hidden="true">AB</span>
+            <span aria-hidden="true">{initials}</span>
             <span className="sr-only">Profile</span>
           </button>
           {profileOpen && (
             <div className="absolute right-0 mt-2 w-40 rounded-md border border-[var(--border)] bg-white shadow-lg z-50">
+              <a
+                className="block w-full px-3 py-2 text-left text-sm text-slate-700 hover:bg-[#f5f7fa]"
+                href="/settings#security"
+              >
+                Security
+              </a>
               <button
                 className="w-full text-left px-3 py-2 text-sm text-slate-700 hover:bg-[#f5f7fa]"
                 onClick={handleLogout}

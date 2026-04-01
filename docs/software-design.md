@@ -13,6 +13,7 @@ Roster Planner is a web application for creating, editing, and reviewing daily a
 ## 3. Scope
 - Included:
   - Authentication/session management
+  - Multi-factor authentication (TOTP + recovery codes)
   - Roster, people, task template, and settings management
   - API and UI behaviors in the current Next.js application
   - Data persistence in PostgreSQL and JSON-backed stores
@@ -24,7 +25,7 @@ Roster Planner is a web application for creating, editing, and reviewing daily a
 ## 4. System Context
 - Users:
   - Editor: Can view and update operational roster data.
-  - Admin editor: Can also modify configuration and master data.
+  - Admin user: Can also modify configuration and master data.
 - Runtime components:
   - Next.js application server (UI + API routes)
   - PostgreSQL (Prisma models for employees/tasks/rosters)
@@ -39,7 +40,8 @@ Roster Planner is a web application for creating, editing, and reviewing daily a
   - Prisma data access for relational tables
   - Filesystem persistence for several domain objects
 - Shared libraries:
-  - `lib/sessionToken.ts`: Signed token creation/verification
+  - `lib/sessionToken.ts`: Opaque token hashing and cookie controls
+  - `lib/auth.ts`: User, session, and MFA lifecycle
   - `lib/apiAuth.ts`: Route guard and same-origin enforcement
   - `lib/requestOrigin.ts`: Origin allow-list handling
 
@@ -50,7 +52,6 @@ Roster Planner is a web application for creating, editing, and reviewing daily a
 - `Task(id, type, label, start, end, rosterId, employeeId, createdAt, updatedAt)`
 
 ### 6.2 JSON-backed Stores
-- `accounts.json`: Accounts and editors (role metadata)
 - `settings.json`: Default hours by day
 - `people.json`: People profile and default schedules
 - `taskTemplates.json`: Task template catalog and generation metadata
@@ -62,17 +63,18 @@ The system currently uses hybrid persistence (Postgres + JSON files). This is ac
 ## 7. API Design and Authorization
 ### 7.1 Authentication
 - Session cookie: `roster_session`
-- Token format: signed HMAC token with issued-at and expiry claims
-- Cookie controls: `HttpOnly`, `SameSite=Lax`, `Secure` in production, bounded max-age
+- Token format: opaque random token hashed server-side and stored in PostgreSQL
+- Cookie controls: `HttpOnly`, `SameSite=Strict`, `Secure` in production, bounded max-age
+- MFA: optional TOTP factor with encrypted shared secret and hashed recovery codes
 
 ### 7.2 Authorization Matrix
 - Public:
-  - `GET /api/auth/accounts` (login picker support)
   - `GET|POST|DELETE /api/auth/session` (session bootstrap/end)
+  - `POST /api/auth/session/verify-2fa` (MFA completion)
 - Authenticated editor:
   - Read roster/task/people/settings/template data
   - Modify operational roster/task data
-- Admin editor:
+- Admin user:
   - Modify settings
   - Modify people
   - Modify task templates
@@ -87,14 +89,16 @@ The system currently uses hybrid persistence (Postgres + JSON files). This is ac
 ### 8.1 Threats Addressed
 - Cookie forgery and privilege escalation
 - Unauthenticated API access to business data
+- Replay-resistant revocable sessions
 - CSRF-like cross-origin mutation attempts
 - Malformed payload abuse and unsafe implicit coercion
 - Known package vulnerabilities in framework/dependency tree
 
 ### 8.2 Controls Implemented
-- Signed, expiring session tokens
+- Server-side revocable sessions with opaque tokens
 - Centralized route auth guard (`requireSession`)
 - Admin-only route enforcement for sensitive writes
+- Optional TOTP MFA with encrypted secret storage and recovery codes
 - Same-origin checks for all state-changing endpoints
 - Strict payload validation in API routes
 - Dependency hardening:
@@ -104,13 +108,15 @@ The system currently uses hybrid persistence (Postgres + JSON files). This is ac
 
 ### 8.3 Residual Risks
 - Filesystem JSON stores remain susceptible to concurrent write race conditions.
-- Login flow remains account/editor selection based (no user password/IdP).
+- Bootstrap admin creation is environment-variable driven and should be removed after initial provisioning.
 - No formal rate limiting yet on auth/session endpoints.
 
 ## 9. Quality and Testing Strategy
 ### 9.1 Test Pyramid
 - Unit tests:
-  - Session token signing/verification behaviors
+  - Session token and cookie behaviors
+  - Password hashing/verification
+  - TOTP and recovery-code helpers
   - Origin allow-list behavior
 - Integration tests (next phase):
   - API route authorization and role-based access
@@ -129,9 +135,10 @@ The system currently uses hybrid persistence (Postgres + JSON files). This is ac
 - Environment variables:
   - `DATABASE_URL` (required)
   - `SESSION_SECRET` (required in production, >= 32 chars)
+  - `APP_ENCRYPTION_KEY` (required in production for MFA secret encryption)
+  - `APP_BOOTSTRAP_ADMIN_EMAIL` / `APP_BOOTSTRAP_ADMIN_PASSWORD` (required for initial local bootstrap)
   - Optional allow-list:
     - `APP_ORIGIN`
-    - `NEXT_PUBLIC_APP_ORIGIN`
     - `ALLOWED_ORIGINS` (comma-separated)
 - Build/start:
   - `npm run build`
@@ -146,7 +153,7 @@ The system currently uses hybrid persistence (Postgres + JSON files). This is ac
   - Basic API metrics (success/error/latency by route)
 
 ## 12. Roadmap
-- Phase 1 (completed): session signing, authz guard, origin checks, payload validation, dependency hardening.
+- Phase 1 (completed): server-side sessions, MFA support, authz guard, origin checks, payload validation, dependency hardening.
 - Phase 2 (recommended): migrate JSON mutable domains to PostgreSQL transactions.
 - Phase 3 (recommended): external identity provider integration and fine-grained RBAC.
 - Phase 4 (recommended): CI pipeline with lint, test, typecheck, and security scanning gates.

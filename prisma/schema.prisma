@@ -7,6 +7,11 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+enum AppUserRole {
+  ADMIN
+  EDITOR
+}
+
 model Employee {
   id        Int      @id @default(autoincrement())
   name      String
@@ -103,4 +108,71 @@ model AppRoster {
   updatedAt    DateTime @updatedAt
 
   @@index([date])
+}
+
+model AppUser {
+  id                String              @id @default(cuid())
+  email             String              @unique
+  name              String
+  role              AppUserRole         @default(EDITOR)
+  passwordHash      String
+  isActive          Boolean             @default(true)
+  mustChangePassword Boolean            @default(false)
+  totpEnabled       Boolean             @default(false)
+  totpSecretCiphertext String?
+  totpSecretNonce   String?
+  totpRecoveryCodes Json?
+  lastLoginAt       DateTime?
+  createdAt         DateTime            @default(now())
+  updatedAt         DateTime            @updatedAt
+  sessions          AppSession[]
+  loginChallenges   AppLoginChallenge[]
+  mfaSetup          AppMfaSetup?
+}
+
+model AppSession {
+  id              String   @id @default(cuid())
+  userId          String
+  tokenHash       String   @unique
+  expiresAt       DateTime
+  mfaSatisfiedAt  DateTime?
+  ipAddress       String?
+  userAgent       String?
+  lastSeenAt      DateTime @default(now())
+  revokedAt       DateTime?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  user            AppUser  @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([expiresAt])
+}
+
+model AppLoginChallenge {
+  id         String   @id @default(cuid())
+  userId     String
+  tokenHash  String   @unique
+  expiresAt  DateTime
+  usedAt     DateTime?
+  ipAddress  String?
+  userAgent  String?
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+  user       AppUser  @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([expiresAt])
+}
+
+model AppMfaSetup {
+  id               String   @id @default(cuid())
+  userId           String   @unique
+  secretCiphertext String
+  secretNonce      String
+  expiresAt        DateTime
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+  user             AppUser  @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([expiresAt])
 }
