@@ -8,37 +8,42 @@ import { usePathname, useRouter } from "next/navigation";
 export default function AppShell({ children }: { children: React.ReactNode }) {
   const [navOpen, setNavOpen] = useState(true);
   const [isMobile, setIsMobile] = useState(false);
+  const [sessionName, setSessionName] = useState<string | null>(null);
+  const [sessionChecked, setSessionChecked] = useState(false);
   const toggleNav = useCallback(() => setNavOpen((o) => !o), []);
   const pathname = usePathname();
   const router = useRouter();
   const isPublic = pathname === "/" || pathname.startsWith("/signup");
   const isWidePage = pathname === "/editor" || pathname.startsWith("/rosters/");
-  const [authReady, setAuthReady] = useState(false);
 
   useEffect(() => {
     if (isPublic) {
-      setAuthReady(true);
+      setSessionName(null);
+      setSessionChecked(false);
       return;
     }
+    if (sessionChecked) return;
     let active = true;
-    fetch("/api/auth/session")
+    fetch("/api/auth/session", { cache: "no-store" })
       .then((res) => (res.ok ? res.json() : { session: null }))
       .then((data) => {
         if (!active) return;
-        if (!data?.session) {
-          router.replace("/signup");
+        const session = data?.session;
+        if (!session?.user) {
+          router.replace(`/signup?next=${encodeURIComponent(pathname)}`);
           return;
         }
-        setAuthReady(true);
+        setSessionName(typeof session.user.name === "string" ? session.user.name : null);
+        setSessionChecked(true);
       })
       .catch(() => {
         if (!active) return;
-        router.replace("/signup");
+        router.replace(`/signup?next=${encodeURIComponent(pathname)}`);
       });
     return () => {
       active = false;
     };
-  }, [isPublic, pathname, router]);
+  }, [isPublic, pathname, router, sessionChecked]);
 
   useEffect(() => {
     const mediaQuery = window.matchMedia("(max-width: 767px)");
@@ -56,10 +61,6 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
 
   if (isPublic) {
     return <main className="min-h-screen bg-[var(--surface)]">{children}</main>;
-  }
-
-  if (!authReady) {
-    return <div className="min-h-screen bg-[var(--surface)]" />;
   }
 
   return (
@@ -81,7 +82,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
           }}
         />
         <div className="flex min-h-screen flex-1 flex-col bg-[#f5f6fa]">
-          <GlobalTopBar />
+          <GlobalTopBar userName={sessionName} />
           <main className={isWidePage ? "px-2 py-3 sm:px-3 sm:py-4 md:px-5 md:py-5" : "px-2 py-3 sm:px-3 sm:py-4 md:px-6 md:py-5"}>
             <div className="w-full space-y-4">
               {children}

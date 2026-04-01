@@ -1,7 +1,7 @@
 "use client";
 import React from "react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import {
   CalendarDays,
   Users,
@@ -46,6 +46,7 @@ export default function SideNav({
   onNavigate?: () => void;
 }){
   const pathname = usePathname() || "/";
+  const router = useRouter();
   const isOpen = open;
   const collapsed = mobile ? false : !isOpen;
 
@@ -64,6 +65,12 @@ export default function SideNav({
   const asideVisibility = isOpen ? "block" : "hidden md:block";
 
   if (mobile && !isOpen) return null;
+
+  React.useEffect(() => {
+    ["/rosters", "/editor", "/people", "/tasks", "/settings"].forEach((href) => {
+      router.prefetch(href);
+    });
+  }, [router]);
 
   const asideClassName = mobile
     ? "fixed inset-y-0 left-0 z-50 w-[236px] overflow-y-auto border-r border-[#e0e3ea] bg-white pt-3 pb-3 shadow-xl"

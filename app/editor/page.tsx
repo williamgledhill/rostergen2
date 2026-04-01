@@ -2,7 +2,7 @@
 import Grid from "@/components/Grid";
 import TopBar from "@/components/TopBar";
 import { useSearchParams } from "next/navigation";
-import React, { useEffect, useMemo, useState } from "react";
+import React, { Suspense, useEffect, useMemo, useState } from "react";
 import { formatLocalId, formatFullDay } from "@/lib/dateUtils";
 import { DEFAULT_SETTINGS } from "@/lib/settingsDefaults";
 import { Person, getDayScheduleForDate } from "@/lib/people";
@@ -21,7 +21,7 @@ function downloadXLS(html: string) {
   }, 0);
 }
 
-export default function Page() {
+function EditorPageContent() {
   const searchParams = useSearchParams();
   const dateParam = searchParams?.get("date");
   const initialDate = useMemo(() => (dateParam ? new Date(`${dateParam}T00:00:00`) : undefined), [dateParam]);
@@ -177,5 +177,13 @@ export default function Page() {
         />
       </div>
     </div>
+  );
+}
+
+export default function Page() {
+  return (
+    <Suspense fallback={<div className="w-full px-3 py-4 text-slate-700">Loading editor...</div>}>
+      <EditorPageContent />
+    </Suspense>
   );
 }

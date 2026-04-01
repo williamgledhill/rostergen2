@@ -1,7 +1,7 @@
 ﻿"use client";
 import React, { useEffect, useState } from "react";
 import Link from "next/link";
-import { useParams, notFound, useRouter } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import { ChevronRight } from "lucide-react";
 import { TaskTemplate } from "@/lib/taskTemplates";
 
@@ -161,8 +161,23 @@ export default function TaskDetailPage() {
   if (loading) {
     return <div className="w-full py-4 px-3"><p className="text-slate-700">Loading...</p></div>;
   }
-  if (!id) return notFound();
-  if (!task) return notFound();
+  if (!id || !task) {
+    return (
+      <div className="w-full px-3 py-4">
+        <div className="max-w-xl rounded-lg border border-[var(--border)] bg-white p-5 shadow-sm">
+          <h1 className="text-xl font-semibold text-slate-900">Task not found</h1>
+          <p className="mt-2 text-sm text-slate-600">
+            That task template does not exist or is still being synced from the database.
+          </p>
+          <div className="mt-4">
+            <Link href="/tasks" className="btn h-9 px-4">
+              Back to tasks
+            </Link>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="w-full py-3 px-3">

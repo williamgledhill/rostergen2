@@ -2,6 +2,8 @@ import { prisma } from "./prisma";
 import { ensureAppPersistenceSeeded } from "./appPersistenceSeed";
 import { defaultTaskTemplates, TaskTemplate, slugifyName } from "./taskTemplates";
 
+let defaultTemplateSyncPromise: Promise<void> | null = null;
+
 function applyDefaults(t: TaskTemplate): TaskTemplate {
   const base = defaultTaskTemplates.find((d) => d.id === t.id);
   const minPerEmployeePerDay = Number.isFinite(t.minPerEmployeePerDay)
@@ -70,6 +72,54 @@ function applyDefaults(t: TaskTemplate): TaskTemplate {
   };
 }
 
+function toTemplateCreateInput(template: TaskTemplate) {
+  return {
+    id: template.id,
+    name: template.name,
+    description: template.description || "",
+    category: template.category || null,
+    color: template.color || null,
+    mustManned: Boolean(template.mustManned),
+    autogenStart: template.autogenStart || null,
+    autogenEnd: template.autogenEnd || null,
+    regularDays: template.regularDays || [],
+    regularTimes: template.regularTimes || [],
+    regularTimesByDay: template.regularTimesByDay || {},
+    regularDayWindows: template.regularDayWindows || {},
+    minPerEmployeePerDay: Number.isFinite(template.minPerEmployeePerDay)
+      ? Number(template.minPerEmployeePerDay)
+      : 0,
+    maxPerEmployeePerDay: Number.isFinite(template.maxPerEmployeePerDay)
+      ? Number(template.maxPerEmployeePerDay)
+      : 0,
+    durationMinutes: Number.isFinite(template.durationMinutes) ? Number(template.durationMinutes) : 0,
+    maxConsecutiveMinutes: Number.isFinite(template.maxConsecutiveMinutes)
+      ? Number(template.maxConsecutiveMinutes)
+      : 0,
+    waitingMinutes: Number.isFinite(template.waitingMinutes) ? Number(template.waitingMinutes) : 0,
+    packingMinutes: Number.isFinite(template.packingMinutes) ? Number(template.packingMinutes) : 0,
+    limitPerDay: Number.isFinite(template.limitPerDay) ? Number(template.limitPerDay) : 0,
+    enabled: template.enabled !== false,
+  };
+}
+
+async function ensureDefaultTaskTemplatesSynced() {
+  if (defaultTemplateSyncPromise) return defaultTemplateSyncPromise;
+
+  defaultTemplateSyncPromise = prisma.appTaskTemplate
+    .createMany({
+      data: defaultTaskTemplates.map(toTemplateCreateInput),
+      skipDuplicates: true,
+    })
+    .then(() => undefined)
+    .catch((error) => {
+      defaultTemplateSyncPromise = null;
+      throw error;
+    });
+
+  return defaultTemplateSyncPromise;
+}
+
 function mapTemplate(record: any): TaskTemplate {
   return applyDefaults({
     id: record.id,
@@ -103,6 +153,7 @@ function mapTemplate(record: any): TaskTemplate {
 
 export async function getTaskTemplates(): Promise<TaskTemplate[]> {
   await ensureAppPersistenceSeeded();
+  await ensureDefaultTaskTemplatesSynced();
   const templates = await prisma.appTaskTemplate.findMany({ orderBy: { name: "asc" } });
   return templates.map(mapTemplate);
 }
@@ -114,6 +165,7 @@ export async function addTaskTemplate(input: {
   color?: string;
 }): Promise<TaskTemplate> {
   await ensureAppPersistenceSeeded();
+  await ensureDefaultTaskTemplatesSynced();
 
   const templates = await prisma.appTaskTemplate.findMany({ select: { id: true } });
   const baseSlug = slugifyName(input.name);
@@ -157,6 +209,7 @@ export async function updateTaskTemplate(
   input: Partial<TaskTemplate>
 ): Promise<TaskTemplate | null> {
   await ensureAppPersistenceSeeded();
+  await ensureDefaultTaskTemplatesSynced();
 
   const existing = await prisma.appTaskTemplate.findUnique({ where: { id } });
   if (!existing) return null;
@@ -201,6 +254,7 @@ export async function updateTaskTemplate(
 
 export async function deleteTaskTemplate(id: string): Promise<boolean> {
   await ensureAppPersistenceSeeded();
+  await ensureDefaultTaskTemplatesSynced();
 
   const deleted = await prisma.appTaskTemplate.deleteMany({ where: { id } });
   return deleted.count > 0;
