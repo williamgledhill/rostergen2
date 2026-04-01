@@ -1,3 +1,4 @@
+import { AppDayOfWeek } from "@prisma/client";
 import { prisma } from "./prisma";
 import { ensureAppPersistenceSeeded } from "./appPersistenceSeed";
 import { DAY_KEYS, DEFAULT_SETTINGS, AppSettings, DayKey, DayHours } from "./settingsDefaults";
@@ -15,11 +16,7 @@ function normalizeHoursByDay(input: any): Record<DayKey, DayHours> {
     const candidate = input?.[day];
     const start = isValidTime(candidate?.start) ? candidate.start : next[day].start;
     const end = isValidTime(candidate?.end) ? candidate.end : next[day].end;
-    if (start >= end) {
-      next[day] = { ...DEFAULT_SETTINGS.hoursByDay[day] };
-    } else {
-      next[day] = { start, end };
-    }
+    next[day] = start >= end ? { ...DEFAULT_SETTINGS.hoursByDay[day] } : { start, end };
   });
   return next;
 }
@@ -33,12 +30,38 @@ function normalizeUpcomingDays(input: unknown): number {
   return rounded;
 }
 
+function rowsToHoursByDay(
+  rows: Array<{ dayOfWeek: AppDayOfWeek; start: string; end: string }>
+): Record<DayKey, DayHours> {
+  const hoursByDay = { ...DEFAULT_SETTINGS.hoursByDay };
+  rows.forEach((row) => {
+    hoursByDay[row.dayOfWeek as DayKey] = {
+      start: row.start,
+      end: row.end,
+    };
+  });
+  return normalizeHoursByDay(hoursByDay);
+}
+
+function toDayHourRows(hoursByDay: Record<DayKey, DayHours>) {
+  return DAY_KEYS.map((day) => ({
+    dayOfWeek: day,
+    start: hoursByDay[day].start,
+    end: hoursByDay[day].end,
+  }));
+}
+
 export async function getSettings(): Promise<AppSettings> {
   await ensureAppPersistenceSeeded();
 
-  const record = await prisma.appSettings.findUnique({ where: { id: "default" } });
+  const record = await prisma.appSettings.findUnique({
+    where: { id: "default" },
+    include: { dayHours: true },
+  });
   return {
-    hoursByDay: normalizeHoursByDay(record?.hoursByDay),
+    hoursByDay: record?.dayHours.length
+      ? rowsToHoursByDay(record.dayHours)
+      : normalizeHoursByDay(record?.hoursByDay),
     upcomingDays: normalizeUpcomingDays(record?.upcomingDays),
   };
 }
@@ -51,10 +74,27 @@ export async function saveSettings(input: AppSettings): Promise<AppSettings> {
     upcomingDays: normalizeUpcomingDays(input?.upcomingDays),
   };
 
-  await prisma.appSettings.upsert({
-    where: { id: "default" },
-    update: normalized,
-    create: { id: "default", ...normalized },
+  await prisma.$transaction(async (tx) => {
+    await tx.appSettings.upsert({
+      where: { id: "default" },
+      update: {
+        hoursByDay: normalized.hoursByDay as never,
+        upcomingDays: normalized.upcomingDays,
+      },
+      create: {
+        id: "default",
+        hoursByDay: normalized.hoursByDay as never,
+        upcomingDays: normalized.upcomingDays,
+      },
+    });
+
+    await tx.appSettingsDayHours.deleteMany({ where: { settingsId: "default" } });
+    await tx.appSettingsDayHours.createMany({
+      data: toDayHourRows(normalized.hoursByDay).map((row) => ({
+        settingsId: "default",
+        ...row,
+      })),
+    });
   });
 
   return normalized;

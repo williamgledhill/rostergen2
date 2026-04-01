@@ -1,3 +1,4 @@
+import { AppDayOfWeek } from "@prisma/client";
 import { prisma } from "./prisma";
 import { ensureAppPersistenceSeeded } from "./appPersistenceSeed";
 import { defaultTaskTemplates, TaskTemplate, slugifyName } from "./taskTemplates";
@@ -103,24 +104,85 @@ function toTemplateCreateInput(template: TaskTemplate) {
   };
 }
 
+function toRelationRows(templateId: string, template: Partial<TaskTemplate>) {
+  const regularDays = Array.isArray(template.regularDays) ? template.regularDays : [];
+  const regularTimes = Array.isArray(template.regularTimes) ? template.regularTimes : [];
+  const regularTimesByDay =
+    template.regularTimesByDay && typeof template.regularTimesByDay === "object" && !Array.isArray(template.regularTimesByDay)
+      ? template.regularTimesByDay
+      : {};
+  const regularDayWindows =
+    template.regularDayWindows && typeof template.regularDayWindows === "object" && !Array.isArray(template.regularDayWindows)
+      ? template.regularDayWindows
+      : {};
+
+  return {
+    regularDayRules: regularDays.map((day) => ({
+      templateId,
+      dayOfWeek: day as AppDayOfWeek,
+    })),
+    timeSlots: [
+      ...regularTimes.map((time) => ({
+        templateId,
+        dayOfWeek: null as AppDayOfWeek | null,
+        time,
+      })),
+      ...Object.entries(regularTimesByDay).flatMap(([day, times]) =>
+        (Array.isArray(times) ? times : []).map((time) => ({
+          templateId,
+          dayOfWeek: day as AppDayOfWeek,
+          time,
+        }))
+      ),
+    ],
+    dayWindows: Object.entries(regularDayWindows).map(([day, value]) => ({
+      templateId,
+      dayOfWeek: day as AppDayOfWeek,
+      start: value?.start || null,
+      end: value?.end || null,
+    })),
+  };
+}
+
 async function ensureDefaultTaskTemplatesSynced() {
   if (defaultTemplateSyncPromise) return defaultTemplateSyncPromise;
 
-  defaultTemplateSyncPromise = prisma.appTaskTemplate
-    .createMany({
+  defaultTemplateSyncPromise = (async () => {
+    await prisma.appTaskTemplate.createMany({
       data: defaultTaskTemplates.map(toTemplateCreateInput),
       skipDuplicates: true,
-    })
-    .then(() => undefined)
-    .catch((error) => {
-      defaultTemplateSyncPromise = null;
-      throw error;
     });
+
+    for (const template of defaultTaskTemplates) {
+      const relations = toRelationRows(template.id, template);
+      if (relations.regularDayRules.length) {
+        await prisma.appTaskTemplateRegularDay.createMany({
+          data: relations.regularDayRules,
+          skipDuplicates: true,
+        });
+      }
+      if (relations.timeSlots.length) {
+        await prisma.appTaskTemplateTimeSlot.createMany({
+          data: relations.timeSlots,
+          skipDuplicates: true,
+        });
+      }
+      if (relations.dayWindows.length) {
+        await prisma.appTaskTemplateDayWindow.createMany({
+          data: relations.dayWindows,
+          skipDuplicates: true,
+        });
+      }
+    }
+  })().catch((error) => {
+    defaultTemplateSyncPromise = null;
+    throw error;
+  });
 
   return defaultTemplateSyncPromise;
 }
 
-function mapTemplate(record: any): TaskTemplate {
+function mapLegacyTemplate(record: any): TaskTemplate {
   return applyDefaults({
     id: record.id,
     name: record.name,
@@ -151,10 +213,72 @@ function mapTemplate(record: any): TaskTemplate {
   });
 }
 
+function mapTemplate(record: any): TaskTemplate {
+  if (!record.regularDayRules && !record.timeSlots && !record.dayWindows) {
+    return mapLegacyTemplate(record);
+  }
+
+  const regularDays = (record.regularDayRules || [])
+    .map((row: { dayOfWeek: AppDayOfWeek }) => row.dayOfWeek)
+    .sort();
+  const regularTimes = (record.timeSlots || [])
+    .filter((row: { dayOfWeek: AppDayOfWeek | null }) => !row.dayOfWeek)
+    .map((row: { time: string }) => row.time)
+    .sort();
+  const regularTimesByDay = Object.fromEntries(
+    ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"].map((day) => [
+      day,
+      (record.timeSlots || [])
+        .filter((row: { dayOfWeek: AppDayOfWeek | null; time: string }) => row.dayOfWeek === day)
+        .map((row: { time: string }) => row.time)
+        .sort(),
+    ]).filter(([, times]) => (times as string[]).length > 0)
+  );
+  const regularDayWindows = Object.fromEntries(
+    (record.dayWindows || []).map((row: { dayOfWeek: AppDayOfWeek; start: string | null; end: string | null }) => [
+      row.dayOfWeek,
+      {
+        ...(row.start ? { start: row.start } : {}),
+        ...(row.end ? { end: row.end } : {}),
+      },
+    ])
+  );
+
+  return applyDefaults({
+    id: record.id,
+    name: record.name,
+    description: record.description || "",
+    category: record.category || undefined,
+    color: record.color || undefined,
+    mustManned: record.mustManned,
+    autogenStart: record.autogenStart || "",
+    autogenEnd: record.autogenEnd || "",
+    regularDays,
+    regularTimes,
+    regularTimesByDay,
+    regularDayWindows,
+    minPerEmployeePerDay: record.minPerEmployeePerDay,
+    maxPerEmployeePerDay: record.maxPerEmployeePerDay,
+    durationMinutes: record.durationMinutes,
+    maxConsecutiveMinutes: record.maxConsecutiveMinutes,
+    waitingMinutes: record.waitingMinutes,
+    packingMinutes: record.packingMinutes,
+    limitPerDay: record.limitPerDay,
+    enabled: record.enabled,
+  });
+}
+
 export async function getTaskTemplates(): Promise<TaskTemplate[]> {
   await ensureAppPersistenceSeeded();
   await ensureDefaultTaskTemplatesSynced();
-  const templates = await prisma.appTaskTemplate.findMany({ orderBy: { name: "asc" } });
+  const templates = await prisma.appTaskTemplate.findMany({
+    orderBy: { name: "asc" },
+    include: {
+      regularDayRules: true,
+      timeSlots: true,
+      dayWindows: true,
+    },
+  });
   return templates.map(mapTemplate);
 }
 
@@ -199,6 +323,11 @@ export async function addTaskTemplate(input: {
       limitPerDay: 0,
       enabled: true,
     },
+    include: {
+      regularDayRules: true,
+      timeSlots: true,
+      dayWindows: true,
+    },
   });
 
   return mapTemplate(created);
@@ -213,43 +342,76 @@ export async function updateTaskTemplate(
 
   const existing = await prisma.appTaskTemplate.findUnique({ where: { id } });
   if (!existing) return null;
+  const existingTemplate = mapLegacyTemplate(existing);
 
-  const updated = await prisma.appTaskTemplate.update({
-    where: { id },
-    data: {
-      ...(input.name !== undefined ? { name: input.name } : {}),
-      ...(input.description !== undefined ? { description: input.description } : {}),
-      ...(input.category !== undefined ? { category: input.category || null } : {}),
-      ...(input.color !== undefined ? { color: input.color || null } : {}),
-      ...(input.mustManned !== undefined ? { mustManned: input.mustManned } : {}),
-      ...(input.autogenStart !== undefined ? { autogenStart: input.autogenStart || null } : {}),
-      ...(input.autogenEnd !== undefined ? { autogenEnd: input.autogenEnd || null } : {}),
-      ...(input.regularDays !== undefined ? { regularDays: input.regularDays } : {}),
-      ...(input.regularTimes !== undefined ? { regularTimes: input.regularTimes } : {}),
-      ...(input.regularTimesByDay !== undefined
-        ? { regularTimesByDay: input.regularTimesByDay || {} }
-        : {}),
-      ...(input.regularDayWindows !== undefined
-        ? { regularDayWindows: input.regularDayWindows || {} }
-        : {}),
-      ...(input.minPerEmployeePerDay !== undefined
-        ? { minPerEmployeePerDay: input.minPerEmployeePerDay }
-        : {}),
-      ...(input.maxPerEmployeePerDay !== undefined
-        ? { maxPerEmployeePerDay: input.maxPerEmployeePerDay }
-        : {}),
-      ...(input.durationMinutes !== undefined ? { durationMinutes: input.durationMinutes } : {}),
-      ...(input.maxConsecutiveMinutes !== undefined
-        ? { maxConsecutiveMinutes: input.maxConsecutiveMinutes }
-        : {}),
-      ...(input.waitingMinutes !== undefined ? { waitingMinutes: input.waitingMinutes } : {}),
-      ...(input.packingMinutes !== undefined ? { packingMinutes: input.packingMinutes } : {}),
-      ...(input.limitPerDay !== undefined ? { limitPerDay: input.limitPerDay } : {}),
-      ...(input.enabled !== undefined ? { enabled: input.enabled } : {}),
-    },
+  const updated = await prisma.$transaction(async (tx) => {
+    await tx.appTaskTemplate.update({
+      where: { id },
+      data: {
+        ...(input.name !== undefined ? { name: input.name } : {}),
+        ...(input.description !== undefined ? { description: input.description } : {}),
+        ...(input.category !== undefined ? { category: input.category || null } : {}),
+        ...(input.color !== undefined ? { color: input.color || null } : {}),
+        ...(input.mustManned !== undefined ? { mustManned: input.mustManned } : {}),
+        ...(input.autogenStart !== undefined ? { autogenStart: input.autogenStart || null } : {}),
+        ...(input.autogenEnd !== undefined ? { autogenEnd: input.autogenEnd || null } : {}),
+        ...(input.regularDays !== undefined ? { regularDays: input.regularDays } : {}),
+        ...(input.regularTimes !== undefined ? { regularTimes: input.regularTimes } : {}),
+        ...(input.regularTimesByDay !== undefined
+          ? { regularTimesByDay: input.regularTimesByDay || {} }
+          : {}),
+        ...(input.regularDayWindows !== undefined
+          ? { regularDayWindows: input.regularDayWindows || {} }
+          : {}),
+        ...(input.minPerEmployeePerDay !== undefined
+          ? { minPerEmployeePerDay: input.minPerEmployeePerDay }
+          : {}),
+        ...(input.maxPerEmployeePerDay !== undefined
+          ? { maxPerEmployeePerDay: input.maxPerEmployeePerDay }
+          : {}),
+        ...(input.durationMinutes !== undefined ? { durationMinutes: input.durationMinutes } : {}),
+        ...(input.maxConsecutiveMinutes !== undefined
+          ? { maxConsecutiveMinutes: input.maxConsecutiveMinutes }
+          : {}),
+        ...(input.waitingMinutes !== undefined ? { waitingMinutes: input.waitingMinutes } : {}),
+        ...(input.packingMinutes !== undefined ? { packingMinutes: input.packingMinutes } : {}),
+        ...(input.limitPerDay !== undefined ? { limitPerDay: input.limitPerDay } : {}),
+        ...(input.enabled !== undefined ? { enabled: input.enabled } : {}),
+      },
+    });
+
+    const relations = toRelationRows(id, {
+      regularDays: input.regularDays ?? existingTemplate.regularDays ?? [],
+      regularTimes: input.regularTimes ?? existingTemplate.regularTimes ?? [],
+      regularTimesByDay: input.regularTimesByDay ?? existingTemplate.regularTimesByDay ?? {},
+      regularDayWindows: input.regularDayWindows ?? existingTemplate.regularDayWindows ?? {},
+    });
+
+    await tx.appTaskTemplateRegularDay.deleteMany({ where: { templateId: id } });
+    await tx.appTaskTemplateTimeSlot.deleteMany({ where: { templateId: id } });
+    await tx.appTaskTemplateDayWindow.deleteMany({ where: { templateId: id } });
+
+    if (relations.regularDayRules.length) {
+      await tx.appTaskTemplateRegularDay.createMany({ data: relations.regularDayRules });
+    }
+    if (relations.timeSlots.length) {
+      await tx.appTaskTemplateTimeSlot.createMany({ data: relations.timeSlots });
+    }
+    if (relations.dayWindows.length) {
+      await tx.appTaskTemplateDayWindow.createMany({ data: relations.dayWindows });
+    }
+
+    return tx.appTaskTemplate.findUnique({
+      where: { id },
+      include: {
+        regularDayRules: true,
+        timeSlots: true,
+        dayWindows: true,
+      },
+    });
   });
 
-  return mapTemplate(updated);
+  return updated ? mapTemplate(updated) : null;
 }
 
 export async function deleteTaskTemplate(id: string): Promise<boolean> {

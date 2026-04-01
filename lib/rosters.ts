@@ -101,7 +101,7 @@ function normalizeRosterForDate(roster: RosterFile, date: Date): RosterFile {
   };
 }
 
-function mapRosterRecord(record: any): RosterFile {
+function mapLegacyRosterRecord(record: any): RosterFile {
   const date = toLocalStartDate(record.date) ?? parseLocalId(record.id) ?? new Date();
   return normalizeRosterForDate(
     {
@@ -122,9 +122,100 @@ function mapRosterRecord(record: any): RosterFile {
   );
 }
 
+function mapRosterRecord(record: any): RosterFile {
+  const date = toLocalStartDate(record.date) ?? parseLocalId(record.id) ?? new Date();
+  if (!record.rosterEmployees && !record.rosterTasks) {
+    return mapLegacyRosterRecord(record);
+  }
+
+  const employees = (record.rosterEmployees || [])
+    .slice()
+    .sort((a: { position: number }, b: { position: number }) => a.position - b.position)
+    .map((employee: any) => ({
+      id: employee.externalId,
+      name: employee.name,
+      ...(employee.startTime ? { startTime: employee.startTime } : {}),
+      ...(employee.endTime ? { endTime: employee.endTime } : {}),
+    }));
+
+  const tasks = (record.rosterTasks || [])
+    .slice()
+    .sort((a: { position: number }, b: { position: number }) => a.position - b.position)
+    .map((task: any) => ({
+      id: task.externalId,
+      type: task.type,
+      label: task.label,
+      col: task.col,
+      startRow: task.startRow,
+      span: task.span,
+      ...(task.color ? { color: task.color } : {}),
+      ...(task.employeeId ? { employeeId: task.employeeId } : {}),
+      ...(task.locked ? { locked: true } : {}),
+      ...(task.isLocked ? { isLocked: true } : {}),
+      ...(task.readOnly ? { readOnly: true } : {}),
+    }));
+
+  return normalizeRosterForDate(
+    {
+      id: record.id,
+      title: record.title,
+      start: date,
+      end: date,
+      status: record.status === "Published" ? "Published" : "Draft",
+      updated: record.updatedLabel || "-",
+      tours: record.tours,
+      people: record.people,
+      employees,
+      tasks,
+      hoursStart: record.hoursStart || undefined,
+      hoursEnd: record.hoursEnd || undefined,
+    },
+    date
+  );
+}
+
+function toRosterEmployeeRows(rosterId: string, employees: any[]) {
+  return employees.map((employee, index) => ({
+    rosterId,
+    externalId: String(employee?.id ?? index + 1),
+    name: String(employee?.name ?? `Employee ${index + 1}`),
+    startTime: typeof employee?.startTime === "string" ? employee.startTime : null,
+    endTime: typeof employee?.endTime === "string" ? employee.endTime : null,
+    position: index + 1,
+  }));
+}
+
+function toRosterTaskRows(rosterId: string, tasks: any[]) {
+  return tasks.map((task, index) => ({
+    rosterId,
+    externalId: String(task?.id ?? `task-${index + 1}`),
+    type: String(task?.type ?? "task"),
+    label: String(task?.label ?? "Task"),
+    col: Number.isFinite(task?.col) ? Number(task.col) : 0,
+    startRow: Number.isFinite(task?.startRow) ? Number(task.startRow) : 0,
+    span: Number.isFinite(task?.span) ? Number(task.span) : 1,
+    color: typeof task?.color === "string" ? task.color : null,
+    employeeId: task?.employeeId !== undefined && task?.employeeId !== null ? String(task.employeeId) : null,
+    locked: task?.locked === true,
+    isLocked: task?.isLocked === true,
+    readOnly: task?.readOnly === true,
+    position: index + 1,
+  }));
+}
+
+async function findManyRosters(args: Parameters<typeof prisma.appRoster.findMany>[0]) {
+  return prisma.appRoster.findMany({
+    ...args,
+    include: {
+      rosterEmployees: true,
+      rosterTasks: true,
+    },
+  });
+}
+
 export async function buildRosterList(limit?: number): Promise<RosterFile[]> {
   await ensureAppPersistenceSeeded();
-  const saved = (await prisma.appRoster.findMany({
+  const saved = (await findManyRosters({
     orderBy: { date: "asc" },
     ...(typeof limit === "number" ? { take: limit } : {}),
   })).map(mapRosterRecord);
@@ -147,7 +238,13 @@ export function formatRange(start: Date, end: Date) {
 
 export async function getRosterById(id: string): Promise<RosterFile | null> {
   await ensureAppPersistenceSeeded();
-  const roster = await prisma.appRoster.findUnique({ where: { id } });
+  const roster = await prisma.appRoster.findUnique({
+    where: { id },
+    include: {
+      rosterEmployees: true,
+      rosterTasks: true,
+    },
+  });
   return roster ? mapRosterRecord(roster) : null;
 }
 
@@ -175,7 +272,7 @@ export async function getRostersForMonth(month: string, limit = 200): Promise<Ro
   const start = new Date(year, monthNumber - 1, 1);
   const end = new Date(year, monthNumber, 1);
 
-  const rosters = await prisma.appRoster.findMany({
+  const rosters = await findManyRosters({
     where: {
       date: {
         gte: start,
@@ -233,7 +330,7 @@ export async function getUpcomingRosters(upcomingDays = 7): Promise<RosterFile[]
   const end = new Date(start);
   end.setDate(start.getDate() + dayCount);
 
-  const saved = await prisma.appRoster.findMany({
+  const saved = await findManyRosters({
     where: {
       date: {
         gte: start,
@@ -258,33 +355,50 @@ export async function saveRosterEntry(entry: RosterFile): Promise<void> {
 
   const date = parseLocalId(entry.id) ?? toLocalStartDate(entry.start) ?? new Date();
   const normalized = normalizeRosterForDate(entry, date);
+  const employees = Array.isArray(normalized.employees) ? normalized.employees : [];
+  const tasks = Array.isArray(normalized.tasks) ? normalized.tasks : [];
 
-  await prisma.appRoster.upsert({
-    where: { id: normalized.id },
-    update: {
-      date,
-      title: normalized.title,
-      status: normalized.status,
-      updatedLabel: normalized.updated,
-      tours: normalized.tours,
-      people: normalized.people,
-      employees: Array.isArray(normalized.employees) ? normalized.employees : [],
-      tasks: Array.isArray(normalized.tasks) ? normalized.tasks : [],
-      hoursStart: normalized.hoursStart || null,
-      hoursEnd: normalized.hoursEnd || null,
-    },
-    create: {
-      id: normalized.id,
-      date,
-      title: normalized.title,
-      status: normalized.status,
-      updatedLabel: normalized.updated,
-      tours: normalized.tours,
-      people: normalized.people,
-      employees: Array.isArray(normalized.employees) ? normalized.employees : [],
-      tasks: Array.isArray(normalized.tasks) ? normalized.tasks : [],
-      hoursStart: normalized.hoursStart || null,
-      hoursEnd: normalized.hoursEnd || null,
-    },
+  await prisma.$transaction(async (tx) => {
+    await tx.appRoster.upsert({
+      where: { id: normalized.id },
+      update: {
+        date,
+        title: normalized.title,
+        status: normalized.status,
+        updatedLabel: normalized.updated,
+        tours: normalized.tours,
+        people: normalized.people,
+        employees: employees as never,
+        tasks: tasks as never,
+        hoursStart: normalized.hoursStart || null,
+        hoursEnd: normalized.hoursEnd || null,
+      },
+      create: {
+        id: normalized.id,
+        date,
+        title: normalized.title,
+        status: normalized.status,
+        updatedLabel: normalized.updated,
+        tours: normalized.tours,
+        people: normalized.people,
+        employees: employees as never,
+        tasks: tasks as never,
+        hoursStart: normalized.hoursStart || null,
+        hoursEnd: normalized.hoursEnd || null,
+      },
+    });
+
+    await tx.appRosterEmployee.deleteMany({ where: { rosterId: normalized.id } });
+    await tx.appRosterTask.deleteMany({ where: { rosterId: normalized.id } });
+
+    const employeeRows = toRosterEmployeeRows(normalized.id, employees);
+    if (employeeRows.length) {
+      await tx.appRosterEmployee.createMany({ data: employeeRows });
+    }
+
+    const taskRows = toRosterTaskRows(normalized.id, tasks);
+    if (taskRows.length) {
+      await tx.appRosterTask.createMany({ data: taskRows });
+    }
   });
 }

@@ -12,6 +12,22 @@ enum AppUserRole {
   EDITOR
 }
 
+enum AppDayOfWeek {
+  Mon
+  Tue
+  Wed
+  Thu
+  Fri
+  Sat
+  Sun
+}
+
+enum AppScheduleWeekType {
+  DEFAULT
+  WEEK_A
+  WEEK_B
+}
+
 model Employee {
   id        Int      @id @default(autoincrement())
   name      String
@@ -53,10 +69,12 @@ model AppPerson {
   id        String   @id
   name      String
   email     String?
+  fortnightAnchorDate String?
   schedule  Json
   fortnight Json?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+  daySchedules AppPersonDaySchedule[]
 }
 
 model AppTaskTemplate {
@@ -82,6 +100,9 @@ model AppTaskTemplate {
   enabled                Boolean  @default(true)
   createdAt              DateTime @default(now())
   updatedAt              DateTime @updatedAt
+  regularDayRules        AppTaskTemplateRegularDay[]
+  timeSlots              AppTaskTemplateTimeSlot[]
+  dayWindows             AppTaskTemplateDayWindow[]
 }
 
 model AppSettings {
@@ -90,6 +111,7 @@ model AppSettings {
   upcomingDays Int     @default(7)
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
+  dayHours    AppSettingsDayHours[]
 }
 
 model AppRoster {
@@ -106,8 +128,118 @@ model AppRoster {
   hoursEnd     String?
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
+  rosterEmployees AppRosterEmployee[]
+  rosterTasks     AppRosterTask[]
 
   @@index([date])
+}
+
+model AppPersonDaySchedule {
+  id        Int                 @id @default(autoincrement())
+  personId  String
+  weekType  AppScheduleWeekType
+  dayOfWeek AppDayOfWeek
+  enabled   Boolean             @default(false)
+  start     String
+  end       String
+  createdAt DateTime            @default(now())
+  updatedAt DateTime            @updatedAt
+  person    AppPerson           @relation(fields: [personId], references: [id], onDelete: Cascade)
+
+  @@unique([personId, weekType, dayOfWeek])
+  @@index([personId, weekType])
+}
+
+model AppTaskTemplateRegularDay {
+  id         Int            @id @default(autoincrement())
+  templateId String
+  dayOfWeek  AppDayOfWeek
+  createdAt  DateTime       @default(now())
+  template   AppTaskTemplate @relation(fields: [templateId], references: [id], onDelete: Cascade)
+
+  @@unique([templateId, dayOfWeek])
+  @@index([templateId])
+}
+
+model AppTaskTemplateTimeSlot {
+  id         Int             @id @default(autoincrement())
+  templateId String
+  dayOfWeek  AppDayOfWeek?
+  time       String
+  createdAt  DateTime        @default(now())
+  template   AppTaskTemplate @relation(fields: [templateId], references: [id], onDelete: Cascade)
+
+  @@index([templateId, dayOfWeek])
+}
+
+model AppTaskTemplateDayWindow {
+  id         Int             @id @default(autoincrement())
+  templateId String
+  dayOfWeek  AppDayOfWeek
+  start      String?
+  end        String?
+  createdAt  DateTime        @default(now())
+  updatedAt  DateTime        @updatedAt
+  template   AppTaskTemplate @relation(fields: [templateId], references: [id], onDelete: Cascade)
+
+  @@unique([templateId, dayOfWeek])
+  @@index([templateId])
+}
+
+model AppSettingsDayHours {
+  id         Int          @id @default(autoincrement())
+  settingsId String
+  dayOfWeek  AppDayOfWeek
+  start      String
+  end        String
+  createdAt  DateTime     @default(now())
+  updatedAt  DateTime     @updatedAt
+  settings   AppSettings  @relation(fields: [settingsId], references: [id], onDelete: Cascade)
+
+  @@unique([settingsId, dayOfWeek])
+  @@index([settingsId])
+}
+
+model AppRosterEmployee {
+  id         Int        @id @default(autoincrement())
+  rosterId    String
+  externalId String
+  name       String
+  startTime  String?
+  endTime    String?
+  position   Int
+  createdAt  DateTime   @default(now())
+  updatedAt  DateTime   @updatedAt
+  roster     AppRoster  @relation(fields: [rosterId], references: [id], onDelete: Cascade)
+
+  @@unique([rosterId, position])
+  @@index([rosterId])
+  @@index([rosterId, externalId])
+}
+
+model AppRosterTask {
+  id                  Int        @id @default(autoincrement())
+  rosterId            String
+  externalId          String
+  type                String
+  label               String
+  col                 Int
+  startRow            Int
+  span                Int
+  color               String?
+  employeeId          String?
+  locked              Boolean    @default(false)
+  isLocked            Boolean    @default(false)
+  readOnly            Boolean    @default(false)
+  position            Int
+  createdAt           DateTime   @default(now())
+  updatedAt           DateTime   @updatedAt
+  roster              AppRoster  @relation(fields: [rosterId], references: [id], onDelete: Cascade)
+
+  @@unique([rosterId, position])
+  @@index([rosterId])
+  @@index([rosterId, col, startRow])
+  @@index([rosterId, employeeId])
 }
 
 model AppUser {
