@@ -27,6 +27,16 @@ describe("origin allow-list checks", () => {
     expect(allowed).toBe(false);
   });
 
+  it("allows same-origin referer when origin is missing", () => {
+    const allowed = isAllowedRequestOrigin(
+      "https://roster.example.com/api/tasks",
+      null,
+      [],
+      "https://roster.example.com/editor?date=2026-04-01"
+    );
+    expect(allowed).toBe(true);
+  });
+
   it("normalizes env-configured allowed origins", () => {
     process.env.APP_ORIGIN = "https://roster.example.com";
     process.env.ALLOWED_ORIGINS = "https://admin.example.com, https://ops.example.com";

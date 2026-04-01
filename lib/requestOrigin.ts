@@ -20,12 +20,21 @@ export function getConfiguredAllowedOrigins() {
   return Array.from(new Set(configured));
 }
 
-export function isAllowedRequestOrigin(requestUrl: string, originHeader: string | null, extraAllowedOrigins: string[] = []) {
-  if (!originHeader) return false;
+export function isAllowedRequestOrigin(
+  requestUrl: string,
+  originHeader: string | null,
+  extraAllowedOrigins: string[] = [],
+  refererHeader?: string | null
+) {
   const requestOrigin = normalizeOrigin(requestUrl);
-  const sourceOrigin = normalizeOrigin(originHeader);
-  if (!requestOrigin || !sourceOrigin) return false;
+  if (!requestOrigin) return false;
+
+  const candidateOrigins = [originHeader, refererHeader]
+    .map((value) => (typeof value === "string" ? normalizeOrigin(value) : null))
+    .filter((value): value is string => typeof value === "string");
+
+  if (candidateOrigins.length === 0) return false;
 
   const allowed = new Set<string>([requestOrigin, ...extraAllowedOrigins]);
-  return allowed.has(sourceOrigin);
+  return candidateOrigins.some((sourceOrigin) => allowed.has(sourceOrigin));
 }

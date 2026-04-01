@@ -41,7 +41,12 @@ export async function requirePageSession(options?: { adminOnly?: boolean }) {
 
 export function enforceSameOrigin(request: Request) {
   const allowedOrigins = getConfiguredAllowedOrigins();
-  const isAllowed = isAllowedRequestOrigin(request.url, request.headers.get("origin"), allowedOrigins);
+  const isAllowed = isAllowedRequestOrigin(
+    request.url,
+    request.headers.get("origin"),
+    allowedOrigins,
+    request.headers.get("referer")
+  );
   if (isAllowed) return null;
   return NextResponse.json({ error: "Forbidden origin" }, { status: 403 });
 }
