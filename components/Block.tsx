@@ -44,7 +44,8 @@ export default function Block({
   packingMinutes,
 }: Props) {
   const cls = color ? "" : typeToClass[type] ?? "bg-[var(--gallery)]";
-  const rightBorder = isLastCol ? "" : "border-r";
+  const rightBorder = isLastCol ? "" : "border-r-2";
+  const bottomBorder = "border-b-2";
   const selOverlay = selected ? "shadow-[inset_0_0_0_2px_rgba(0,0,0,0.8)]" : "";
   const colHighlight = highlighted && !selected ? "shadow-[inset_0_0_0_1px_rgba(52,77,232,0.28)]" : "";
   const totalRows = Math.max(1, span);
@@ -61,7 +62,7 @@ export default function Block({
   return (
     <div
       data-id={id}
-      className={`relative border-b ${rightBorder} border-black ${cls} ${selOverlay} ${colHighlight}
+      className={`relative ${bottomBorder} ${rightBorder} border-black ${cls} ${selOverlay} ${colHighlight}
                   flex items-center justify-center text-center select-none overflow-hidden`}
       style={{ gridColumn: String(col), gridRow: `${startRow} / span ${span}`, backgroundColor: color || undefined }}
       onClick={(e) => { e.stopPropagation(); onSelect?.(); }}
@@ -73,7 +74,7 @@ export default function Block({
         {segments.map((seg, idx) => (
           <div
             key={seg.key}
-            className={`flex items-center justify-center ${idx > 0 ? "border-t border-black/30" : ""}`}
+            className={`flex items-center justify-center ${idx > 0 ? "border-t-2 border-black/70" : ""}`}
           >
             <span className="px-2 text-[13px] font-semibold uppercase tracking-wide">{seg.label}</span>
           </div>

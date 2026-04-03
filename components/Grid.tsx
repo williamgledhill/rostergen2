@@ -1492,7 +1492,7 @@ export default function Grid({
             <div
               key={`time-${r}`}
               ref={i === 0 ? firstTimeCellRef : undefined}
-              className="sticky left-0 z-20 border-b bg-[#f8f9fc] px-2 py-2 text-center text-[12px] font-semibold tabular-nums text-slate-700 shadow-[inset_-1px_0_0_rgba(148,163,184,0.45)]"
+              className="sticky left-0 z-20 border-b-2 border-black bg-[#f8f9fc] px-2 py-2 text-center text-[12px] font-semibold tabular-nums text-slate-700 shadow-[inset_-2px_0_0_rgba(0,0,0,0.95)]"
             >
               {timeRangeForRow(r)}
             </div>
@@ -1504,7 +1504,7 @@ export default function Grid({
           return (
             <div
               key={`slot-${idx}`}
-              className={`relative cursor-pointer border-b ${s.col === lastCol ? "" : "border-r"} ${
+              className={`relative cursor-pointer border-b-2 border-black ${s.col === lastCol ? "" : "border-r-2"} ${
                 highlighted ? "bg-[#eef2ff]/55" : ""
               } hover:bg-slate-50`}
               style={{ gridColumn: String(s.col), gridRow: String(s.row) }}
