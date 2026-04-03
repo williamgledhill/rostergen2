@@ -5,7 +5,6 @@ import { getTaskTemplates } from "@/lib/taskTemplatesStore";
 export const dynamic = "force-dynamic";
 
 export default async function Page() {
-  await requirePageSession();
-  const templates = await getTaskTemplates();
+  const [_, templates] = await Promise.all([requirePageSession(), getTaskTemplates()]);
   return <TasksClient initialTasks={templates} />;
 }

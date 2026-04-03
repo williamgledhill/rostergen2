@@ -9,8 +9,7 @@ export default async function Page({
 }: {
   params: Promise<{ id: string }>;
 }) {
-  await requirePageSession();
   const { id } = await params;
-  const task = await getTaskTemplateById(id);
+  const [_, task] = await Promise.all([requirePageSession(), getTaskTemplateById(id)]);
   return <TaskDetailClient id={id} initialTask={task} />;
 }

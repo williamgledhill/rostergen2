@@ -33,21 +33,22 @@ export default async function Page({
 }: {
   searchParams?: Promise<{ date?: string }>;
 }) {
-  await requirePageSession();
-
   const resolvedSearchParams = (await searchParams) ?? {};
   const dateParam = typeof resolvedSearchParams.date === "string" ? resolvedSearchParams.date : "";
   const selectedDate = parseLocalId(dateParam) ?? new Date();
-  const [people, settings, templates, savedRoster] = await Promise.all([
+  const [_, people, settings, templates, savedRoster] = await Promise.all([
+    requirePageSession(),
     getPeople(),
     getSettings(),
     getTaskTemplates(),
-    getRosterById(dateParam),
+    dateParam ? getRosterById(dateParam) : Promise.resolve(null),
   ]);
 
-  const baseEmployees = Array.isArray(savedRoster?.employees)
-    ? savedRoster!.employees
-    : workingPeopleForDate(selectedDate, people);
+  const defaultEmployees = workingPeopleForDate(selectedDate, people);
+  const savedEmployees = Array.isArray(savedRoster?.employees) ? savedRoster!.employees : [];
+  const useSavedEmployees = savedEmployees.length > 0;
+  const baseEmployees = useSavedEmployees ? savedEmployees : defaultEmployees;
+  const baseTasks = useSavedEmployees && Array.isArray(savedRoster?.tasks) ? savedRoster!.tasks : [];
 
   return (
     <EditorClient
@@ -57,7 +58,7 @@ export default async function Page({
       templates={templates}
       initialRoster={{
         employees: syncEmployeesWithPeople(baseEmployees, people),
-        tasks: Array.isArray(savedRoster?.tasks) ? savedRoster!.tasks : [],
+        tasks: baseTasks,
         hoursStart: savedRoster?.hoursStart,
         hoursEnd: savedRoster?.hoursEnd,
       }}

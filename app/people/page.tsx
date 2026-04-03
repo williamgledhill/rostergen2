@@ -5,7 +5,6 @@ import { getPeople } from "@/lib/peopleStore";
 export const dynamic = "force-dynamic";
 
 export default async function Page() {
-  await requirePageSession();
-  const people = await getPeople();
+  const [_, people] = await Promise.all([requirePageSession(), getPeople()]);
   return <PeopleClient initialPeople={people} />;
 }
