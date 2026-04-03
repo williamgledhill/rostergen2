@@ -44,10 +44,14 @@ export default function Block({
   packingMinutes,
 }: Props) {
   const cls = color ? "" : typeToClass[type] ?? "bg-[var(--gallery)]";
-  const rightBorder = isLastCol ? "" : "border-r-2";
-  const bottomBorder = "border-b-2";
-  const selOverlay = selected ? "shadow-[inset_0_0_0_2px_rgba(0,0,0,0.8)]" : "";
-  const colHighlight = highlighted && !selected ? "shadow-[inset_0_0_0_1px_rgba(52,77,232,0.28)]" : "";
+  const boxShadow = [
+    !isLastCol ? "inset -0.5px 0 0 rgba(148,163,184,0.9)" : "",
+    "inset 0 -0.5px 0 rgba(148,163,184,0.9)",
+    selected ? "inset 0 0 0 2px rgba(15,23,42,0.82)" : "",
+    highlighted && !selected ? "inset 0 0 0 1px rgba(52,77,232,0.28)" : "",
+  ]
+    .filter(Boolean)
+    .join(", ");
   const totalRows = Math.max(1, span);
   const waitingRows = Math.max(0, Math.round((waitingMinutes ?? 0) / 15));
   const packingRows = Math.max(0, Math.round((packingMinutes ?? 0) / 15));
@@ -62,9 +66,13 @@ export default function Block({
   return (
     <div
       data-id={id}
-      className={`relative ${bottomBorder} ${rightBorder} border-black ${cls} ${selOverlay} ${colHighlight}
-                  flex items-center justify-center text-center select-none overflow-hidden`}
-      style={{ gridColumn: String(col), gridRow: `${startRow} / span ${span}`, backgroundColor: color || undefined }}
+      className={`relative ${cls} flex items-center justify-center text-center select-none overflow-hidden`}
+      style={{
+        gridColumn: String(col),
+        gridRow: `${startRow} / span ${span}`,
+        backgroundColor: color || undefined,
+        boxShadow,
+      }}
       onClick={(e) => { e.stopPropagation(); onSelect?.(); }}
     >
       <div
@@ -74,7 +82,7 @@ export default function Block({
         {segments.map((seg, idx) => (
           <div
             key={seg.key}
-            className={`flex items-center justify-center ${idx > 0 ? "border-t-2 border-black/70" : ""}`}
+            className={`flex items-center justify-center ${idx > 0 ? "border-t border-slate-500/60" : ""}`}
           >
             <span className="px-2 text-[13px] font-semibold uppercase tracking-wide">{seg.label}</span>
           </div>

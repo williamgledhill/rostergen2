@@ -1380,7 +1380,7 @@ export default function Grid({
           gridAutoRows: "var(--rowh)",
         }}
       >
-        <div className="sticky left-0 z-40 rounded-tl-[12px] border-b bg-[var(--surface-subtle)] px-3 py-1.5 text-center shadow-[inset_-1px_0_0_rgba(148,163,184,0.45),inset_0_-1px_0_rgba(15,23,42,0.08)]">
+        <div className="sticky left-0 z-40 rounded-tl-[12px] border-b border-slate-300 bg-[var(--surface-subtle)] px-3 py-1.5 text-center shadow-[inset_-0.5px_0_0_rgba(148,163,184,0.9),inset_0_-0.5px_0_rgba(148,163,184,0.9)]">
           <span className="text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-700">Time</span>
         </div>
         {employeeCols.map((h) => {
@@ -1390,7 +1390,7 @@ export default function Grid({
           return (
             <div
               key={h.id}
-              className={`group relative border-b ${h.col === lastCol ? "rounded-tr-[12px]" : "border-r"} px-3 py-1.5 transition ${
+              className={`group relative border-b border-slate-300 ${h.col === lastCol ? "rounded-tr-[12px]" : "border-r border-slate-300"} px-3 py-1.5 transition ${
                 highlighted ? "bg-[#eef2ff]" : "bg-[var(--surface-subtle)]"
               }`}
               onMouseEnter={() => setHoveredCol(h.col)}
@@ -1492,7 +1492,7 @@ export default function Grid({
             <div
               key={`time-${r}`}
               ref={i === 0 ? firstTimeCellRef : undefined}
-              className="sticky left-0 z-20 border-b-2 border-black bg-[#f8f9fc] px-2 py-2 text-center text-[12px] font-semibold tabular-nums text-slate-700 shadow-[inset_-2px_0_0_rgba(0,0,0,0.95)]"
+              className="sticky left-0 z-20 bg-[#f8f9fc] px-2 py-2 text-center text-[12px] font-semibold tabular-nums text-slate-700 shadow-[inset_-0.5px_0_0_rgba(148,163,184,0.9),inset_0_-0.5px_0_rgba(148,163,184,0.9)]"
             >
               {timeRangeForRow(r)}
             </div>
@@ -1504,10 +1504,14 @@ export default function Grid({
           return (
             <div
               key={`slot-${idx}`}
-              className={`relative cursor-pointer border-b-2 border-black ${s.col === lastCol ? "" : "border-r-2"} ${
+              className={`relative cursor-pointer ${
                 highlighted ? "bg-[#eef2ff]/55" : ""
               } hover:bg-slate-50`}
-              style={{ gridColumn: String(s.col), gridRow: String(s.row) }}
+              style={{
+                gridColumn: String(s.col),
+                gridRow: String(s.row),
+                boxShadow: `${s.col === lastCol ? "" : "inset -0.5px 0 0 rgba(148,163,184,0.9), "}inset 0 -0.5px 0 rgba(148,163,184,0.9)`,
+              }}
               onClick={(e) => { e.stopPropagation(); openPicker(s.col, s.row); }}
               title="Add task"
             >
