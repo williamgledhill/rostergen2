@@ -31,15 +31,15 @@ const Item = ({
         href={href}
         prefetch={true}
         onClick={onClick}
-        className={`flex min-h-[72px] w-full flex-col items-center justify-center gap-1 rounded-[12px] px-1 py-1.5 text-center transition ${
-          active ? "text-[#3f4c84]" : "text-[#4b556b] hover:text-[#374151]"
+        className={`flex min-h-[70px] w-full flex-col items-center justify-center gap-1 rounded-[12px] px-1 py-1.5 text-center transition ${
+          active ? "text-[#23325f]" : "text-[#2f3d68] hover:text-[#22305a]"
         }`}
         title={label}
       >
-        <span className={`grid h-10 w-10 place-items-center rounded-full ${active ? "bg-[#6b73ff]" : "bg-transparent"}`}>
-          <Icon className={`h-4 w-4 ${active ? "text-white" : "text-[#6b768f]"}`} aria-hidden="true" />
+        <span className={`grid h-9 w-9 place-items-center rounded-full ${active ? "bg-[var(--accent)] shadow-[0_6px_14px_rgba(52,77,232,0.22)]" : "bg-transparent"}`}>
+          <Icon className={`h-[18px] w-[18px] ${active ? "text-white" : "text-[#44537d]"}`} aria-hidden="true" />
         </span>
-        <span className="block w-full text-center text-[12.5px] font-medium leading-[1.1] text-current">{label}</span>
+        <span className="block w-full text-center text-[13px] font-medium leading-[1.1] text-current">{label}</span>
       </Link>
     );
   }
@@ -49,15 +49,15 @@ const Item = ({
       href={href}
       prefetch={true}
       onClick={onClick}
-      className={`inline-flex h-10 w-full items-center gap-2.5 rounded-[12px] px-4 text-left transition ${
-        active ? "bg-[#eceefe] text-[#3f4c84]" : "text-[#4b556b] hover:bg-[#f3f4f7]"
+      className={`inline-flex h-9 w-full items-center gap-2.5 rounded-[10px] px-3.5 text-left transition ${
+        active ? "bg-[rgba(52,77,232,0.12)] text-[#22305a]" : "text-[#2f3d68] hover:bg-[#f3f5fb] hover:text-[#22305a]"
       }`}
       title={label}
     >
       <span className={`grid h-7 w-7 shrink-0 place-items-center rounded-full ${active ? "bg-white/90 shadow-sm" : "bg-transparent"}`}>
-        <Icon className={`h-4 w-4 ${active ? "text-[#4a57a1]" : "text-[#6b768f]"}`} aria-hidden="true" />
+        <Icon className={`h-[18px] w-[18px] ${active ? "text-[var(--accent)]" : "text-[#44537d]"}`} aria-hidden="true" />
       </span>
-      <span className="text-[14px] font-medium leading-5">{label}</span>
+      <span className="text-[14px] font-medium leading-5 text-current">{label}</span>
     </Link>
   );
 };
