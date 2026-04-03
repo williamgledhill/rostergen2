@@ -228,8 +228,14 @@ export function formatRange(start: Date, end: Date) {
 
 export async function getRosterById(id: string): Promise<RosterFile | null> {
   await ensureAppPersistenceSeeded();
-  const roster = await prisma.appRoster.findUnique({ where: { id } });
-  return roster ? mapLegacyRosterRecord(roster) : null;
+  const roster = await prisma.appRoster.findUnique({
+    where: { id },
+    include: {
+      rosterEmployees: true,
+      rosterTasks: true,
+    },
+  });
+  return roster ? mapRosterRecord(roster) : null;
 }
 
 export async function getRosterMonths(limit = 200) {

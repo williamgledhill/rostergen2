@@ -1,6 +1,6 @@
 import EditorClient from "./EditorClient";
 import { requirePageSession } from "@/lib/apiAuth";
-import { parseLocalId } from "@/lib/dateUtils";
+import { formatLocalId, parseLocalId } from "@/lib/dateUtils";
 import { getDayScheduleForDate, type Person } from "@/lib/people";
 import { getPeople } from "@/lib/peopleStore";
 import { getRosterById } from "@/lib/rosters";
@@ -36,19 +36,20 @@ export default async function Page({
   const resolvedSearchParams = (await searchParams) ?? {};
   const dateParam = typeof resolvedSearchParams.date === "string" ? resolvedSearchParams.date : "";
   const selectedDate = parseLocalId(dateParam) ?? new Date();
+  const rosterDateId = formatLocalId(selectedDate);
   const [_, people, settings, templates, savedRoster] = await Promise.all([
     requirePageSession(),
     getPeople(),
     getSettings(),
     getTaskTemplates(),
-    dateParam ? getRosterById(dateParam) : Promise.resolve(null),
+    getRosterById(rosterDateId),
   ]);
 
   const defaultEmployees = workingPeopleForDate(selectedDate, people);
   const savedEmployees = Array.isArray(savedRoster?.employees) ? savedRoster!.employees : [];
-  const useSavedEmployees = savedEmployees.length > 0;
-  const baseEmployees = useSavedEmployees ? savedEmployees : defaultEmployees;
-  const baseTasks = useSavedEmployees && Array.isArray(savedRoster?.tasks) ? savedRoster!.tasks : [];
+  const hasSavedRoster = savedRoster !== null;
+  const baseEmployees = hasSavedRoster ? savedEmployees : defaultEmployees;
+  const baseTasks = hasSavedRoster && Array.isArray(savedRoster?.tasks) ? savedRoster!.tasks : [];
 
   return (
     <EditorClient
