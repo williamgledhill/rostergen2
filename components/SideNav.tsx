@@ -50,11 +50,11 @@ const Item = ({
       prefetch={true}
       onClick={onClick}
       className={`inline-flex h-9 w-full items-center gap-2.5 rounded-[10px] px-3.5 text-left transition ${
-        active ? "bg-[rgba(52,77,232,0.12)] text-[#22305a]" : "text-[#2f3d68] hover:bg-[#f3f5fb] hover:text-[#22305a]"
+        active ? "bg-[rgba(52,77,232,0.09)] text-[#22305a]" : "text-[#2f3d68] hover:bg-[rgba(52,77,232,0.045)] hover:text-[#22305a]"
       }`}
       title={label}
     >
-      <span className={`grid h-7 w-7 shrink-0 place-items-center rounded-full ${active ? "bg-white/90 shadow-sm" : "bg-transparent"}`}>
+      <span className="grid h-7 w-7 shrink-0 place-items-center rounded-full">
         <Icon className={`h-[18px] w-[18px] ${active ? "text-[var(--accent)]" : "text-[#44537d]"}`} aria-hidden="true" />
       </span>
       <span className="text-[14px] font-medium leading-5 text-current">{label}</span>
@@ -105,7 +105,7 @@ export default function SideNav({
   return (
     <aside className={asideClassName}>
       <div className="flex h-full flex-col">
-        <div className={`w-full ${collapsed ? "space-y-0.5 px-2 pt-1" : "space-y-1 px-2 pt-3"}`}>
+        <div className={`w-full ${collapsed ? "space-y-0.5 px-2 pt-1" : "space-y-1.5 px-2 pt-3"}`}>
           {rosterItems.map((item) => (
             <Item key={item.label} {...item} collapsed={collapsed} onClick={mobile ? onNavigate : undefined} />
           ))}
