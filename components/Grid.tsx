@@ -1380,7 +1380,7 @@ export default function Grid({
           gridAutoRows: "var(--rowh)",
         }}
       >
-        <div className="sticky left-0 z-40 rounded-tl-[12px] border-b border-slate-300 bg-[var(--surface-subtle)] px-3 py-1.5 text-center shadow-[inset_-0.5px_0_0_rgba(148,163,184,0.9),inset_0_-0.5px_0_rgba(148,163,184,0.9)]">
+        <div className="sticky left-0 z-40 rounded-tl-[12px] border-b border-slate-300 bg-[var(--surface-subtle)] px-3 py-1.5 text-center shadow-[inset_-0.5px_0_0_rgba(148,163,184,0.9)]">
           <span className="text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-700">Time</span>
         </div>
         {employeeCols.map((h) => {
