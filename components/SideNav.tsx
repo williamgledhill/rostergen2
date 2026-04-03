@@ -26,22 +26,43 @@ const Item = ({
   onClick?: () => void;
 }) => {
   const layout = collapsed
-    ? "flex-col justify-center gap-1 px-1 py-2 text-center"
+    ? "flex-col justify-center gap-1.5 px-1 py-2 text-center"
     : "justify-start gap-2.5 px-4";
   const base = `inline-flex w-full items-center rounded-[12px] text-left transition ${collapsed ? "min-h-[68px]" : "h-10"}`;
-  const state = active
-    ? "bg-[#eceefe] text-[#3f4c84]"
-    : "text-[#4b556b] hover:bg-[#f3f4f7]";
+  const state = collapsed
+    ? active
+      ? "text-[#3f4c84]"
+      : "text-[#4b556b] hover:text-[#374151]"
+    : active
+      ? "bg-[#eceefe] text-[#3f4c84]"
+      : "text-[#4b556b] hover:bg-[#f3f4f7]";
   return (
     <Link href={href} prefetch={true} onClick={onClick} className={`${base} ${state}`} title={collapsed ? label : undefined}>
       <span
-        className={`grid shrink-0 place-items-center rounded-full ${collapsed ? "h-8 w-8" : "h-7 w-7"} ${
-          active ? "bg-white/90 shadow-sm" : "bg-transparent"
+        className={`grid shrink-0 place-items-center rounded-full ${collapsed ? "h-9 w-9" : "h-7 w-7"} ${
+          collapsed
+            ? active
+              ? "bg-[#6b73ff]"
+              : "bg-transparent"
+            : active
+              ? "bg-white/90 shadow-sm"
+              : "bg-transparent"
         }`}
       >
-        <Icon className={`${collapsed ? "h-4 w-4" : "h-4 w-4"} ${active ? "text-[#4a57a1]" : "text-[#6b768f]"}`} aria-hidden="true" />
+        <Icon
+          className={`${collapsed ? "h-4 w-4" : "h-4 w-4"} ${
+            collapsed
+              ? active
+                ? "text-white"
+                : "text-[#6b768f]"
+              : active
+                ? "text-[#4a57a1]"
+                : "text-[#6b768f]"
+          }`}
+          aria-hidden="true"
+        />
       </span>
-      <span className={collapsed ? "text-[10px] font-medium leading-[1.15] text-current" : "text-[14px] leading-5 font-medium"}>{label}</span>
+      <span className={collapsed ? "text-[11px] font-medium leading-[1.2] text-current" : "text-[14px] leading-5 font-medium"}>{label}</span>
     </Link>
   );
 };
@@ -89,7 +110,7 @@ export default function SideNav({
   return (
     <aside className={asideClassName}>
       <div className="flex h-full flex-col">
-        <div className={!collapsed ? "px-4 pt-2 pb-5" : "px-2 pt-2 pb-4"}>
+        <div className={!collapsed ? "px-4 pt-2 pb-5" : "px-2 pt-3 pb-4"}>
           {!collapsed ? (
             <Link href="/rosters" prefetch={true} onClick={mobile ? onNavigate : undefined} className="block" title="Go to Rosters">
               <img
@@ -99,20 +120,7 @@ export default function SideNav({
               />
             </Link>
           ) : (
-            <Link
-              href="/rosters"
-              prefetch={true}
-              onClick={mobile ? onNavigate : undefined}
-              className="mx-auto flex min-h-[64px] w-full flex-col items-center justify-center gap-1 rounded-[12px] border border-[#eceff5] bg-[#fafbfe] text-center"
-              title="Go to Rosters"
-            >
-              <img
-                src="/royal-australian-mint-logo.svg"
-                alt="Australian Government Royal Australian Mint"
-                className="h-7 w-7 object-contain"
-              />
-              <span className="px-1 text-[9px] font-semibold uppercase tracking-[0.08em] text-[#55627f]">Mint</span>
-            </Link>
+            <div className="h-1" aria-hidden="true" />
           )}
         </div>
         <div className={`w-full space-y-1 ${collapsed ? "px-2" : "px-2"}`}>
@@ -135,9 +143,7 @@ export default function SideNav({
         {!mobile && (
           <div className={`mt-auto ${collapsed ? "px-2 pt-4" : "px-3 pt-4"}`}>
             {collapsed ? (
-              <div className="rounded-[12px] border border-[#eceff5] bg-[#fafbfe] px-2 py-2 text-center">
-                <p className="text-[9px] font-medium uppercase tracking-[0.08em] text-[#7c879b]">Roster</p>
-              </div>
+              <div className="h-2" aria-hidden="true" />
             ) : (
               <>
                 <p className="text-center text-[12px] text-[#707991]">Powered by rostergenerator.app</p>
