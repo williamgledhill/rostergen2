@@ -1,29 +1,20 @@
 "use client";
 import React from "react";
-import { Download, Plus, Sparkles, Menu, Save, RotateCcw, Trash2, Undo2, Redo2 } from "lucide-react";
-import { useNav } from "@/components/NavContext";
+import { Download, Plus, Sparkles, Save, RotateCcw, Trash2, Undo2, Redo2 } from "lucide-react";
 
 export default function TopBar({
-  navOpen,
-  onToggleNav,
   showActions = true,
   hours,
   onHoursStartChange,
   onHoursEndChange,
   onHoursDefault,
 }: {
-  navOpen?: boolean;
-  onToggleNav?: () => void;
   showActions?: boolean;
   hours?: { start: string; end: string };
   onHoursStartChange?: (value: string) => void;
   onHoursEndChange?: (value: string) => void;
   onHoursDefault?: () => void;
 }) {
-  const nav = useNav();
-  const isOpen = navOpen ?? nav.navOpen;
-  const toggleNav = onToggleNav ?? nav.toggleNav;
-
   function handleAddEmployee(){
     if(typeof window !== "undefined"){
       window.dispatchEvent(new CustomEvent("roster:add-employee"));
@@ -74,16 +65,6 @@ export default function TopBar({
   return (
     <header className="rounded-[12px] border border-[var(--border)] bg-[var(--surface-subtle)] px-3 py-2">
       <div className="flex min-h-[38px] w-full items-start gap-2 sm:items-center">
-        {!isOpen && (
-          <button
-            className="btn h-9 w-9 shrink-0 p-0"
-            onClick={toggleNav}
-            aria-pressed={isOpen}
-            title={isOpen ? "Collapse sidebar" : "Expand sidebar"}
-          >
-            <Menu className="w-4 h-4" />
-          </button>
-        )}
         {showActions && (
           <div className="min-w-0 flex-1">
             <div className="grid grid-cols-2 gap-2 sm:flex sm:w-max sm:items-center sm:gap-2">

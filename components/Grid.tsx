@@ -1,6 +1,6 @@
 "use client";
 import React, { useMemo, useState, useRef, useEffect, useCallback } from "react";
-import { X, Settings2, Trash2, Search } from "lucide-react";
+import { X, Trash2, Search } from "lucide-react";
 import Block from "@/components/Block";
 import Modal from "@/components/Modal";
 import { TaskTemplate, defaultTaskTemplates } from "@/lib/taskTemplates";
@@ -1397,24 +1397,22 @@ export default function Grid({
               onMouseLeave={() => setHoveredCol((current) => (current === h.col ? null : current))}
             >
               <button
-                className="absolute right-2 top-1.5 grid h-7 w-7 place-items-center rounded-md border border-[#d6dcea] bg-white text-slate-500 shadow-sm transition hover:border-[#b9c7e6] hover:text-slate-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#7283f5]/45"
+                type="button"
+                className="flex h-full w-full flex-col items-start justify-center rounded-[10px] pr-2 text-left transition hover:bg-[#eef2ff] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#7283f5]/45"
                 onClick={(e) => {
                   e.stopPropagation();
                   openEmployeeSettings({ id: h.id, name: h.name, startTime: h.startTime, endTime: h.endTime });
                 }}
-                title={`Settings for ${h.name}`}
-                aria-label={`Settings for ${h.name}`}
+                title={`Edit hours for ${h.name}`}
+                aria-label={`Edit hours for ${h.name}`}
               >
-                <Settings2 className="h-3.5 w-3.5" />
-              </button>
-              <div className="flex h-full flex-col items-start justify-center pr-10">
                 <span className="max-w-full truncate text-[15px] font-semibold leading-tight tracking-[0.01em] text-slate-900">
                   {h.name}
                 </span>
                 <span className={`mt-0.5 text-[12px] font-medium tabular-nums ${resolved.isOff ? "italic text-slate-500" : "text-slate-600"}`}>
                   {hoursLabel}
                 </span>
-              </div>
+              </button>
               {employeeSettingsId === h.id && (
                 <div
                   ref={employeeSettingsRef}
