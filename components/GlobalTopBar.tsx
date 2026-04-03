@@ -51,19 +51,19 @@ export default function GlobalTopBar({ userName }: { userName?: string | null })
   }
 
   return (
-    <header className="h-14 bg-[var(--accent)] px-4">
+    <header className="sticky top-0 z-50 h-14 bg-[var(--accent)] px-4">
       <div className="relative flex h-full items-center justify-center">
         {showNavToggle && (
           <button
             type="button"
-            className="absolute left-0 grid h-9 w-9 place-items-center rounded-md border border-white/20 bg-white/8 text-white transition hover:bg-white/14 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/40"
+            className="absolute left-0 flex h-10 w-10 items-center justify-center text-white transition hover:text-white/85 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/35"
             onClick={toggleNav}
             aria-label="Toggle navigation"
           >
-            <span className="flex flex-col gap-[3px]" aria-hidden="true">
-              <span className="block h-[1.5px] w-4 rounded-full bg-current" />
-              <span className="block h-[1.5px] w-4 rounded-full bg-current" />
-              <span className="block h-[1.5px] w-4 rounded-full bg-current" />
+            <span className="flex flex-col gap-1" aria-hidden="true">
+              <span className="block h-[2px] w-5 rounded-full bg-current" />
+              <span className="block h-[2px] w-5 rounded-full bg-current" />
+              <span className="block h-[2px] w-5 rounded-full bg-current" />
             </span>
           </button>
         )}

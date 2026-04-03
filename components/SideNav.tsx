@@ -31,7 +31,7 @@ const Item = ({
         href={href}
         prefetch={true}
         onClick={onClick}
-        className={`flex min-h-[82px] w-full flex-col items-center justify-center gap-1.5 rounded-[12px] px-1 py-2 text-center transition ${
+        className={`flex min-h-[72px] w-full flex-col items-center justify-center gap-1 rounded-[12px] px-1 py-1.5 text-center transition ${
           active ? "text-[#3f4c84]" : "text-[#4b556b] hover:text-[#374151]"
         }`}
         title={label}
@@ -39,7 +39,7 @@ const Item = ({
         <span className={`grid h-10 w-10 place-items-center rounded-full ${active ? "bg-[#6b73ff]" : "bg-transparent"}`}>
           <Icon className={`h-4 w-4 ${active ? "text-white" : "text-[#6b768f]"}`} aria-hidden="true" />
         </span>
-        <span className="block w-full text-center text-[12px] font-medium leading-[1.15] text-current">{label}</span>
+        <span className="block w-full text-center text-[12.5px] font-medium leading-[1.1] text-current">{label}</span>
       </Link>
     );
   }
@@ -99,13 +99,13 @@ export default function SideNav({
   }, [router]);
 
   const asideClassName = mobile
-    ? "fixed inset-x-0 bottom-0 left-0 top-14 z-50 w-[236px] overflow-y-auto border-r border-[#e0e3ea] bg-white pt-3 pb-3 shadow-xl"
-    : `${asideVisibility} ${asideWidth} relative flex-shrink-0 overflow-visible border-r border-[#e2e8f0] bg-white pt-3 pb-3 transition-all duration-200 md:sticky md:top-14 md:h-[calc(100vh-56px)] md:overflow-y-auto`;
+    ? "fixed inset-x-0 bottom-0 left-0 top-14 z-50 w-[236px] overflow-y-auto border-r border-[#e0e3ea] bg-white pt-2 pb-3 shadow-xl"
+    : `${asideVisibility} ${asideWidth} relative flex-shrink-0 overflow-visible border-r border-[#e2e8f0] bg-white pt-1 pb-3 transition-all duration-200 md:sticky md:top-14 md:h-[calc(100vh-56px)] md:overflow-y-auto`;
 
   return (
     <aside className={asideClassName}>
       <div className="flex h-full flex-col">
-        <div className={!collapsed ? "px-4 pt-2 pb-5" : "px-2 pt-3 pb-4"}>
+        <div className={!collapsed ? "px-4 pt-2 pb-5" : "px-2 pt-1 pb-2"}>
           {!collapsed ? (
             <Link href="/rosters" prefetch={true} onClick={mobile ? onNavigate : undefined} className="block" title="Go to Rosters">
               <img
@@ -115,10 +115,10 @@ export default function SideNav({
               />
             </Link>
           ) : (
-            <div className="h-1" aria-hidden="true" />
+            <div className="h-0" aria-hidden="true" />
           )}
         </div>
-        <div className={`w-full space-y-1 ${collapsed ? "px-2" : "px-2"}`}>
+        <div className={`w-full ${collapsed ? "space-y-0.5 px-2" : "space-y-1 px-2"}`}>
           {rosterItems.map((item) => (
             <Item key={item.label} {...item} collapsed={collapsed} onClick={mobile ? onNavigate : undefined} />
           ))}
@@ -136,9 +136,9 @@ export default function SideNav({
           })}
         </div>
         {!mobile && (
-          <div className={`mt-auto ${collapsed ? "px-2 pt-4" : "px-3 pt-4"}`}>
+          <div className={`mt-auto ${collapsed ? "px-2 pt-2" : "px-3 pt-4"}`}>
             {collapsed ? (
-              <div className="h-2" aria-hidden="true" />
+              <div className="h-0" aria-hidden="true" />
             ) : (
               <>
                 <p className="text-center text-[12px] text-[#707991]">Powered by rostergenerator.app</p>
