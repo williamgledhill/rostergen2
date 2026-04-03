@@ -25,44 +25,39 @@ const Item = ({
   collapsed?: boolean;
   onClick?: () => void;
 }) => {
-  const layout = collapsed
-    ? "flex-col items-center justify-center gap-1.5 px-1 py-2 text-center"
-    : "justify-start gap-2.5 px-4";
-  const base = `inline-flex w-full rounded-[12px] text-left transition ${collapsed ? "min-h-[76px]" : "h-10 items-center"}`;
-  const state = collapsed
-    ? active
-      ? "text-[#3f4c84]"
-      : "text-[#4b556b] hover:text-[#374151]"
-    : active
-      ? "bg-[#eceefe] text-[#3f4c84]"
-      : "text-[#4b556b] hover:bg-[#f3f4f7]";
-  return (
-    <Link href={href} prefetch={true} onClick={onClick} className={`${base} ${state}`} title={collapsed ? label : undefined}>
-      <span
-        className={`grid shrink-0 place-items-center rounded-full ${collapsed ? "h-9 w-9" : "h-7 w-7"} ${
-          collapsed
-            ? active
-              ? "bg-[#6b73ff]"
-              : "bg-transparent"
-            : active
-              ? "bg-white/90 shadow-sm"
-              : "bg-transparent"
+  if (collapsed) {
+    return (
+      <Link
+        href={href}
+        prefetch={true}
+        onClick={onClick}
+        className={`flex min-h-[82px] w-full flex-col items-center justify-center gap-1.5 rounded-[12px] px-1 py-2 text-center transition ${
+          active ? "text-[#3f4c84]" : "text-[#4b556b] hover:text-[#374151]"
         }`}
+        title={label}
       >
-        <Icon
-          className={`${collapsed ? "h-4 w-4" : "h-4 w-4"} ${
-            collapsed
-              ? active
-                ? "text-white"
-                : "text-[#6b768f]"
-              : active
-                ? "text-[#4a57a1]"
-                : "text-[#6b768f]"
-          }`}
-          aria-hidden="true"
-        />
+        <span className={`grid h-10 w-10 place-items-center rounded-full ${active ? "bg-[#6b73ff]" : "bg-transparent"}`}>
+          <Icon className={`h-4 w-4 ${active ? "text-white" : "text-[#6b768f]"}`} aria-hidden="true" />
+        </span>
+        <span className="block w-full text-center text-[12px] font-medium leading-[1.15] text-current">{label}</span>
+      </Link>
+    );
+  }
+
+  return (
+    <Link
+      href={href}
+      prefetch={true}
+      onClick={onClick}
+      className={`inline-flex h-10 w-full items-center gap-2.5 rounded-[12px] px-4 text-left transition ${
+        active ? "bg-[#eceefe] text-[#3f4c84]" : "text-[#4b556b] hover:bg-[#f3f4f7]"
+      }`}
+      title={label}
+    >
+      <span className={`grid h-7 w-7 shrink-0 place-items-center rounded-full ${active ? "bg-white/90 shadow-sm" : "bg-transparent"}`}>
+        <Icon className={`h-4 w-4 ${active ? "text-[#4a57a1]" : "text-[#6b768f]"}`} aria-hidden="true" />
       </span>
-      <span className={collapsed ? "block w-full text-center text-[12px] font-medium leading-[1.2] text-current" : "text-[14px] leading-5 font-medium"}>{label}</span>
+      <span className="text-[14px] font-medium leading-5">{label}</span>
     </Link>
   );
 };
