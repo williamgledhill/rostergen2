@@ -287,15 +287,27 @@ export async function getTaskTemplates(): Promise<TaskTemplate[]> {
   await ensureDefaultTaskTemplatesSynced();
   const templates = await prisma.appTaskTemplate.findMany({
     orderBy: { name: "asc" },
+    include: {
+      regularDayRules: true,
+      timeSlots: true,
+      dayWindows: true,
+    },
   });
-  return templates.map(mapLegacyTemplate);
+  return templates.map(mapTemplate);
 }
 
 export async function getTaskTemplateById(id: string): Promise<TaskTemplate | null> {
   await ensureAppPersistenceSeeded();
   await ensureDefaultTaskTemplatesSynced();
-  const template = await prisma.appTaskTemplate.findUnique({ where: { id } });
-  return template ? mapLegacyTemplate(template) : null;
+  const template = await prisma.appTaskTemplate.findUnique({
+    where: { id },
+    include: {
+      regularDayRules: true,
+      timeSlots: true,
+      dayWindows: true,
+    },
+  });
+  return template ? mapTemplate(template) : null;
 }
 
 export async function addTaskTemplate(input: {
