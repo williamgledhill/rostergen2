@@ -28,6 +28,15 @@ function workingPeopleForDate(date: Date, people: Person[]) {
     .map((person) => ({ id: person.id, name: person.name }));
 }
 
+function hasMeaningfulSavedLayout(
+  roster: { employees?: any[]; tasks?: any[] } | null
+) {
+  if (!roster) return false;
+  const employees = Array.isArray(roster.employees) ? roster.employees : [];
+  const tasks = Array.isArray(roster.tasks) ? roster.tasks : [];
+  return employees.length > 0 || tasks.length > 0;
+}
+
 export default async function Page({
   searchParams,
 }: {
@@ -47,9 +56,10 @@ export default async function Page({
 
   const defaultEmployees = workingPeopleForDate(selectedDate, people);
   const savedEmployees = Array.isArray(savedRoster?.employees) ? savedRoster!.employees : [];
-  const hasSavedRoster = savedRoster !== null;
-  const baseEmployees = hasSavedRoster ? savedEmployees : defaultEmployees;
-  const baseTasks = hasSavedRoster && Array.isArray(savedRoster?.tasks) ? savedRoster!.tasks : [];
+  const savedTasks = Array.isArray(savedRoster?.tasks) ? savedRoster!.tasks : [];
+  const hasSavedLayout = hasMeaningfulSavedLayout(savedRoster);
+  const baseEmployees = hasSavedLayout ? savedEmployees : defaultEmployees;
+  const baseTasks = hasSavedLayout ? savedTasks : [];
 
   return (
     <EditorClient
