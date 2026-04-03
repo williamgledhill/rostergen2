@@ -25,13 +25,23 @@ const Item = ({
   collapsed?: boolean;
   onClick?: () => void;
 }) => {
-  const layout = collapsed ? "justify-center px-2" : "justify-start gap-2.5 px-4";
-  const base = `inline-flex h-10 w-full items-center rounded-[10px] text-left transition ${layout}`;
-  const state = active ? "bg-[#e8e9fb] text-[#3f4c84]" : "text-[#384462] hover:bg-[#f3f4f7]";
+  const layout = collapsed
+    ? "flex-col justify-center gap-1 px-1 py-2 text-center"
+    : "justify-start gap-2.5 px-4";
+  const base = `inline-flex w-full items-center rounded-[12px] text-left transition ${collapsed ? "min-h-[68px]" : "h-10"}`;
+  const state = active
+    ? "bg-[#eceefe] text-[#3f4c84]"
+    : "text-[#4b556b] hover:bg-[#f3f4f7]";
   return (
     <Link href={href} prefetch={true} onClick={onClick} className={`${base} ${state}`} title={collapsed ? label : undefined}>
-      <Icon className={`h-4 w-4 shrink-0 ${active ? "text-[#4a57a1]" : "text-[#6b768f]"}`} aria-hidden="true" />
-      <span className={collapsed ? "sr-only" : "text-[14px] leading-5 font-medium"}>{label}</span>
+      <span
+        className={`grid shrink-0 place-items-center rounded-full ${collapsed ? "h-8 w-8" : "h-7 w-7"} ${
+          active ? "bg-white/90 shadow-sm" : "bg-transparent"
+        }`}
+      >
+        <Icon className={`${collapsed ? "h-4 w-4" : "h-4 w-4"} ${active ? "text-[#4a57a1]" : "text-[#6b768f]"}`} aria-hidden="true" />
+      </span>
+      <span className={collapsed ? "text-[10px] font-medium leading-[1.15] text-current" : "text-[14px] leading-5 font-medium"}>{label}</span>
     </Link>
   );
 };
@@ -61,7 +71,7 @@ export default function SideNav({
     { icon: FolderOpen, label: "Tasks", href: "/tasks" },
     { icon: Settings, label: "Settings", href: "/settings" },
   ];
-  const asideWidth = collapsed ? "w-[68px]" : "w-[236px]";
+  const asideWidth = collapsed ? "w-[86px]" : "w-[236px]";
   const asideVisibility = isOpen ? "block" : "hidden md:block";
 
   if (mobile && !isOpen) return null;
@@ -74,7 +84,7 @@ export default function SideNav({
 
   const asideClassName = mobile
     ? "fixed inset-y-0 left-0 z-50 w-[236px] overflow-y-auto border-r border-[#e0e3ea] bg-white pt-3 pb-3 shadow-xl"
-    : `${asideVisibility} ${asideWidth} relative flex-shrink-0 overflow-visible border-r border-[#e0e3ea] bg-white pt-3 pb-3 transition-all duration-200 md:sticky md:top-0 md:h-screen md:overflow-y-auto`;
+    : `${asideVisibility} ${asideWidth} relative flex-shrink-0 overflow-visible border-r border-[#e2e8f0] bg-white pt-3 pb-3 transition-all duration-200 md:sticky md:top-0 md:h-screen md:overflow-y-auto`;
 
   return (
     <aside className={asideClassName}>
@@ -93,14 +103,19 @@ export default function SideNav({
               href="/rosters"
               prefetch={true}
               onClick={mobile ? onNavigate : undefined}
-              className="mx-auto grid h-8 w-8 place-items-center rounded-md bg-[#e8e9fb] text-xs font-bold text-[#4a57a1]"
+              className="mx-auto flex min-h-[64px] w-full flex-col items-center justify-center gap-1 rounded-[12px] border border-[#eceff5] bg-[#fafbfe] text-center"
               title="Go to Rosters"
             >
-              M
+              <img
+                src="/royal-australian-mint-logo.svg"
+                alt="Australian Government Royal Australian Mint"
+                className="h-7 w-7 object-contain"
+              />
+              <span className="px-1 text-[9px] font-semibold uppercase tracking-[0.08em] text-[#55627f]">Mint</span>
             </Link>
           )}
         </div>
-        <div className="w-full space-y-1 px-2">
+        <div className={`w-full space-y-1 ${collapsed ? "px-2" : "px-2"}`}>
           {rosterItems.map((item) => (
             <Item key={item.label} {...item} collapsed={collapsed} onClick={mobile ? onNavigate : undefined} />
           ))}
@@ -118,9 +133,17 @@ export default function SideNav({
           })}
         </div>
         {!mobile && (
-          <div className="mt-auto px-3 pt-4">
-            <p className="text-center text-[12px] text-[#707991]">Powered by rostergenerator.app</p>
-            <p className="mt-1 text-center text-[11px] text-[#707991]">Copyright William Gledhill 2026 (excluding Mint Logo).</p>
+          <div className={`mt-auto ${collapsed ? "px-2 pt-4" : "px-3 pt-4"}`}>
+            {collapsed ? (
+              <div className="rounded-[12px] border border-[#eceff5] bg-[#fafbfe] px-2 py-2 text-center">
+                <p className="text-[9px] font-medium uppercase tracking-[0.08em] text-[#7c879b]">Roster</p>
+              </div>
+            ) : (
+              <>
+                <p className="text-center text-[12px] text-[#707991]">Powered by rostergenerator.app</p>
+                <p className="mt-1 text-center text-[11px] text-[#707991]">Copyright William Gledhill 2026 (excluding Mint Logo).</p>
+              </>
+            )}
           </div>
         )}
       </div>

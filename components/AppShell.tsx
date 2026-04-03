@@ -6,7 +6,7 @@ import GlobalTopBar from "@/components/GlobalTopBar";
 import { usePathname, useRouter } from "next/navigation";
 
 export default function AppShell({ children }: { children: React.ReactNode }) {
-  const [navOpen, setNavOpen] = useState(true);
+  const [navOpen, setNavOpen] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
   const [sessionName, setSessionName] = useState<string | null>(null);
   const [sessionChecked, setSessionChecked] = useState(false);
