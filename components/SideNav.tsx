@@ -26,9 +26,9 @@ const Item = ({
   onClick?: () => void;
 }) => {
   const layout = collapsed
-    ? "flex-col justify-center gap-1.5 px-1 py-2 text-center"
+    ? "flex-col items-center justify-center gap-1.5 px-1 py-2 text-center"
     : "justify-start gap-2.5 px-4";
-  const base = `inline-flex w-full items-center rounded-[12px] text-left transition ${collapsed ? "min-h-[68px]" : "h-10"}`;
+  const base = `inline-flex w-full rounded-[12px] text-left transition ${collapsed ? "min-h-[76px]" : "h-10 items-center"}`;
   const state = collapsed
     ? active
       ? "text-[#3f4c84]"
@@ -62,7 +62,7 @@ const Item = ({
           aria-hidden="true"
         />
       </span>
-      <span className={collapsed ? "text-[11px] font-medium leading-[1.2] text-current" : "text-[14px] leading-5 font-medium"}>{label}</span>
+      <span className={collapsed ? "block w-full text-center text-[12px] font-medium leading-[1.2] text-current" : "text-[14px] leading-5 font-medium"}>{label}</span>
     </Link>
   );
 };
@@ -104,8 +104,8 @@ export default function SideNav({
   }, [router]);
 
   const asideClassName = mobile
-    ? "fixed inset-y-0 left-0 z-50 w-[236px] overflow-y-auto border-r border-[#e0e3ea] bg-white pt-3 pb-3 shadow-xl"
-    : `${asideVisibility} ${asideWidth} relative flex-shrink-0 overflow-visible border-r border-[#e2e8f0] bg-white pt-3 pb-3 transition-all duration-200 md:sticky md:top-0 md:h-screen md:overflow-y-auto`;
+    ? "fixed inset-x-0 bottom-0 left-0 top-14 z-50 w-[236px] overflow-y-auto border-r border-[#e0e3ea] bg-white pt-3 pb-3 shadow-xl"
+    : `${asideVisibility} ${asideWidth} relative flex-shrink-0 overflow-visible border-r border-[#e2e8f0] bg-white pt-3 pb-3 transition-all duration-200 md:sticky md:top-14 md:h-[calc(100vh-56px)] md:overflow-y-auto`;
 
   return (
     <aside className={asideClassName}>
