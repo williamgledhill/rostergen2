@@ -29,7 +29,7 @@ const Item = ({
   const base = `inline-flex h-10 w-full items-center rounded-[10px] text-left transition ${layout}`;
   const state = active ? "bg-[#e8e9fb] text-[#3f4c84]" : "text-[#384462] hover:bg-[#f3f4f7]";
   return (
-    <Link href={href} onClick={onClick} className={`${base} ${state}`} title={collapsed ? label : undefined}>
+    <Link href={href} prefetch={true} onClick={onClick} className={`${base} ${state}`} title={collapsed ? label : undefined}>
       <Icon className={`h-4 w-4 shrink-0 ${active ? "text-[#4a57a1]" : "text-[#6b768f]"}`} aria-hidden="true" />
       <span className={collapsed ? "sr-only" : "text-[14px] leading-5 font-medium"}>{label}</span>
     </Link>
@@ -81,7 +81,7 @@ export default function SideNav({
       <div className="flex h-full flex-col">
         <div className={!collapsed ? "px-4 pt-2 pb-5" : "px-2 pt-2 pb-4"}>
           {!collapsed ? (
-            <Link href="/rosters" onClick={mobile ? onNavigate : undefined} className="block" title="Go to Rosters">
+            <Link href="/rosters" prefetch={true} onClick={mobile ? onNavigate : undefined} className="block" title="Go to Rosters">
               <img
                 src="/royal-australian-mint-logo.svg"
                 alt="Australian Government Royal Australian Mint"
@@ -91,6 +91,7 @@ export default function SideNav({
           ) : (
             <Link
               href="/rosters"
+              prefetch={true}
               onClick={mobile ? onNavigate : undefined}
               className="mx-auto grid h-8 w-8 place-items-center rounded-md bg-[#e8e9fb] text-xs font-bold text-[#4a57a1]"
               title="Go to Rosters"
