@@ -702,6 +702,37 @@ export default function Grid({
       incTotal(meta.id);
     };
 
+    const getSpanForMeta = (
+      meta: TemplateMeta,
+      row: number,
+      endRow: number,
+      options: { ignoreWindow: boolean }
+    ) => {
+      const windowEnd = options.ignoreWindow ? endRow : (meta.window?.endRow ?? endRow);
+      const maxEnd = Math.min(endRow, windowEnd, maxRowEx);
+      const available = maxEnd - row;
+      if (available <= 0) return 0;
+      const span = meta.allowShrink ? Math.max(1, Math.min(meta.span, available)) : meta.span;
+      return span <= available ? span : 0;
+    };
+
+    const isTypeCoveredAt = (templateId: string, row: number) =>
+      generated.some((task) => task.type === templateId && row >= task.startRow && row < task.startRow + task.span);
+
+    const pickEmployeeForPlacement = (meta: TemplateMeta, row: number, span: number) => {
+      const sortedEmployees = [...employees].sort(
+        (a, b) => getEmpCount(meta.id, a.id) - getEmpCount(meta.id, b.id)
+      );
+      return sortedEmployees.find((emp) => {
+        if (getEmpCount(meta.id, emp.id) >= meta.maxPerEmp) return false;
+        const col = employeeColById.get(emp.id) ?? employees.findIndex((e) => e.id === emp.id) + 2;
+        return (
+          isFree(col, row, span, emp.id) &&
+          !exceedsConcurrentLimit(meta.id, row, span, meta.maxConcurrentPerTimeslot)
+        );
+      });
+    };
+
     const getWindow = (template: TaskTemplate) => {
       const dayWindow = template.regularDayWindows?.[dayKey];
       const startValue = dayWindow?.start || template.autogenStart || "";
@@ -828,13 +859,35 @@ export default function Grid({
       const maxPerEmp = meta.maxPerEmp;
       const minPerEmp = meta.minPerEmp;
 
+      if (meta.mustManned) {
+        const requiredRows =
+          meta.regularTimeRows.length > 0
+            ? meta.regularTimeRows
+            : Array.from(
+                { length: Math.max(0, window.endRow - window.startRow) },
+                (_, index) => window.startRow + index
+              );
+
+        for (const row of requiredRows) {
+          if (getTotal(meta.id) >= limitPerDay) break;
+          const requiredSpan = getSpanForMeta(meta, row, window.endRow, { ignoreWindow: false });
+          if (!requiredSpan) continue;
+          const alreadyCovered =
+            meta.regularTimeRows.length > 0
+              ? generated.some((task) => task.type === meta.id && task.startRow === row)
+              : isTypeCoveredAt(meta.id, row);
+          if (alreadyCovered) continue;
+          const picked = pickEmployeeForPlacement(meta, row, requiredSpan);
+          if (!picked) continue;
+          const col = employeeColById.get(picked.id) ?? employees.findIndex((e) => e.id === picked.id) + 2;
+          addTask(meta, col, row, requiredSpan, picked.id);
+        }
+        continue;
+      }
+
       let candidateRows: number[] = [];
       if (meta.regularTimeRows.length > 0) {
         candidateRows = meta.regularTimeRows;
-      } else if (meta.mustManned) {
-        for (let r = window.startRow; r + span <= window.endRow; r += span) {
-          candidateRows.push(r);
-        }
       } else {
         for (let r = window.startRow; r + span <= window.endRow; r += 1) {
           candidateRows.push(r);
@@ -901,20 +954,6 @@ export default function Grid({
     const fillTemplates = flexibleTemplates.length ? flexibleTemplates : templatesToSchedule;
     const ignoreFixedTimes = flexibleTemplates.length === 0;
 
-    const getSpanForMeta = (
-      meta: TemplateMeta,
-      row: number,
-      endRow: number,
-      options: { ignoreLimits: boolean; ignoreWindow: boolean }
-    ) => {
-      const windowEnd = options.ignoreWindow ? endRow : (meta.window?.endRow ?? endRow);
-      const maxEnd = Math.min(endRow, windowEnd, maxRowEx);
-      const available = maxEnd - row;
-      if (available <= 0) return 0;
-      const span = meta.allowShrink ? Math.max(1, Math.min(meta.span, available)) : meta.span;
-      return span <= available ? span : 0;
-    };
-
     const getConsecutiveSpan = (col: number, type: string, startRow: number, span: number) => {
       const list = tasksByCol.get(col) ?? [];
       let total = span;
@@ -954,7 +993,7 @@ export default function Grid({
             if (getTotal(meta.id) >= meta.limitPerDay) return null;
             if (getEmpCount(meta.id, empId) >= meta.maxPerEmp) return null;
           }
-          const span = getSpanForMeta(meta, row, endRow, options);
+          const span = getSpanForMeta(meta, row, endRow, { ignoreWindow: options.ignoreWindow });
           if (!span) return null;
           if (exceedsConcurrentLimit(meta.id, row, span, meta.maxConcurrentPerTimeslot)) return null;
           const exceedsConsecutive =
@@ -991,7 +1030,7 @@ export default function Grid({
           row = endRow;
           break;
         }
-        const span = getSpanForMeta(picked.meta, row, endRow, picked.options);
+        const span = getSpanForMeta(picked.meta, row, endRow, { ignoreWindow: picked.options.ignoreWindow });
         if (!span) {
           row += 1;
           continue;
@@ -1018,8 +1057,41 @@ export default function Grid({
       }
     });
 
+    const unmetCoverage = templatesToSchedule
+      .filter((meta) => meta.mustManned && meta.window)
+      .flatMap((meta) => {
+        const window = meta.window!;
+        if (meta.regularTimeRows.length > 0) {
+          return meta.regularTimeRows
+            .filter((row) => !generated.some((task) => task.type === meta.id && task.startRow === row))
+            .map((row) => {
+              const span = getSpanForMeta(meta, row, window.endRow, { ignoreWindow: false }) || 1;
+              return `${meta.template.name} ${timeRangeForSpan(row, span)}`;
+            });
+        }
+
+        const gaps: string[] = [];
+        let gapStart: number | null = null;
+        for (let row = window.startRow; row < window.endRow; row += 1) {
+          const covered = isTypeCoveredAt(meta.id, row);
+          if (!covered && gapStart === null) {
+            gapStart = row;
+          } else if (covered && gapStart !== null) {
+            gaps.push(`${meta.template.name} ${timeRangeForSpan(gapStart, row - gapStart)}`);
+            gapStart = null;
+          }
+        }
+        if (gapStart !== null) {
+          gaps.push(`${meta.template.name} ${timeRangeForSpan(gapStart, window.endRow - gapStart)}`);
+        }
+        return gaps;
+      });
+
     const ordered = generated.sort((a, b) => (a.col - b.col) || (a.startRow - b.startRow));
     applyRosterState(employees, ordered);
+    if (unmetCoverage.length && typeof window !== "undefined") {
+      window.alert(`Autofill could not fully man: ${unmetCoverage.join(", ")}`);
+    }
   }, [employees, templates, rosterDate, colorForType, maxRowEx, rowFromTime, people, applyRosterState]);
 
   const saveRoster = useCallback(async () => {
