@@ -105,20 +105,7 @@ export default function SideNav({
   return (
     <aside className={asideClassName}>
       <div className="flex h-full flex-col">
-        <div className={!collapsed ? "px-4 pt-2 pb-5" : "px-2 pt-1 pb-2"}>
-          {!collapsed ? (
-            <Link href="/rosters" prefetch={true} onClick={mobile ? onNavigate : undefined} className="block" title="Go to Rosters">
-              <img
-                src="/royal-australian-mint-logo.svg"
-                alt="Australian Government Royal Australian Mint"
-                className="mx-auto h-auto w-full max-w-[192px] object-contain"
-              />
-            </Link>
-          ) : (
-            <div className="h-0" aria-hidden="true" />
-          )}
-        </div>
-        <div className={`w-full ${collapsed ? "space-y-0.5 px-2" : "space-y-1 px-2"}`}>
+        <div className={`w-full ${collapsed ? "space-y-0.5 px-2 pt-1" : "space-y-1 px-2 pt-3"}`}>
           {rosterItems.map((item) => (
             <Item key={item.label} {...item} collapsed={collapsed} onClick={mobile ? onNavigate : undefined} />
           ))}
