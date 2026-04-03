@@ -36,7 +36,7 @@ const Item = ({
         }`}
         title={label}
       >
-        <span className={`grid h-9 w-9 place-items-center rounded-full ${active ? "bg-[var(--accent)] shadow-[0_6px_14px_rgba(52,77,232,0.22)]" : "bg-transparent"}`}>
+        <span className={`grid h-9 w-9 place-items-center rounded-full ${active ? "bg-[var(--accent)]" : "bg-transparent"}`}>
           <Icon className={`h-[18px] w-[18px] ${active ? "text-white" : "text-[#44537d]"}`} aria-hidden="true" />
         </span>
         <span className="block w-full text-center text-[13px] font-medium leading-[1.1] text-current">{label}</span>
