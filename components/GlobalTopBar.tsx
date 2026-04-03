@@ -2,7 +2,6 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Menu } from "lucide-react";
 import { useNav } from "@/components/NavContext";
 
 function getInitials(name?: string | null) {
@@ -31,6 +30,7 @@ export default function GlobalTopBar({ userName }: { userName?: string | null })
     return "Roster Planner";
   }, [pathname]);
   const initials = useMemo(() => getInitials(userName), [userName]);
+  const showNavToggle = !pathname.startsWith("/editor");
 
   useEffect(() => {
     const onClick = (e: MouseEvent) => {
@@ -53,14 +53,20 @@ export default function GlobalTopBar({ userName }: { userName?: string | null })
   return (
     <header className="h-14 bg-[var(--accent)] px-4">
       <div className="relative flex h-full items-center justify-center">
-        <button
-          type="button"
-          className="absolute left-0 grid h-9 w-9 place-items-center rounded-md border border-white/20 bg-white/8 text-white transition hover:bg-white/14 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/40"
-          onClick={toggleNav}
-          aria-label="Toggle navigation"
-        >
-          <Menu className="h-4 w-4" />
-        </button>
+        {showNavToggle && (
+          <button
+            type="button"
+            className="absolute left-0 grid h-9 w-9 place-items-center rounded-md border border-white/20 bg-white/8 text-white transition hover:bg-white/14 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/40"
+            onClick={toggleNav}
+            aria-label="Toggle navigation"
+          >
+            <span className="flex flex-col gap-[3px]" aria-hidden="true">
+              <span className="block h-[1.5px] w-4 rounded-full bg-current" />
+              <span className="block h-[1.5px] w-4 rounded-full bg-current" />
+              <span className="block h-[1.5px] w-4 rounded-full bg-current" />
+            </span>
+          </button>
+        )}
         <span className="text-[16px] font-semibold tracking-[0.01em] text-white">{pageTitle}</span>
         <div className="absolute right-0" ref={profileRef}>
           <button
