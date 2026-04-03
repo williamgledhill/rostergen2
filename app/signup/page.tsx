@@ -2,13 +2,14 @@
 
 import Link from "next/link";
 import React, { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { Eye, EyeOff, LoaderCircle } from "lucide-react";
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 export default function SignupPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -19,19 +20,23 @@ export default function SignupPage() {
   const [requiresTwoFactor, setRequiresTwoFactor] = useState(false);
   const [twoFactorName, setTwoFactorName] = useState("");
   const [error, setError] = useState("");
+  const redirectTarget = (() => {
+    const next = searchParams.get("next");
+    return next && next.startsWith("/") ? next : "/rosters";
+  })();
 
   useEffect(() => {
     fetch("/api/auth/session")
       .then((res) => (res.ok ? res.json() : { session: null }))
       .then((data) => {
         if (data?.session) {
-          router.replace("/editor");
+          router.replace(redirectTarget);
           return;
         }
         setLoading(false);
       })
       .catch(() => setLoading(false));
-  }, [router]);
+  }, [redirectTarget, router]);
 
   const isDisabled = loading || submitting;
 
@@ -56,7 +61,7 @@ export default function SignupPage() {
 
         const data = await res.json().catch(() => ({}));
         if (!res.ok) throw new Error(data?.error || "Verification failed");
-        router.push("/editor");
+        router.push(redirectTarget);
       } catch (err: any) {
         setError(err?.message || "Could not verify the code.");
       } finally {
@@ -97,7 +102,7 @@ export default function SignupPage() {
         return;
       }
 
-      router.push("/editor");
+      router.push(redirectTarget);
     } catch (err: any) {
       setError(err?.message || "Could not start a session. Please try again.");
     } finally {
