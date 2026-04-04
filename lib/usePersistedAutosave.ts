@@ -1,6 +1,6 @@
 "use client";
 
-import { Dispatch, SetStateAction, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { Dispatch, SetStateAction, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { AutosaveMode, AutosaveState, PersistedDraftRecord, readDraftRecord, writeDraftRecord } from "@/lib/clientDrafts";
 
 type SaveResult<T> = {
@@ -12,6 +12,8 @@ type SaveHandler<T> = (
   value: T,
   options: { mode: AutosaveMode; keepalive?: boolean }
 ) => Promise<SaveResult<T> | void>;
+
+const useIsomorphicLayoutEffect = typeof window !== "undefined" ? useLayoutEffect : useEffect;
 
 export function usePersistedAutosave<T>(options: {
   storageKey: string;
@@ -152,7 +154,7 @@ export function usePersistedAutosave<T>(options: {
     saveStateRef.current = saveState;
   }, [saveState]);
 
-  useEffect(() => {
+  useIsomorphicLayoutEffect(() => {
     clearAutosaveTimer();
     saveCycleRef.current += 1;
     queuedModeRef.current = null;
