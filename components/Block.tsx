@@ -84,15 +84,15 @@ export default function Block({
         {segments.map((seg, idx) => (
           <div
             key={seg.key}
-            className={`flex items-center justify-center ${
-              seg.key === "waiting"
-                ? "border-b border-slate-700/90"
-                : seg.key === "packing"
-                  ? "border-t border-slate-700/90"
-                  : idx > 0
-                    ? "border-t border-slate-700/80"
-                    : ""
-            }`}
+            className="flex items-center justify-center"
+            style={{
+              boxShadow:
+                seg.key === "waiting"
+                  ? "inset 0 -1px 0 rgba(71,85,105,0.98)"
+                  : seg.key === "packing" || idx > 0
+                    ? "inset 0 1px 0 rgba(71,85,105,0.98)"
+                    : undefined,
+            }}
           >
             <span className="px-2 text-[13px] font-semibold uppercase tracking-wide">{seg.label}</span>
           </div>
