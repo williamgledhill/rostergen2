@@ -87,11 +87,7 @@ export default function Block({
             className="flex items-center justify-center"
             style={{
               boxShadow:
-                seg.key === "waiting"
-                  ? "inset 0 -1px 0 rgba(71,85,105,0.98)"
-                  : seg.key === "packing" || idx > 0
-                    ? "inset 0 1px 0 rgba(71,85,105,0.98)"
-                    : undefined,
+                idx > 0 ? "inset 0 1px 0 rgba(71,85,105,0.98)" : undefined,
             }}
           >
             <span className="px-2 text-[13px] font-semibold uppercase tracking-wide">{seg.label}</span>
