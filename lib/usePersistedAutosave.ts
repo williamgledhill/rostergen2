@@ -42,6 +42,8 @@ export function usePersistedAutosave<T>(options: {
     initialSavedAt ? { state: "saved", savedAt: initialSavedAt } : { state: "idle" }
   );
 
+  const getSignatureRef = useRef(getSignature);
+  const saveRef = useRef(save);
   const valueRef = useRef(value);
   const saveStateRef = useRef(saveState);
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -49,6 +51,16 @@ export function usePersistedAutosave<T>(options: {
   const queuedModeRef = useRef<AutosaveMode | null>(null);
   const lastSavedSignatureRef = useRef(initialSignature);
   const saveCycleRef = useRef(0);
+
+  useEffect(() => {
+    getSignatureRef.current = getSignature;
+  }, [getSignature]);
+
+  useEffect(() => {
+    saveRef.current = save;
+  }, [save]);
+
+  const computeSignature = useCallback((nextValue: T) => getSignatureRef.current(nextValue), []);
 
   const clearAutosaveTimer = useCallback(() => {
     if (timerRef.current) {
@@ -75,7 +87,7 @@ export function usePersistedAutosave<T>(options: {
 
       const snapshot = valueRef.current;
       if (!canSave || (typeof canSaveValue === "function" && !canSaveValue(snapshot))) return;
-      const snapshotSignature = getSignature(snapshot);
+      const snapshotSignature = computeSignature(snapshot);
       if (snapshotSignature === lastSavedSignatureRef.current) return;
 
       if (saveInFlightRef.current) {
@@ -91,15 +103,15 @@ export function usePersistedAutosave<T>(options: {
       setSaveState(nextSavingState);
 
       try {
-        const result = (await save(snapshot, { mode, keepalive: saveOptions?.keepalive })) || {};
+        const result = (await saveRef.current(snapshot, { mode, keepalive: saveOptions?.keepalive })) || {};
         const savedValue = result.value ?? snapshot;
         const savedAt = result.savedAt ?? new Date().toISOString();
-        const savedSignature = getSignature(savedValue);
+        const savedSignature = computeSignature(savedValue);
 
         if (saveCycle === saveCycleRef.current) {
           lastSavedSignatureRef.current = savedSignature;
           const currentValue = valueRef.current;
-          const currentSignature = getSignature(currentValue);
+          const currentSignature = computeSignature(currentValue);
           const hasNewerLocalChanges = currentSignature !== snapshotSignature;
 
           if (hasNewerLocalChanges) {
@@ -143,7 +155,7 @@ export function usePersistedAutosave<T>(options: {
         }
       }
     },
-    [canSave, canSaveValue, clearAutosaveTimer, getSignature, persistDraft, save]
+    [canSave, canSaveValue, clearAutosaveTimer, computeSignature, persistDraft]
   );
 
   useEffect(() => {
@@ -161,7 +173,7 @@ export function usePersistedAutosave<T>(options: {
 
     const draft = readDraftRecord<T>(storageKey);
     const nextValue = draft?.value ?? initialValue;
-    const nextSignature = getSignature(nextValue);
+    const nextSignature = computeSignature(nextValue);
     const nextSavedSignature = draft?.lastSavedSignature ?? initialSignature;
     const nextSavedAt = draft?.savedAt ?? initialSavedAt;
     const shouldUseDraft =
@@ -181,9 +193,9 @@ export function usePersistedAutosave<T>(options: {
           : { state: "idle" };
     saveStateRef.current = nextState;
     setSaveState(nextState);
-  }, [clearAutosaveTimer, getSignature, initialSavedAt, initialSignature, initialValue, persistDraft, storageKey]);
+  }, [clearAutosaveTimer, computeSignature, initialSavedAt, initialSignature, initialValue, persistDraft, storageKey]);
 
-  const currentSignature = useMemo(() => getSignature(value), [getSignature, value]);
+  const currentSignature = useMemo(() => computeSignature(value), [computeSignature, value]);
 
   useEffect(() => {
     persistDraft(value, lastSavedSignatureRef.current, saveStateRef.current.savedAt);
@@ -210,7 +222,7 @@ export function usePersistedAutosave<T>(options: {
 
   useEffect(() => {
     const flushAutosave = () => {
-      const signature = getSignature(valueRef.current);
+      const signature = computeSignature(valueRef.current);
       if (signature === lastSavedSignatureRef.current) return;
       clearAutosaveTimer();
       void saveNow({ mode: "autosave", keepalive: true });
@@ -226,7 +238,7 @@ export function usePersistedAutosave<T>(options: {
       window.removeEventListener("pagehide", flushAutosave);
       document.removeEventListener("visibilitychange", onVisibilityChange);
     };
-  }, [clearAutosaveTimer, getSignature, saveNow]);
+  }, [clearAutosaveTimer, computeSignature, saveNow]);
 
   return {
     value,
