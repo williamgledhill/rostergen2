@@ -346,7 +346,7 @@ export default function TaskDetailClient({ id, initialTask }: { id: string; init
                     <span className="text-[12px] text-slate-500">0 = no limit</span>
                   </div>
                   <p className="mt-2 max-w-[220px] text-[12px] text-slate-500">
-                    Set this to 1 to keep autofill from placing multiple people on this task at the same time.
+                    0 = no hard cap. Autofill still tries to stagger breaks first, then condenses only if it has to.
                   </p>
                 </div>
               </div>

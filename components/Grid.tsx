@@ -5,6 +5,10 @@ import Block from "@/components/Block";
 import Modal from "@/components/Modal";
 import { TaskTemplate, defaultTaskTemplates } from "@/lib/taskTemplates";
 import { getDayScheduleForDate, type Person } from "@/lib/people";
+import {
+  getAutofillTemplatePriority,
+  getPreferredConcurrentLimit,
+} from "@/lib/rosterAutofill";
 
 type Employee = { id: string | number; name: string; startTime?: string; endTime?: string };
 type GridTask = {
@@ -738,6 +742,22 @@ export default function Grid({
     const isTypeCoveredAt = (templateId: string, row: number) =>
       generated.some((task) => task.type === templateId && row >= task.startRow && row < task.startRow + task.span);
 
+    const countConcurrentAssignments = (templateId: string, startRow: number, span: number) => {
+      const endRow = startRow + span;
+      let busiestRow = 0;
+      for (let row = startRow; row < endRow; row += 1) {
+        let active = 0;
+        for (const task of generated) {
+          if (task.type !== templateId) continue;
+          if (row < task.startRow + task.span && row + 1 > task.startRow) {
+            active += 1;
+          }
+        }
+        busiestRow = Math.max(busiestRow, active);
+      }
+      return busiestRow;
+    };
+
     const pickEmployeeForPlacement = (meta: TemplateMeta, row: number, span: number) => {
       const sortedEmployees = [...employees].sort(
         (a, b) => getEmpCount(meta.id, a.id) - getEmpCount(meta.id, b.id)
@@ -852,20 +872,18 @@ export default function Grid({
       .map(buildMeta)
       .filter((t): t is TemplateMeta => !!t)
       .sort((a, b) => {
-        const priority = (meta: TemplateMeta) => {
-          if (meta.mustManned && meta.hasFixedTimes) return 5;
-          if (meta.hasFixedTimes) return 4;
-          if (meta.minPerEmp > 0) return 3;
-          if (meta.mustManned) return 2;
-          return 1;
-        };
-        const aPriority = priority(a);
-        const bPriority = priority(b);
+        const aPriority = getAutofillTemplatePriority(a);
+        const bPriority = getAutofillTemplatePriority(b);
         if (aPriority !== bPriority) return bPriority - aPriority;
         return 0;
       });
 
-    const getCandidateRowsForEmployee = (meta: TemplateMeta, emp: Employee, rows: number[]) => {
+    const getCandidateRowsForEmployee = (
+      meta: TemplateMeta,
+      emp: Employee,
+      rows: number[],
+      concurrentLimit = meta.maxConcurrentPerTimeslot
+    ) => {
       const col = employeeColById.get(emp.id) ?? employees.findIndex((e) => e.id === emp.id) + 2;
       const window = getEmployeeWindow(emp);
       if (!window) return [];
@@ -881,10 +899,15 @@ export default function Grid({
           if (!span) return false;
           return (
             isFree(col, row, span, emp.id) &&
-            !exceedsConcurrentLimit(meta.id, row, span, meta.maxConcurrentPerTimeslot)
+            !exceedsConcurrentLimit(meta.id, row, span, concurrentLimit)
           );
         })
         .sort((a, b) => {
+          const spanA = getSpanForMeta(meta, a, meta.window?.endRow ?? maxRowEx, { ignoreWindow: false });
+          const spanB = getSpanForMeta(meta, b, meta.window?.endRow ?? maxRowEx, { ignoreWindow: false });
+          const overlapA = spanA ? countConcurrentAssignments(meta.id, a, spanA) : Number.POSITIVE_INFINITY;
+          const overlapB = spanB ? countConcurrentAssignments(meta.id, b, spanB) : Number.POSITIVE_INFINITY;
+          if (overlapA !== overlapB) return overlapA - overlapB;
           const distanceA = Math.abs(a - idealRow);
           const distanceB = Math.abs(b - idealRow);
           if (distanceA !== distanceB) return distanceA - distanceB;
@@ -900,13 +923,13 @@ export default function Grid({
         )
       );
 
-      const backtrack = (remaining: Employee[]): boolean => {
+      const backtrack = (remaining: Employee[], concurrentLimit: number): boolean => {
         if (!remaining.length) return true;
 
         let bestIndex = -1;
         let bestRows: number[] | null = null;
         for (let index = 0; index < remaining.length; index += 1) {
-          const rows = getCandidateRowsForEmployee(meta, remaining[index], candidateRows);
+          const rows = getCandidateRowsForEmployee(meta, remaining[index], candidateRows, concurrentLimit);
           if (rows.length === 0) return false;
           if (bestRows === null || rows.length < bestRows.length) {
             bestRows = rows;
@@ -924,14 +947,19 @@ export default function Grid({
           const span = getSpanForMeta(meta, row, meta.window?.endRow ?? maxRowEx, { ignoreWindow: false });
           if (!span) continue;
           const task = addTask(meta, col, row, span, emp.id);
-          if (backtrack(nextRemaining)) return true;
+          if (backtrack(nextRemaining, concurrentLimit)) return true;
           removeTask(task, meta, emp.id);
         }
 
         return false;
       };
 
-      return backtrack(pendingEmployees);
+      const preferredConcurrentLimit = getPreferredConcurrentLimit(meta.maxConcurrentPerTimeslot, {
+        preferSolo: !meta.mustManned,
+      });
+      if (backtrack(pendingEmployees, preferredConcurrentLimit)) return true;
+      if (preferredConcurrentLimit === meta.maxConcurrentPerTimeslot) return false;
+      return backtrack(pendingEmployees, meta.maxConcurrentPerTimeslot);
     };
 
     if (!templatesToSchedule.length) {
