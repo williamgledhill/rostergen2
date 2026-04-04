@@ -1746,7 +1746,7 @@ export default function Grid({
                   <p className="mt-2 text-sm text-slate-600">Pick from saved people.</p>
                 </div>
                 <button
-                  className="grid h-10 w-10 place-items-center rounded-[12px] border border-[var(--border)] bg-[var(--surface-subtle)] text-slate-600 transition hover:bg-white hover:text-slate-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#7283f5]/45"
+                  className="grid h-10 w-10 place-items-center rounded-[12px] bg-[var(--surface-subtle)] text-slate-600 transition hover:bg-white hover:text-slate-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#7283f5]/45"
                   onClick={() => setAddOpen(false)}
                   aria-label="Close add employee dialog"
                 >
@@ -1829,7 +1829,7 @@ export default function Grid({
 
               <div className="flex items-center justify-end border-t border-[var(--border)] bg-white px-5 py-3">
                 <button className="btn h-9 px-4 text-[13px]" onClick={() => setAddOpen(false)}>
-                  Cancel
+                  Close
                 </button>
               </div>
             </div>
