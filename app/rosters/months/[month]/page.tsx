@@ -1,51 +1,21 @@
-﻿"use client";
-import React, { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { Plus } from "lucide-react";
-import { useParams } from "next/navigation";
 import RosterTable from "@/components/RosterTable";
 import { formatLocalId } from "@/lib/dateUtils";
-import type { RosterFile } from "@/lib/rosters";
+import { formatMonthLabel, getRostersForMonth } from "@/lib/rosters";
+import { requirePageSession } from "@/lib/apiAuth";
 
-function formatMonthLabelLocal(month: string) {
-  if (!/^\d{4}-\d{2}$/.test(month)) return month;
-  const [y, m] = month.split("-").map(Number);
-  const dt = new Date(y, m - 1, 1);
-  return new Intl.DateTimeFormat("en-US", { month: "long", year: "numeric" }).format(dt);
-}
+export default async function RostersForMonthPage({
+  params,
+}: {
+  params: Promise<{ month: string }>;
+}) {
+  const { month } = await params;
+  await requirePageSession();
 
-export default function RostersForMonth() {
-  const params = useParams();
-  const month = typeof params?.month === "string" ? params.month : "";
-  const [rosters, setRosters] = useState<RosterFile[]>([]);
-  const [loading, setLoading] = useState(true);
-  const label = useMemo(() => formatMonthLabelLocal(month) || month || "this month", [month]);
+  const rosters = await getRostersForMonth(month, 5000);
+  const label = formatMonthLabel(month) || month || "this month";
   const todayHref = `/editor?date=${encodeURIComponent(formatLocalId(new Date()))}`;
-
-  useEffect(() => {
-    let active = true;
-    if (!month) {
-      setRosters([]);
-      setLoading(false);
-      return;
-    }
-    setLoading(true);
-    fetch(`/api/rosters/month?month=${encodeURIComponent(month)}`)
-      .then((res) => (res.ok ? res.json() : []))
-      .then((data) => {
-        if (!active) return;
-        setRosters(Array.isArray(data) ? data : []);
-      })
-      .catch(() => {
-        if (active) setRosters([]);
-      })
-      .finally(() => {
-        if (active) setLoading(false);
-      });
-    return () => {
-      active = false;
-    };
-  }, [month]);
 
   return (
     <div className="w-full py-3 px-3">
@@ -66,13 +36,8 @@ export default function RostersForMonth() {
             </Link>
           </div>
         </div>
-        {loading ? (
-          <div className="text-slate-600 text-sm">Loading rosters...</div>
-        ) : (
-          <RosterTable rosters={rosters} />
-        )}
+        <RosterTable rosters={rosters} />
       </div>
     </div>
   );
 }
-

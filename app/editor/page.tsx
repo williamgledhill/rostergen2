@@ -6,8 +6,8 @@ import { getPeople } from "@/lib/peopleStore";
 import { getRosterById } from "@/lib/rosters";
 import { getSettings } from "@/lib/settings";
 import { getTaskTemplates } from "@/lib/taskTemplatesStore";
-
-export const dynamic = "force-dynamic";
+import { cookies } from "next/headers";
+import { LAST_EDITOR_DATE_COOKIE, isLocalDateId } from "@/lib/editorPersistence";
 
 function syncEmployeesWithPeople(employees: any[], people: Person[]) {
   const byId = new Map(people.map((p) => [String(p.id), p.name]));
@@ -44,7 +44,12 @@ export default async function Page({
 }) {
   const resolvedSearchParams = (await searchParams) ?? {};
   const dateParam = typeof resolvedSearchParams.date === "string" ? resolvedSearchParams.date : "";
-  const selectedDate = parseLocalId(dateParam) ?? new Date();
+  const cookieStore = await cookies();
+  const rememberedDate = cookieStore.get(LAST_EDITOR_DATE_COOKIE)?.value ?? "";
+  const selectedDate =
+    parseLocalId(dateParam) ??
+    parseLocalId(isLocalDateId(rememberedDate) ? rememberedDate : "") ??
+    new Date();
   const rosterDateId = formatLocalId(selectedDate);
   const [_, people, settings, templates, savedRoster] = await Promise.all([
     requirePageSession(),
@@ -72,6 +77,7 @@ export default async function Page({
         tasks: baseTasks,
         hoursStart: savedRoster?.hoursStart,
         hoursEnd: savedRoster?.hoursEnd,
+        savedAt: savedRoster?.updatedAt ? savedRoster.updatedAt.toISOString() : undefined,
       }}
     />
   );

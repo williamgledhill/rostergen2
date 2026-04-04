@@ -2,6 +2,8 @@ import { NextResponse } from "next/server";
 import { addTaskTemplate, deleteTaskTemplate, getTaskTemplateById, getTaskTemplates, updateTaskTemplate } from "@/lib/taskTemplatesStore";
 import { enforceSameOrigin, requireSession } from "@/lib/apiAuth";
 import { z } from "zod";
+import { revalidatePath, revalidateTag } from "next/cache";
+import { CACHE_TAGS } from "@/lib/cacheTags";
 
 const DAY_KEYS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"] as const;
 const dayKeySet = new Set<string>(DAY_KEYS);
@@ -85,6 +87,9 @@ export async function POST(request: Request) {
       category: parsed.data.category,
       color: parsed.data.color,
     });
+    revalidateTag(CACHE_TAGS.tasks, "max");
+    revalidatePath("/editor");
+    revalidatePath("/tasks");
     return NextResponse.json(created, { status: 201 });
   } catch (err: any) {
     return NextResponse.json({ error: err?.message || "Failed to add template" }, { status: 500 });
@@ -128,6 +133,9 @@ export async function PUT(request: Request) {
     };
     const updated = await updateTaskTemplate(id, payload);
     if (!updated) return NextResponse.json({ error: "Template not found" }, { status: 404 });
+    revalidateTag(CACHE_TAGS.tasks, "max");
+    revalidatePath("/editor");
+    revalidatePath("/tasks");
     return NextResponse.json(updated);
   } catch (err: any) {
     return NextResponse.json({ error: err?.message || "Failed to update template" }, { status: 500 });
@@ -149,6 +157,9 @@ export async function DELETE(request: Request) {
     }
     const deleted = await deleteTaskTemplate(id);
     if (!deleted) return NextResponse.json({ error: "Template not found" }, { status: 404 });
+    revalidateTag(CACHE_TAGS.tasks, "max");
+    revalidatePath("/editor");
+    revalidatePath("/tasks");
     return NextResponse.json({ ok: true });
   } catch (err: any) {
     return NextResponse.json({ error: err?.message || "Failed to delete template" }, { status: 500 });

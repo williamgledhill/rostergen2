@@ -2,8 +2,11 @@ import React from "react";
 import TopBar from "@/components/TopBar";
 import DateNavigator from "@/components/DateNavigator";
 import Link from "next/link";
+import { requirePageSession } from "@/lib/apiAuth";
 
-export default function OldRosters() {
+export default async function OldRosters() {
+  await requirePageSession();
+
   return (
     <div className="w-full py-4 px-3 space-y-4">
       <TopBar />

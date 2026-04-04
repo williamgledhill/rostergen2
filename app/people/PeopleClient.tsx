@@ -135,6 +135,7 @@ export default function PeopleClient({ initialPeople }: { initialPeople: Person[
                   <tr
                     key={p.id}
                     className="border-b border-[#E6EAF0] hover:bg-[#f8fafc] cursor-pointer"
+                    onMouseEnter={() => router.prefetch(`/people/${p.id}`)}
                     onClick={() => router.push(`/people/${p.id}`)}
                   >
                     <td className="align-middle px-3 py-3">

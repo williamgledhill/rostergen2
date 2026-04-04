@@ -3,6 +3,8 @@ import { enforceSameOrigin, requireSession } from "@/lib/apiAuth";
 import { ALL_DAYS } from "@/lib/people";
 import { z } from "zod";
 import type { Person } from "@/lib/people";
+import { revalidatePath, revalidateTag } from "next/cache";
+import { CACHE_TAGS } from "@/lib/cacheTags";
 
 const timeSchema = z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/);
 const dayScheduleSchema = z.object({
@@ -73,6 +75,9 @@ export async function POST(req: Request) {
         : undefined,
     };
     const person = await upsertPerson(personToSave);
+    revalidateTag(CACHE_TAGS.people, "max");
+    revalidatePath("/editor");
+    revalidatePath("/people");
     return NextResponse.json(person);
   } catch (err) {
     console.error(err);
@@ -93,6 +98,9 @@ export async function DELETE(req: Request) {
     const id = searchParams.get("id");
     if (!id) return NextResponse.json({ error: "Missing id" }, { status: 400 });
     await deletePerson(id);
+    revalidateTag(CACHE_TAGS.people, "max");
+    revalidatePath("/editor");
+    revalidatePath("/people");
     return NextResponse.json({ ok: true });
   } catch (err) {
     console.error(err);

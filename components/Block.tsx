@@ -78,16 +78,18 @@ export default function Block({
       onClick={(e) => { e.stopPropagation(); onSelect?.(); }}
     >
       <div
-        className="absolute inset-0 grid pointer-events-none"
-        style={{ gridTemplateRows: segments.map((seg) => `${seg.rows}fr`).join(" ") }}
+        className="absolute inset-0 pointer-events-none"
+        style={{ display: "flex", flexDirection: "column" }}
       >
         {segments.map((seg, idx) => (
           <div
             key={seg.key}
             className="flex items-center justify-center"
             style={{
+              height: `calc(var(--rowh) * ${seg.rows})`,
+              flexShrink: 0,
               boxShadow:
-                idx > 0 ? "inset 0 1px 0 rgba(71,85,105,0.98)" : undefined,
+                idx < segments.length - 1 ? "inset 0 -1px 0 rgba(71,85,105,0.98)" : undefined,
             }}
           >
             <span className="px-2 text-[13px] font-semibold uppercase tracking-wide">{seg.label}</span>

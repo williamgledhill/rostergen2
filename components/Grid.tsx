@@ -3,6 +3,8 @@ import React, { useMemo, useState, useRef, useEffect, useCallback } from "react"
 import { X, Trash2, Search, Settings2 } from "lucide-react";
 import Block from "@/components/Block";
 import Modal from "@/components/Modal";
+import { AutosaveState, readDraftRecord, writeDraftRecord } from "@/lib/clientDrafts";
+import { buildEditorDraftStorageKey } from "@/lib/editorPersistence";
 import { TaskTemplate, defaultTaskTemplates } from "@/lib/taskTemplates";
 import { getDayScheduleForDate, type Person } from "@/lib/people";
 import {
@@ -28,6 +30,15 @@ type HistorySnapshot = {
   employees: Employee[];
   tasks: GridTask[];
 };
+
+type RosterDraftValue = {
+  employees: Employee[];
+  tasks: GridTask[];
+  hoursStart?: string;
+  hoursEnd?: string;
+};
+
+export type RosterSaveState = AutosaveState;
 
 const MIN_ROW = 2;
 const DEFAULT_START_MIN = 9 * 60 + 30;
@@ -171,7 +182,10 @@ export default function Grid({
   rosterDate,
   hoursStart,
   hoursEnd,
+  initialSavedAt,
   onExportXLS,
+  onSaveStateChange,
+  onRestoreDraftHours,
   people: initialPeople,
   templates: initialTemplates,
 }: {
@@ -181,7 +195,10 @@ export default function Grid({
   rosterDate: Date;
   hoursStart?: string;
   hoursEnd?: string;
-  onExportXLS: (html: string) => void;
+  initialSavedAt?: string;
+  onExportXLS: (html: string, fileName: string) => void;
+  onSaveStateChange?: (state: RosterSaveState) => void;
+  onRestoreDraftHours?: (hours: { start: string; end: string }) => void;
   people?: Person[];
   templates?: TaskTemplate[];
 }) {
@@ -207,12 +224,20 @@ export default function Grid({
   const prevMaxRef = useRef<number | null>(null);
   const employeesRef = useRef<Employee[]>(initialEmployees);
   const tasksRef = useRef<GridTask[]>(initialTasks);
+  const hoursRef = useRef<{ start?: string; end?: string }>({ start: hoursStart, end: hoursEnd });
   const historyPastRef = useRef<HistorySnapshot[]>([]);
   const historyFutureRef = useRef<HistorySnapshot[]>([]);
   const autosaveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const saveInFlightRef = useRef(false);
+  const queuedSaveModeRef = useRef<"autosave" | "manual" | null>(null);
+  const saveCycleRef = useRef(0);
+  const autofillRunRef = useRef(0);
+  const suspendDraftEffectsRef = useRef(true);
+  const lastSavedAtRef = useRef(initialSavedAt);
   const lastSavedSignatureRef = useRef(
     buildRosterSaveSignature(initialEmployees, initialTasks, hoursStart, hoursEnd, rosterDateId)
   );
+  const draftStorageKey = useMemo(() => buildEditorDraftStorageKey(rosterDateId), [rosterDateId]);
 
   const dayStartMin = useMemo(() => parseTimeToMinutes(hoursStart) ?? DEFAULT_START_MIN, [hoursStart]);
   const rawEndMin = useMemo(() => parseTimeToMinutes(hoursEnd) ?? DEFAULT_END_MIN, [hoursEnd]);
@@ -312,7 +337,40 @@ export default function Grid({
   }, [setRosterState, snapshotFrom]);
 
   useEffect(() => {
-    setRosterState(initialEmployees, initialTasks);
+    suspendDraftEffectsRef.current = true;
+    const serverDraftValue: RosterDraftValue = {
+      employees: cloneEmployees(initialEmployees),
+      tasks: cloneTasks(initialTasks),
+      hoursStart,
+      hoursEnd,
+    };
+    const serverSignature = buildRosterSaveSignature(
+      serverDraftValue.employees,
+      serverDraftValue.tasks,
+      serverDraftValue.hoursStart,
+      serverDraftValue.hoursEnd,
+      rosterDateId
+    );
+    const persistedDraft = readDraftRecord<RosterDraftValue>(draftStorageKey);
+    const persistedValue = persistedDraft?.value ?? serverDraftValue;
+    const persistedSignature = buildRosterSaveSignature(
+      persistedValue.employees,
+      persistedValue.tasks,
+      persistedValue.hoursStart,
+      persistedValue.hoursEnd,
+      rosterDateId
+    );
+    const nextLastSavedSignature = persistedDraft?.lastSavedSignature ?? serverSignature;
+    const shouldUseDraft =
+      persistedDraft !== null &&
+      (persistedSignature !== serverSignature || nextLastSavedSignature !== serverSignature);
+    const nextDraftValue = shouldUseDraft ? persistedValue : serverDraftValue;
+    const nextSavedAt = persistedDraft?.savedAt ?? initialSavedAt;
+
+    setRosterState(
+      cloneEmployees(nextDraftValue.employees),
+      cloneTasks(nextDraftValue.tasks)
+    );
     historyPastRef.current = [];
     historyFutureRef.current = [];
     setSelected(undefined);
@@ -322,15 +380,43 @@ export default function Grid({
       clearTimeout(autosaveTimerRef.current);
       autosaveTimerRef.current = null;
     }
-    lastSavedSignatureRef.current = buildRosterSaveSignature(
-      initialEmployees,
-      initialTasks,
-      hoursStart,
-      hoursEnd,
-      rosterDateId
+    autofillRunRef.current = 0;
+    lastSavedAtRef.current = nextSavedAt;
+    lastSavedSignatureRef.current = shouldUseDraft ? nextLastSavedSignature : serverSignature;
+    writeDraftRecord<RosterDraftValue>(draftStorageKey, {
+      value: nextDraftValue,
+      lastSavedSignature: lastSavedSignatureRef.current,
+      savedAt: lastSavedAtRef.current,
+    });
+    if (shouldUseDraft && typeof onRestoreDraftHours === "function") {
+      onRestoreDraftHours({
+        start: nextDraftValue.hoursStart || hoursStart || "",
+        end: nextDraftValue.hoursEnd || hoursEnd || "",
+      });
+    }
+    saveCycleRef.current += 1;
+    queuedSaveModeRef.current = null;
+    onSaveStateChange?.(
+      persistedSignature !== lastSavedSignatureRef.current
+        ? { state: "dirty", mode: "autosave", savedAt: lastSavedAtRef.current }
+        : lastSavedAtRef.current
+          ? { state: "saved", savedAt: lastSavedAtRef.current }
+          : { state: "idle" }
     );
     setEmployeeSettingsError("");
-  }, [initialEmployees, initialTasks, rosterDateId, hoursStart, hoursEnd, setRosterState]);
+    queueMicrotask(() => {
+      suspendDraftEffectsRef.current = false;
+    });
+  }, [
+    draftStorageKey,
+    initialEmployees,
+    initialSavedAt,
+    initialTasks,
+    onRestoreDraftHours,
+    onSaveStateChange,
+    rosterDateId,
+    setRosterState,
+  ]);
 
   useEffect(() => {
     employeesRef.current = employees;
@@ -339,6 +425,24 @@ export default function Grid({
   useEffect(() => {
     tasksRef.current = tasks;
   }, [tasks]);
+
+  useEffect(() => {
+    hoursRef.current = { start: hoursStart, end: hoursEnd };
+  }, [hoursStart, hoursEnd]);
+
+  useEffect(() => {
+    if (suspendDraftEffectsRef.current) return;
+    writeDraftRecord<RosterDraftValue>(draftStorageKey, {
+      value: {
+        employees: cloneEmployees(employees),
+        tasks: cloneTasks(tasks),
+        hoursStart,
+        hoursEnd,
+      },
+      lastSavedSignature: lastSavedSignatureRef.current,
+      savedAt: lastSavedAtRef.current,
+    });
+  }, [draftStorageKey, employees, hoursEnd, hoursStart, tasks]);
 
   useEffect(() => {
     if (selected === undefined) return;
@@ -611,6 +715,8 @@ export default function Grid({
   }, [removeEmployee]);
 
   const autofill = useCallback(() => {
+    const autofillVariant = autofillRunRef.current;
+    autofillRunRef.current += 1;
     if (!employees.length) {
       applyRosterState(employees, []);
       return;
@@ -641,6 +747,18 @@ export default function Grid({
     const peopleById = new Map(people.map((p) => [String(p.id), p]));
     const peopleByName = new Map(people.map((p) => [p.name.toLowerCase(), p]));
     const employeeWindows = new Map<string | number, { startRow: number; endRow: number } | null>();
+    const employeeOrder = new Map(employees.map((emp, index) => [emp.id, index]));
+
+    const getRotatedRank = (index: number, total: number, offset: number) => {
+      if (total <= 0) return 0;
+      const normalizedOffset = ((offset % total) + total) % total;
+      return (index - normalizedOffset + total) % total;
+    };
+
+    const getRowVariantRank = (rows: number[], row: number, offset: number) => {
+      const index = rows.indexOf(row);
+      return getRotatedRank(index < 0 ? 0 : index, rows.length, offset);
+    };
 
     const getTotal = (templateId: string) => totalsByTemplate.get(templateId) ?? 0;
     const incTotal = (templateId: string) => totalsByTemplate.set(templateId, getTotal(templateId) + 1);
@@ -816,7 +934,14 @@ export default function Grid({
 
     const pickEmployeeForPlacement = (meta: TemplateMeta, row: number, span: number) => {
       const sortedEmployees = [...employees].sort(
-        (a, b) => getEmpCount(meta.id, a.id) - getEmpCount(meta.id, b.id)
+        (a, b) => {
+          const countDiff = getEmpCount(meta.id, a.id) - getEmpCount(meta.id, b.id);
+          if (countDiff !== 0) return countDiff;
+          return (
+            getRotatedRank(employeeOrder.get(a.id) ?? 0, employees.length, autofillVariant) -
+            getRotatedRank(employeeOrder.get(b.id) ?? 0, employees.length, autofillVariant)
+          );
+        }
       );
       return sortedEmployees.find((emp) => {
         if (getEmpCount(meta.id, emp.id) >= meta.maxPerEmp) return false;
@@ -964,6 +1089,9 @@ export default function Grid({
           const overlapA = spanA ? countConcurrentAssignments(meta.id, a, spanA) : Number.POSITIVE_INFINITY;
           const overlapB = spanB ? countConcurrentAssignments(meta.id, b, spanB) : Number.POSITIVE_INFINITY;
           if (overlapA !== overlapB) return overlapA - overlapB;
+          const variantRankA = getRowVariantRank(rows, a, autofillVariant);
+          const variantRankB = getRowVariantRank(rows, b, autofillVariant);
+          if (variantRankA !== variantRankB) return variantRankA - variantRankB;
           const distanceA = Math.abs(a - idealRow);
           const distanceB = Math.abs(b - idealRow);
           if (distanceA !== distanceB) return distanceA - distanceB;
@@ -1098,7 +1226,14 @@ export default function Grid({
         if (getTotal(meta.id) >= limitPerDay) break;
 
         const sortedEmployees = [...employees].sort(
-          (a, b) => getEmpCount(meta.id, a.id) - getEmpCount(meta.id, b.id)
+          (a, b) => {
+            const countDiff = getEmpCount(meta.id, a.id) - getEmpCount(meta.id, b.id);
+            if (countDiff !== 0) return countDiff;
+            return (
+              getRotatedRank(employeeOrder.get(a.id) ?? 0, employees.length, autofillVariant) -
+              getRotatedRank(employeeOrder.get(b.id) ?? 0, employees.length, autofillVariant)
+            );
+          }
         );
         const picked = sortedEmployees.find((emp) => {
           if (getEmpCount(meta.id, emp.id) >= maxPerEmp) return false;
@@ -1174,7 +1309,9 @@ export default function Grid({
         const aEmp = getEmpCount(a.meta.id, empId);
         const bEmp = getEmpCount(b.meta.id, empId);
         if (aEmp !== bEmp) return aEmp - bEmp;
-        return getTotal(a.meta.id) - getTotal(b.meta.id);
+        const totalDiff = getTotal(a.meta.id) - getTotal(b.meta.id);
+        if (totalDiff !== 0) return totalDiff;
+        return a.meta.id.localeCompare(b.meta.id);
       });
       return { meta: preferred[0].meta, options };
     };
@@ -1265,33 +1402,105 @@ export default function Grid({
     }
   }, [employees, templates, rosterDate, colorForType, maxRowEx, rowFromTime, people, applyRosterState]);
 
-  const saveRoster = useCallback(async (options?: { silent?: boolean }) => {
+  const saveRoster = useCallback(async (options?: { mode?: "autosave" | "manual"; keepalive?: boolean }) => {
+    const mode = options?.mode ?? "manual";
+    if (autosaveTimerRef.current) {
+      clearTimeout(autosaveTimerRef.current);
+      autosaveTimerRef.current = null;
+    }
+    if (saveInFlightRef.current) {
+      queuedSaveModeRef.current = mode;
+      return;
+    }
+
+    const snapshotEmployees = cloneEmployees(employeesRef.current);
+    const snapshotTasks = cloneTasks(tasksRef.current);
+    const snapshotHours = { ...hoursRef.current };
+    const nextSignature = buildRosterSaveSignature(
+      snapshotEmployees,
+      snapshotTasks,
+      snapshotHours.start,
+      snapshotHours.end,
+      rosterDateId
+    );
+
+    if (nextSignature === lastSavedSignatureRef.current) {
+      return;
+    }
+
+    saveInFlightRef.current = true;
+    const saveCycle = saveCycleRef.current;
+    onSaveStateChange?.({ state: "saving", mode });
+
     try {
       const res = await fetch("/api/rosters", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ date: rosterDateId, employees, tasks, hoursStart, hoursEnd }),
+        body: JSON.stringify({
+          date: rosterDateId,
+          employees: snapshotEmployees,
+          tasks: snapshotTasks,
+          hoursStart: snapshotHours.start,
+          hoursEnd: snapshotHours.end,
+        }),
+        keepalive: options?.keepalive,
       });
       if (!res.ok) {
         console.error("Save failed", await res.text());
-        if (!options?.silent) alert("Failed to save roster");
+        if (saveCycle === saveCycleRef.current) {
+          onSaveStateChange?.({ state: "error", mode });
+        }
         return;
       }
-      lastSavedSignatureRef.current = buildRosterSaveSignature(
-        employees,
-        tasks,
-        hoursStart,
-        hoursEnd,
-        rosterDateId
-      );
-      if (!options?.silent) alert("Roster saved");
-    } catch (err) {
-      console.error(err);
-      if (!options?.silent) alert("Failed to save roster");
+
+        const payload = (await res.json().catch(() => ({}))) as { savedAt?: string };
+        if (saveCycle === saveCycleRef.current) {
+          lastSavedSignatureRef.current = nextSignature;
+          lastSavedAtRef.current =
+            typeof payload.savedAt === "string" ? payload.savedAt : new Date().toISOString();
+          writeDraftRecord<RosterDraftValue>(draftStorageKey, {
+            value: {
+              employees: snapshotEmployees,
+              tasks: snapshotTasks,
+              hoursStart: snapshotHours.start,
+              hoursEnd: snapshotHours.end,
+            },
+            lastSavedSignature: nextSignature,
+            savedAt: lastSavedAtRef.current,
+          });
+          onSaveStateChange?.({
+            state: "saved",
+            mode,
+            savedAt: lastSavedAtRef.current,
+          });
+        }
+      } catch (err) {
+        console.error(err);
+        if (saveCycle === saveCycleRef.current) {
+        writeDraftRecord<RosterDraftValue>(draftStorageKey, {
+          value: {
+            employees: snapshotEmployees,
+            tasks: snapshotTasks,
+            hoursStart: snapshotHours.start,
+            hoursEnd: snapshotHours.end,
+          },
+          lastSavedSignature: lastSavedSignatureRef.current,
+          savedAt: lastSavedAtRef.current,
+        });
+        onSaveStateChange?.({ state: "error", mode });
+      }
+    } finally {
+      saveInFlightRef.current = false;
+      if (queuedSaveModeRef.current) {
+        const queuedMode = queuedSaveModeRef.current;
+        queuedSaveModeRef.current = null;
+        void saveRoster({ mode: queuedMode });
+      }
     }
-  }, [employees, tasks, rosterDateId, hoursStart, hoursEnd]);
+  }, [draftStorageKey, rosterDateId, onSaveStateChange]);
 
   useEffect(() => {
+    if (suspendDraftEffectsRef.current) return;
     const nextSignature = buildRosterSaveSignature(
       employees,
       tasks,
@@ -1300,9 +1509,10 @@ export default function Grid({
       rosterDateId
     );
     if (nextSignature === lastSavedSignatureRef.current) return;
+    onSaveStateChange?.({ state: "dirty", mode: "autosave", savedAt: lastSavedAtRef.current });
     if (autosaveTimerRef.current) clearTimeout(autosaveTimerRef.current);
     autosaveTimerRef.current = setTimeout(() => {
-      void saveRoster({ silent: true });
+      void saveRoster({ mode: "autosave" });
     }, 700);
     return () => {
       if (autosaveTimerRef.current) {
@@ -1310,7 +1520,36 @@ export default function Grid({
         autosaveTimerRef.current = null;
       }
     };
-  }, [employees, tasks, hoursStart, hoursEnd, rosterDateId, saveRoster]);
+  }, [employees, tasks, hoursStart, hoursEnd, rosterDateId, saveRoster, onSaveStateChange]);
+
+  useEffect(() => {
+    const flushAutosave = () => {
+      const nextSignature = buildRosterSaveSignature(
+        employeesRef.current,
+        tasksRef.current,
+        hoursRef.current.start,
+        hoursRef.current.end,
+        rosterDateId
+      );
+      if (nextSignature === lastSavedSignatureRef.current) return;
+      if (autosaveTimerRef.current) {
+        clearTimeout(autosaveTimerRef.current);
+        autosaveTimerRef.current = null;
+      }
+      void saveRoster({ mode: "autosave", keepalive: true });
+    };
+
+    const onVisibilityChange = () => {
+      if (document.visibilityState === "hidden") flushAutosave();
+    };
+
+    window.addEventListener("pagehide", flushAutosave);
+    document.addEventListener("visibilitychange", onVisibilityChange);
+    return () => {
+      window.removeEventListener("pagehide", flushAutosave);
+      document.removeEventListener("visibilitychange", onVisibilityChange);
+    };
+  }, [rosterDateId, saveRoster]);
 
   const clearNonLockedTasks = useCallback(() => {
     const nextTasks = tasksRef.current.filter((task) => isTaskLocked(task));
@@ -1542,7 +1781,14 @@ export default function Grid({
   </table>
 </body>
 </html>`;
-    onExportXLS(html);
+    const fileName = new Intl.DateTimeFormat("en-GB", {
+      weekday: "long",
+      day: "numeric",
+      month: "long",
+    })
+      .format(rosterDate)
+      .replace(",", "");
+    onExportXLS(html, fileName);
   }, [employeeCols, tasks, onExportXLS, colorForType, timeRangeForSpan, maxRowEx, dayStartMin, dayEndMin, rosterDate, getEmployeeHoursLabel, templateById]);
 
   useEffect(() => {

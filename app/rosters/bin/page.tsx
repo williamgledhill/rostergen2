@@ -1,6 +1,9 @@
-﻿import React from "react";
+import React from "react";
+import { requirePageSession } from "@/lib/apiAuth";
 
-export default function RostersBinPage() {
+export default async function RostersBinPage() {
+  await requirePageSession();
+
   return (
     <div className="w-full py-3 px-3">
       <div className="space-y-3 flex flex-col items-start w-full">
@@ -10,4 +13,3 @@ export default function RostersBinPage() {
     </div>
   );
 }
-

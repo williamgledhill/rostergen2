@@ -9,6 +9,7 @@ import {
   Pencil,
   Settings,
 } from "lucide-react";
+import { buildEditorHref, LAST_EDITOR_DATE_EVENT, LAST_EDITOR_DATE_STORAGE_KEY, isLocalDateId } from "@/lib/editorPersistence";
 
 const Item = ({
   icon: Icon,
@@ -73,6 +74,7 @@ export default function SideNav({
 }){
   const pathname = usePathname() || "/";
   const router = useRouter();
+  const [editorHref, setEditorHref] = React.useState("/editor");
   const isOpen = open;
   const collapsed = mobile ? false : !isOpen;
 
@@ -82,7 +84,7 @@ export default function SideNav({
     { icon: CalendarDays, label: "Rosters", href: "/rosters", active: rostersActive },
   ];
   const navItems = [
-    { icon: Pencil, label: "Editor", href: "/editor" },
+    { icon: Pencil, label: "Editor", href: editorHref },
     { icon: Users, label: "People", href: "/people" },
     { icon: FolderOpen, label: "Tasks", href: "/tasks" },
     { icon: Settings, label: "Settings", href: "/settings" },
@@ -93,10 +95,25 @@ export default function SideNav({
   if (mobile && !isOpen) return null;
 
   React.useEffect(() => {
-    ["/rosters", "/editor", "/people", "/tasks", "/settings"].forEach((href) => {
+    const syncEditorHref = () => {
+      const rememberedDate = typeof window !== "undefined" ? window.localStorage.getItem(LAST_EDITOR_DATE_STORAGE_KEY) : null;
+      setEditorHref(buildEditorHref(isLocalDateId(rememberedDate) ? rememberedDate : null));
+    };
+
+    syncEditorHref();
+    window.addEventListener("storage", syncEditorHref);
+    window.addEventListener(LAST_EDITOR_DATE_EVENT, syncEditorHref as EventListener);
+    return () => {
+      window.removeEventListener("storage", syncEditorHref);
+      window.removeEventListener(LAST_EDITOR_DATE_EVENT, syncEditorHref as EventListener);
+    };
+  }, []);
+
+  React.useEffect(() => {
+    ["/rosters", editorHref, "/people", "/tasks", "/settings"].forEach((href) => {
       router.prefetch(href);
     });
-  }, [router]);
+  }, [editorHref, router]);
 
   const asideClassName = mobile
     ? "fixed inset-x-0 bottom-0 left-0 top-14 z-50 w-[236px] overflow-y-auto border-r border-[#e0e3ea] bg-white pt-2 pb-3 shadow-xl"

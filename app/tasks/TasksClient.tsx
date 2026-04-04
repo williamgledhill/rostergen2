@@ -114,6 +114,7 @@ export default function TasksClient({ initialTasks }: { initialTasks: TaskTempla
                   <tr
                     key={t.id}
                     className="border-b border-[#E6EAF0] hover:bg-[#f8fafc] cursor-pointer"
+                    onMouseEnter={() => router.prefetch(`/tasks/${t.id}`)}
                     onClick={() => router.push(`/tasks/${t.id}`)}
                   >
                     <td className="align-middle px-3 py-3">

@@ -3,6 +3,8 @@ import { saveRosterEntry, getRosterById } from "@/lib/rosters";
 import { parseLocalId, formatFullDay } from "@/lib/dateUtils";
 import { enforceSameOrigin, requireSession } from "@/lib/apiAuth";
 import { z } from "zod";
+import { revalidatePath, revalidateTag } from "next/cache";
+import { CACHE_TAGS } from "@/lib/cacheTags";
 
 const timeSchema = z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/);
 const rosterUpsertSchema = z.object({
@@ -39,7 +41,7 @@ export async function POST(req: Request) {
     const tours = tasks.filter((t: any) => String(t.type).toLowerCase() === "tour").length;
     const people = employees.length;
 
-    await saveRosterEntry({
+    const saved = await saveRosterEntry({
       id: date,
       title: formatFullDay(parsed),
       start: parsed,
@@ -54,7 +56,16 @@ export async function POST(req: Request) {
       people,
     });
 
-    return NextResponse.json({ ok: true });
+    revalidateTag(CACHE_TAGS.rosters, "max");
+    revalidatePath("/editor");
+    revalidatePath("/rosters");
+    revalidatePath(`/rosters/months/${date.slice(0, 7)}`);
+
+    return NextResponse.json({
+      ok: true,
+      savedAt: saved.updatedAt?.toISOString() ?? new Date().toISOString(),
+      updatedLabel: saved.updated,
+    });
   } catch (err) {
     console.error(err);
     return NextResponse.json({ error: "Server error" }, { status: 500 });

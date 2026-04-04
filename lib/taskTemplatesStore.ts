@@ -2,6 +2,8 @@ import { AppDayOfWeek } from "@prisma/client";
 import { prisma } from "./prisma";
 import { ensureAppPersistenceSeeded } from "./appPersistenceSeed";
 import { defaultTaskTemplates, TaskTemplate, slugifyName } from "./taskTemplates";
+import { unstable_cache } from "next/cache";
+import { CACHE_TAGS } from "./cacheTags";
 
 let defaultTemplateSyncPromise: Promise<void> | null = null;
 const runtimeTemplateSyncEnabled =
@@ -282,7 +284,7 @@ function mapTemplate(record: any): TaskTemplate {
   });
 }
 
-export async function getTaskTemplates(): Promise<TaskTemplate[]> {
+async function loadTaskTemplates(): Promise<TaskTemplate[]> {
   await ensureAppPersistenceSeeded();
   await ensureDefaultTaskTemplatesSynced();
   const templates = await prisma.appTaskTemplate.findMany({
@@ -296,7 +298,15 @@ export async function getTaskTemplates(): Promise<TaskTemplate[]> {
   return templates.map(mapTemplate);
 }
 
-export async function getTaskTemplateById(id: string): Promise<TaskTemplate | null> {
+const getTaskTemplatesCached = unstable_cache(async () => loadTaskTemplates(), ["tasks:list"], {
+  tags: [CACHE_TAGS.tasks],
+});
+
+export async function getTaskTemplates(): Promise<TaskTemplate[]> {
+  return getTaskTemplatesCached();
+}
+
+async function loadTaskTemplateById(id: string): Promise<TaskTemplate | null> {
   await ensureAppPersistenceSeeded();
   await ensureDefaultTaskTemplatesSynced();
   const template = await prisma.appTaskTemplate.findUnique({
@@ -308,6 +318,14 @@ export async function getTaskTemplateById(id: string): Promise<TaskTemplate | nu
     },
   });
   return template ? mapTemplate(template) : null;
+}
+
+const getTaskTemplateByIdCached = unstable_cache(async (id: string) => loadTaskTemplateById(id), ["tasks:by-id"], {
+  tags: [CACHE_TAGS.tasks],
+});
+
+export async function getTaskTemplateById(id: string): Promise<TaskTemplate | null> {
+  return getTaskTemplateByIdCached(id);
 }
 
 export async function addTaskTemplate(input: {

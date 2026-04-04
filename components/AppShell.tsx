@@ -3,47 +3,21 @@ import React, { useState, useCallback, useEffect } from "react";
 import SideNav from "@/components/SideNav";
 import { NavProvider } from "@/components/NavContext";
 import GlobalTopBar from "@/components/GlobalTopBar";
-import { usePathname, useRouter } from "next/navigation";
+import { usePathname } from "next/navigation";
 
-export default function AppShell({ children }: { children: React.ReactNode }) {
+export default function AppShell({
+  children,
+  initialUserName,
+}: {
+  children: React.ReactNode;
+  initialUserName?: string | null;
+}) {
   const [navOpen, setNavOpen] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
-  const [sessionName, setSessionName] = useState<string | null>(null);
-  const [sessionChecked, setSessionChecked] = useState(false);
   const toggleNav = useCallback(() => setNavOpen((o) => !o), []);
   const pathname = usePathname();
-  const router = useRouter();
   const isPublic = pathname === "/" || pathname.startsWith("/signup");
   const isWidePage = pathname === "/editor" || pathname.startsWith("/rosters/");
-
-  useEffect(() => {
-    if (isPublic) {
-      setSessionName(null);
-      setSessionChecked(false);
-      return;
-    }
-    if (sessionChecked) return;
-    let active = true;
-    fetch("/api/auth/session", { cache: "no-store" })
-      .then((res) => (res.ok ? res.json() : { session: null }))
-      .then((data) => {
-        if (!active) return;
-        const session = data?.session;
-        if (!session?.user) {
-          router.replace(`/signup?next=${encodeURIComponent(pathname)}`);
-          return;
-        }
-        setSessionName(typeof session.user.name === "string" ? session.user.name : null);
-        setSessionChecked(true);
-      })
-      .catch(() => {
-        if (!active) return;
-        router.replace(`/signup?next=${encodeURIComponent(pathname)}`);
-      });
-    return () => {
-      active = false;
-    };
-  }, [isPublic, pathname, router, sessionChecked]);
 
   useEffect(() => {
     const mediaQuery = window.matchMedia("(max-width: 767px)");
@@ -66,7 +40,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
   return (
     <NavProvider value={{ navOpen, toggleNav }}>
       <div className="relative min-h-screen bg-[#f5f6fa]">
-        <GlobalTopBar userName={sessionName} />
+        <GlobalTopBar userName={initialUserName ?? null} />
         {isMobile && navOpen && (
           <button
             type="button"

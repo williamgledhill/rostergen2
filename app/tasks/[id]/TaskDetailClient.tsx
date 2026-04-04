@@ -1,10 +1,12 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { ChevronRight } from "lucide-react";
+import { buildDraftStorageKey, formatAutosaveStatusText, getAutosaveStatusClassName, removeDraftRecord } from "@/lib/clientDrafts";
 import { type TaskTemplate } from "@/lib/taskTemplates";
+import { usePersistedAutosave } from "@/lib/usePersistedAutosave";
 
 const REGULAR_DAYS = [
   { key: "Mon", label: "Monday" },
@@ -20,12 +22,36 @@ const DURATION_OPTIONS = Array.from({ length: 16 }, (_, idx) => (idx + 1) * 15);
 
 export default function TaskDetailClient({ id, initialTask }: { id: string; initialTask: TaskTemplate | null }) {
   const router = useRouter();
-  const [task, setTask] = useState<TaskTemplate | null>(initialTask);
+  const initialTaskValue = useMemo(() => initialTask, [initialTask]);
+  const {
+    value: task,
+    setValue: setTask,
+    saveState,
+    saveNow,
+  } = usePersistedAutosave<TaskTemplate | null>({
+    storageKey: buildDraftStorageKey("task", id),
+    initialValue: initialTaskValue,
+    getSignature: (value) => JSON.stringify(value),
+    save: async (value, { keepalive }) => {
+      if (!value) return;
+      const res = await fetch("/api/task-templates", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(value),
+        keepalive,
+      });
+      if (!res.ok) throw new Error("Failed to save");
+      const saved = (await res.json()) as TaskTemplate;
+      return {
+        value: saved,
+        savedAt: new Date().toISOString(),
+      };
+    },
+  });
   const [newTimeSlot, setNewTimeSlot] = useState("");
   const [newDayTimeSlots, setNewDayTimeSlots] = useState<Record<string, string>>({});
 
   useEffect(() => {
-    setTask(initialTask);
     setNewTimeSlot("");
     setNewDayTimeSlots({});
   }, [initialTask, id]);
@@ -99,27 +125,12 @@ export default function TaskDetailClient({ id, initialTask }: { id: string; init
     });
   }
 
-  async function save() {
-    if (!task) return;
-    try {
-      const res = await fetch("/api/task-templates", {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(task),
-      });
-      if (!res.ok) throw new Error("Failed to save");
-      alert("Saved");
-    } catch (err) {
-      console.error(err);
-      alert("Failed to save");
-    }
-  }
-
   async function removeTask() {
     if (!confirm("Delete this task? This cannot be undone.")) return;
     try {
       const res = await fetch(`/api/task-templates?id=${id}`, { method: "DELETE" });
       if (!res.ok) throw new Error("Failed to delete");
+      removeDraftRecord(buildDraftStorageKey("task", id));
       router.push("/tasks");
     } catch (err) {
       console.error(err);
@@ -139,6 +150,9 @@ export default function TaskDetailClient({ id, initialTask }: { id: string; init
     );
   }
 
+  const saveStatusText = formatAutosaveStatusText(saveState);
+  const saveStatusClassName = getAutosaveStatusClassName(saveState);
+
   return (
     <div className="w-full py-3 px-3">
       <div className="space-y-3 flex flex-col items-start w-full">
@@ -151,11 +165,17 @@ export default function TaskDetailClient({ id, initialTask }: { id: string; init
           <div className="flex flex-col leading-tight">
             <h1 className="text-2xl font-semibold">{task.name || "Task"}</h1>
             <p className="text-slate-600 text-[14px]">Configure settings for {task.name || "this task"}</p>
+            <p className={`mt-1 text-[12px] font-medium ${saveStatusClassName}`}>{saveStatusText}</p>
           </div>
           <div className="flex items-center gap-2">
             <button className="btn h-9" style={{ borderRadius: "6px", borderColor: "#f3b7b7", color: "#b91c1c" }} onClick={removeTask}>Delete</button>
-            <button className="btn btn-primary h-9" style={{ borderRadius: "6px", paddingInline: "12px" }} onClick={save}>
-              <span className="text-[14px] font-medium text-white">Save</span>
+            <button
+              className="btn btn-primary h-9"
+              style={{ borderRadius: "6px", paddingInline: "12px" }}
+              onClick={() => void saveNow({ mode: "manual" })}
+              disabled={saveState.state === "saving"}
+            >
+              <span className="text-[14px] font-medium text-white">{saveState.state === "saving" ? "Saving..." : "Save"}</span>
             </button>
           </div>
         </div>

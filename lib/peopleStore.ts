@@ -2,6 +2,8 @@ import { AppDayOfWeek, AppScheduleWeekType } from "@prisma/client";
 import { prisma } from "./prisma";
 import { ALL_DAYS, type DayKey, type DaySchedule, type Person } from "./people";
 import { ensureAppPersistenceSeeded } from "./appPersistenceSeed";
+import { unstable_cache } from "next/cache";
+import { CACHE_TAGS } from "./cacheTags";
 
 const DEFAULT_ANCHOR_DATE = "2026-01-05";
 
@@ -155,7 +157,7 @@ function scheduleRowsForPerson(person: Person) {
   return rows;
 }
 
-export async function getPeople(): Promise<Person[]> {
+async function loadPeople(): Promise<Person[]> {
   await ensureAppPersistenceSeeded();
   const people = await prisma.appPerson.findMany({
     orderBy: { name: "asc" },
@@ -164,13 +166,29 @@ export async function getPeople(): Promise<Person[]> {
   return people.map(mapPerson);
 }
 
-export async function getPerson(id: string): Promise<Person | null> {
+const getPeopleCached = unstable_cache(async () => loadPeople(), ["people:list"], {
+  tags: [CACHE_TAGS.people],
+});
+
+export async function getPeople(): Promise<Person[]> {
+  return getPeopleCached();
+}
+
+async function loadPerson(id: string): Promise<Person | null> {
   await ensureAppPersistenceSeeded();
   const person = await prisma.appPerson.findUnique({
     where: { id },
     include: { daySchedules: true },
   });
   return person ? mapPerson(person) : null;
+}
+
+const getPersonCached = unstable_cache(async (id: string) => loadPerson(id), ["people:by-id"], {
+  tags: [CACHE_TAGS.people],
+});
+
+export async function getPerson(id: string): Promise<Person | null> {
+  return getPersonCached(id);
 }
 
 export async function upsertPerson(person: Person): Promise<Person> {

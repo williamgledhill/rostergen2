@@ -2,6 +2,8 @@ import { AppDayOfWeek } from "@prisma/client";
 import { prisma } from "./prisma";
 import { ensureAppPersistenceSeeded } from "./appPersistenceSeed";
 import { DAY_KEYS, DEFAULT_SETTINGS, AppSettings, DayKey, DayHours } from "./settingsDefaults";
+import { unstable_cache } from "next/cache";
+import { CACHE_TAGS } from "./cacheTags";
 
 function isValidTime(value: unknown): value is string {
   if (typeof value !== "string") return false;
@@ -51,7 +53,7 @@ function toDayHourRows(hoursByDay: Record<DayKey, DayHours>) {
   }));
 }
 
-export async function getSettings(): Promise<AppSettings> {
+async function loadSettings(): Promise<AppSettings> {
   await ensureAppPersistenceSeeded();
 
   const record = await prisma.appSettings.findUnique({ where: { id: "default" } });
@@ -59,6 +61,14 @@ export async function getSettings(): Promise<AppSettings> {
     hoursByDay: normalizeHoursByDay(record?.hoursByDay),
     upcomingDays: normalizeUpcomingDays(record?.upcomingDays),
   };
+}
+
+const getSettingsCached = unstable_cache(async () => loadSettings(), ["settings:default"], {
+  tags: [CACHE_TAGS.settings],
+});
+
+export async function getSettings(): Promise<AppSettings> {
+  return getSettingsCached();
 }
 
 export async function saveSettings(input: AppSettings): Promise<AppSettings> {

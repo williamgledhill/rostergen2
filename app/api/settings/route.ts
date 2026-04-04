@@ -3,6 +3,8 @@ import { getSettings, saveSettings } from "@/lib/settings";
 import { enforceSameOrigin, requireSession } from "@/lib/apiAuth";
 import { z } from "zod";
 import { DAY_KEYS } from "@/lib/settingsDefaults";
+import { revalidatePath, revalidateTag } from "next/cache";
+import { CACHE_TAGS } from "@/lib/cacheTags";
 
 const timeSchema = z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/);
 const dayHoursSchema = z.object({ start: timeSchema, end: timeSchema });
@@ -40,6 +42,11 @@ export async function PUT(request: Request) {
       return NextResponse.json({ error: "Invalid payload" }, { status: 400 });
     }
     const saved = await saveSettings(parsed.data);
+    revalidateTag(CACHE_TAGS.settings, "max");
+    revalidateTag(CACHE_TAGS.rosters, "max");
+    revalidatePath("/editor");
+    revalidatePath("/rosters");
+    revalidatePath("/settings");
     return NextResponse.json(saved);
   } catch (err: any) {
     return NextResponse.json({ error: err?.message || "Failed to save settings" }, { status: 500 });

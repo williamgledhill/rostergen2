@@ -5,8 +5,6 @@ import { getUpcomingRosters } from "@/lib/rosters";
 import { getSettings } from "@/lib/settings";
 import { requirePageSession } from "@/lib/apiAuth";
 
-export const dynamic = "force-dynamic";
-
 export default async function Page() {
   const [_, settings] = await Promise.all([requirePageSession(), getSettings()]);
   const rosters = await getUpcomingRosters(settings.upcomingDays);

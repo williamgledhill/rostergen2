@@ -4,6 +4,7 @@ import React, { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import type { RosterFile } from "@/lib/rosters";
+import { buildEditorHref } from "@/lib/editorPersistence";
 
 type Props = {
   rosters: RosterFile[];
@@ -44,7 +45,7 @@ export default function RosterTable({ rosters, footer }: Props) {
   }
 
   function handleRowClick(id: string) {
-    router.push(`/editor?date=${encodeURIComponent(id)}`);
+    router.push(buildEditorHref(id));
   }
 
   return (
@@ -80,6 +81,7 @@ export default function RosterTable({ rosters, footer }: Props) {
                 <tr
                   key={r.id}
                   className={`group border-b border-[#E6EAF0] hover:bg-[#f8fafc] cursor-pointer ${rowStyles}`}
+                  onMouseEnter={() => router.prefetch(buildEditorHref(r.id))}
                   onClick={() => handleRowClick(r.id)}
                 >
                   <td className="align-middle px-3 py-3">
@@ -94,7 +96,7 @@ export default function RosterTable({ rosters, footer }: Props) {
                   </td>
                   <td className="align-middle px-3 py-3">
                     <Link
-                      href={`/editor?date=${encodeURIComponent(r.id)}`}
+                      href={buildEditorHref(r.id)}
                       className="block truncate font-semibold text-slate-800 hover:underline group-hover:underline"
                       onClick={(e) => e.stopPropagation()}
                     >

@@ -1,6 +1,8 @@
 import { prisma } from "./prisma";
 import { ensureAppPersistenceSeeded } from "./appPersistenceSeed";
 import { formatFullDay, formatLocalId, parseLocalId } from "./dateUtils";
+import { unstable_cache } from "next/cache";
+import { CACHE_TAGS } from "./cacheTags";
 
 export type RosterFile = {
   id: string;
@@ -15,6 +17,7 @@ export type RosterFile = {
   tasks?: any[];
   hoursStart?: string;
   hoursEnd?: string;
+  updatedAt?: Date;
 };
 
 function monthId(date: Date) {
@@ -98,6 +101,7 @@ function normalizeRosterForDate(roster: RosterFile, date: Date): RosterFile {
     people,
     employees,
     tasks,
+    updatedAt: roster.updatedAt instanceof Date ? roster.updatedAt : undefined,
   };
 }
 
@@ -117,6 +121,7 @@ function mapLegacyRosterRecord(record: any): RosterFile {
       tasks: Array.isArray(record.tasks) ? record.tasks : [],
       hoursStart: record.hoursStart || undefined,
       hoursEnd: record.hoursEnd || undefined,
+      updatedAt: record.updatedAt ? new Date(record.updatedAt) : undefined,
     },
     date
   );
@@ -169,6 +174,7 @@ function mapRosterRecord(record: any): RosterFile {
       tasks,
       hoursStart: record.hoursStart || undefined,
       hoursEnd: record.hoursEnd || undefined,
+      updatedAt: record.updatedAt ? new Date(record.updatedAt) : undefined,
     },
     date
   );
@@ -203,7 +209,7 @@ function toRosterTaskRows(rosterId: string, tasks: any[]) {
   }));
 }
 
-export async function buildRosterList(limit?: number): Promise<RosterFile[]> {
+async function loadRosterList(limit?: number): Promise<RosterFile[]> {
   await ensureAppPersistenceSeeded();
   const saved = (await prisma.appRoster.findMany({
     orderBy: { date: "asc" },
@@ -211,6 +217,16 @@ export async function buildRosterList(limit?: number): Promise<RosterFile[]> {
   })).map(mapRosterRecord);
   if (typeof limit === "number") return saved.slice(0, limit);
   return saved;
+}
+
+const buildRosterListCached = unstable_cache(
+  async (limit?: number) => loadRosterList(limit),
+  ["rosters:list"],
+  { tags: [CACHE_TAGS.rosters] }
+);
+
+export async function buildRosterList(limit?: number): Promise<RosterFile[]> {
+  return buildRosterListCached(limit);
 }
 
 export function formatRange(start: Date, end: Date) {
@@ -226,7 +242,7 @@ export function formatRange(start: Date, end: Date) {
     : `${monthFmt.format(start)} ${dayFmt.format(start)} - ${monthFmt.format(end)} ${dayFmt.format(end)}, ${yearFmt.format(end)}`;
 }
 
-export async function getRosterById(id: string): Promise<RosterFile | null> {
+async function loadRosterById(id: string): Promise<RosterFile | null> {
   await ensureAppPersistenceSeeded();
   const roster = await prisma.appRoster.findUnique({
     where: { id },
@@ -236,6 +252,16 @@ export async function getRosterById(id: string): Promise<RosterFile | null> {
     },
   });
   return roster ? mapRosterRecord(roster) : null;
+}
+
+const getRosterByIdCached = unstable_cache(
+  async (id: string) => loadRosterById(id),
+  ["rosters:by-id"],
+  { tags: [CACHE_TAGS.rosters] }
+);
+
+export async function getRosterById(id: string): Promise<RosterFile | null> {
+  return getRosterByIdCached(id);
 }
 
 export async function getRosterMonths(limit = 200) {
@@ -254,7 +280,7 @@ export async function getRosterMonths(limit = 200) {
   return typeof limit === "number" ? list.slice(0, limit) : list;
 }
 
-export async function getRostersForMonth(month: string, limit = 200): Promise<RosterFile[]> {
+async function loadRostersForMonth(month: string, limit = 200): Promise<RosterFile[]> {
   await ensureAppPersistenceSeeded();
   if (!/^\d{4}-\d{2}$/.test(month)) return [];
 
@@ -277,6 +303,16 @@ export async function getRostersForMonth(month: string, limit = 200): Promise<Ro
     .map(mapLegacyRosterRecord)
     .filter((r) => !isEmptyRoster(r))
     .slice(0, limit);
+}
+
+const getRostersForMonthCached = unstable_cache(
+  async (month: string, limit = 200) => loadRostersForMonth(month, limit),
+  ["rosters:month"],
+  { tags: [CACHE_TAGS.rosters] }
+);
+
+export async function getRostersForMonth(month: string, limit = 200): Promise<RosterFile[]> {
+  return getRostersForMonthCached(month, limit);
 }
 
 export function buildUpcomingRosterWindow(
@@ -312,11 +348,11 @@ export function buildUpcomingRosterWindow(
   return result;
 }
 
-export async function getUpcomingRosters(upcomingDays = 7): Promise<RosterFile[]> {
+async function loadUpcomingRosters(upcomingDays = 7, fromDateId = formatLocalId(new Date())): Promise<RosterFile[]> {
   await ensureAppPersistenceSeeded();
 
   const dayCount = normalizeUpcomingWindowDays(upcomingDays);
-  const start = startOfDay(new Date());
+  const start = parseLocalId(fromDateId) ?? startOfDay(new Date());
   const end = new Date(start);
   end.setDate(start.getDate() + dayCount);
 
@@ -333,6 +369,17 @@ export async function getUpcomingRosters(upcomingDays = 7): Promise<RosterFile[]
   return buildUpcomingRosterWindow(saved.map(mapLegacyRosterRecord), dayCount, start);
 }
 
+const getUpcomingRostersCached = unstable_cache(
+  async (upcomingDays = 7, fromDateId = formatLocalId(new Date())) =>
+    loadUpcomingRosters(upcomingDays, fromDateId),
+  ["rosters:upcoming"],
+  { tags: [CACHE_TAGS.rosters] }
+);
+
+export async function getUpcomingRosters(upcomingDays = 7): Promise<RosterFile[]> {
+  return getUpcomingRostersCached(upcomingDays, formatLocalId(startOfDay(new Date())));
+}
+
 export function formatMonthLabel(month: string) {
   if (!/^\d{4}-\d{2}$/.test(month)) return month;
   const [y, m] = month.split("-").map(Number);
@@ -340,7 +387,7 @@ export function formatMonthLabel(month: string) {
   return formatMonthTitle(dt);
 }
 
-export async function saveRosterEntry(entry: RosterFile): Promise<void> {
+export async function saveRosterEntry(entry: RosterFile): Promise<RosterFile> {
   await ensureAppPersistenceSeeded();
 
   const date = parseLocalId(entry.id) ?? toLocalStartDate(entry.start) ?? new Date();
@@ -348,8 +395,8 @@ export async function saveRosterEntry(entry: RosterFile): Promise<void> {
   const employees = Array.isArray(normalized.employees) ? normalized.employees : [];
   const tasks = Array.isArray(normalized.tasks) ? normalized.tasks : [];
 
-  await prisma.$transaction(async (tx) => {
-    await tx.appRoster.upsert({
+  const saved = await prisma.$transaction(async (tx) => {
+    const roster = await tx.appRoster.upsert({
       where: { id: normalized.id },
       update: {
         date,
@@ -390,5 +437,15 @@ export async function saveRosterEntry(entry: RosterFile): Promise<void> {
     if (taskRows.length) {
       await tx.appRosterTask.createMany({ data: taskRows });
     }
+
+    return roster;
   });
+
+  return normalizeRosterForDate(
+    {
+      ...normalized,
+      updatedAt: saved.updatedAt,
+    },
+    date
+  );
 }
