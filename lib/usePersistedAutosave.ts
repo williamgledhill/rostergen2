@@ -73,8 +73,8 @@ export function usePersistedAutosave<T>(options: {
 
       const snapshot = valueRef.current;
       if (!canSave || (typeof canSaveValue === "function" && !canSaveValue(snapshot))) return;
-      const nextSignature = getSignature(snapshot);
-      if (nextSignature === lastSavedSignatureRef.current) return;
+      const snapshotSignature = getSignature(snapshot);
+      if (snapshotSignature === lastSavedSignatureRef.current) return;
 
       if (saveInFlightRef.current) {
         queuedModeRef.current = mode;
@@ -95,15 +95,30 @@ export function usePersistedAutosave<T>(options: {
         const savedSignature = getSignature(savedValue);
 
         if (saveCycle === saveCycleRef.current) {
-          valueRef.current = savedValue;
           lastSavedSignatureRef.current = savedSignature;
-          persistDraft(savedValue, savedSignature, savedAt);
-          if (result.value !== undefined) {
-            setValue(savedValue);
+          const currentValue = valueRef.current;
+          const currentSignature = getSignature(currentValue);
+          const hasNewerLocalChanges = currentSignature !== snapshotSignature;
+
+          if (hasNewerLocalChanges) {
+            persistDraft(currentValue, savedSignature, savedAt);
+            const nextDirtyState: AutosaveState = {
+              state: "dirty",
+              mode: "autosave",
+              savedAt,
+            };
+            saveStateRef.current = nextDirtyState;
+            setSaveState(nextDirtyState);
+          } else {
+            valueRef.current = savedValue;
+            persistDraft(savedValue, savedSignature, savedAt);
+            if (result.value !== undefined) {
+              setValue(savedValue);
+            }
+            const nextSavedState: AutosaveState = { state: "saved", mode, savedAt };
+            saveStateRef.current = nextSavedState;
+            setSaveState(nextSavedState);
           }
-          const nextSavedState: AutosaveState = { state: "saved", mode, savedAt };
-          saveStateRef.current = nextSavedState;
-          setSaveState(nextSavedState);
         }
       } catch (error) {
         console.error(error);
