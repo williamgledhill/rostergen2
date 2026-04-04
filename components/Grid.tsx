@@ -1631,6 +1631,7 @@ export default function Grid({
     }
   }
   const lastCol = employeeCols[employeeCols.length - 1]?.col;
+  const firstEmployeeCol = employeeCols[0]?.col;
   const selectedTaskCol = tasks.find((t) => t.id === selected)?.col ?? null;
   const emphasizedCol = selectedTaskCol;
 
@@ -1668,7 +1669,7 @@ export default function Grid({
                 highlighted ? "bg-[#eef0f3]" : "bg-[var(--surface-subtle)]"
               }`}
               style={{
-                boxShadow: `${h.col === lastCol ? "" : "inset -1px 0 0 rgba(71,85,105,0.98), "}inset 0 -1px 0 rgba(71,85,105,0.98)`,
+                boxShadow: `${h.col === firstEmployeeCol ? "inset 1px 0 0 rgba(71,85,105,0.98), " : ""}${h.col === lastCol ? "" : "inset -1px 0 0 rgba(71,85,105,0.98), "}inset 0 -1px 0 rgba(71,85,105,0.98)`,
               }}
               onMouseEnter={() => setHoveredCol(h.col)}
               onMouseLeave={() => setHoveredCol((current) => (current === h.col ? null : current))}
@@ -1788,7 +1789,7 @@ export default function Grid({
               style={{
                 gridColumn: String(s.col),
                 gridRow: String(s.row),
-                boxShadow: `${s.col === lastCol ? "" : "inset -1px 0 0 rgba(71,85,105,0.98), "}inset 0 -1px 0 rgba(71,85,105,0.98)`,
+                boxShadow: `${s.col === firstEmployeeCol ? "inset 1px 0 0 rgba(71,85,105,0.98), " : ""}${s.col === lastCol ? "" : "inset -1px 0 0 rgba(71,85,105,0.98), "}inset 0 -1px 0 rgba(71,85,105,0.98)`,
               }}
               onClick={(e) => { e.stopPropagation(); openPicker(s.col, s.row); }}
               title="Add task"
@@ -1814,6 +1815,7 @@ export default function Grid({
               packingMinutes={template?.packingMinutes}
               selected={t.id === selected}
               highlighted={emphasizedCol === t.col}
+              isFirstCol={t.col === firstEmployeeCol}
               onSelect={() => setSelected(t.id)}
               isLastCol={t.col === lastCol}
               onStartResize={(which, e) => onStartResize(which, t.id, e)}

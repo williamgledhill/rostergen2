@@ -13,6 +13,7 @@ type Props = {
   packingMinutes?: number;
   selected?: boolean;
   highlighted?: boolean;
+  isFirstCol?: boolean;
   isLastCol?: boolean;
   onSelect?: () => void;
   onStartResize?: (which: "top" | "bottom", e: React.MouseEvent) => void;
@@ -36,6 +37,7 @@ export default function Block({
   span,
   selected,
   highlighted,
+  isFirstCol,
   onSelect,
   onStartResize,
   isLastCol,
@@ -45,6 +47,7 @@ export default function Block({
 }: Props) {
   const cls = color ? "" : typeToClass[type] ?? "bg-[var(--gallery)]";
   const boxShadow = [
+    isFirstCol ? "inset 1px 0 0 rgba(71,85,105,0.98)" : "",
     !isLastCol ? "inset -1px 0 0 rgba(71,85,105,0.98)" : "",
     "inset 0 -1px 0 rgba(71,85,105,0.98)",
     selected ? "inset 0 0 0 2px rgba(15,23,42,0.82)" : "",
