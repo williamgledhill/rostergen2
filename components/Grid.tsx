@@ -1,6 +1,6 @@
 "use client";
 import React, { useMemo, useState, useRef, useEffect, useCallback } from "react";
-import { X, Trash2, Search } from "lucide-react";
+import { X, Trash2, Search, Settings2 } from "lucide-react";
 import Block from "@/components/Block";
 import Modal from "@/components/Modal";
 import { TaskTemplate, defaultTaskTemplates } from "@/lib/taskTemplates";
@@ -59,7 +59,14 @@ function cloneTasks(input: GridTask[]) {
 function areEmployeesEqual(a: Employee[], b: Employee[]) {
   if (a.length !== b.length) return false;
   for (let i = 0; i < a.length; i += 1) {
-    if (a[i].id !== b[i].id || a[i].name !== b[i].name) return false;
+    if (
+      a[i].id !== b[i].id ||
+      a[i].name !== b[i].name ||
+      a[i].startTime !== b[i].startTime ||
+      a[i].endTime !== b[i].endTime
+    ) {
+      return false;
+    }
   }
   return true;
 }
@@ -107,6 +114,39 @@ function isEditableTarget(target: EventTarget | null) {
   if (editable instanceof HTMLSelectElement) return true;
   if (editable instanceof HTMLElement && editable.isContentEditable) return true;
   return editable.getAttribute("role") === "textbox";
+}
+
+function buildRosterSaveSignature(
+  employeeList: Employee[],
+  taskList: GridTask[],
+  hoursStart?: string,
+  hoursEnd?: string,
+  rosterDateId?: string
+) {
+  return JSON.stringify({
+    rosterDateId,
+    hoursStart: hoursStart || "",
+    hoursEnd: hoursEnd || "",
+    employees: employeeList.map((emp) => ({
+      id: emp.id,
+      name: emp.name,
+      startTime: emp.startTime || "",
+      endTime: emp.endTime || "",
+    })),
+    tasks: taskList.map((task) => ({
+      id: task.id,
+      type: task.type,
+      label: task.label,
+      col: task.col,
+      startRow: task.startRow,
+      span: task.span,
+      color: task.color || "",
+      employeeId: task.employeeId ?? "",
+      locked: task.locked === true,
+      isLocked: task.isLocked === true,
+      readOnly: task.readOnly === true,
+    })),
+  });
 }
 
 const typeToClassLabel: Record<string, [string, string]> = {
@@ -169,6 +209,10 @@ export default function Grid({
   const tasksRef = useRef<GridTask[]>(initialTasks);
   const historyPastRef = useRef<HistorySnapshot[]>([]);
   const historyFutureRef = useRef<HistorySnapshot[]>([]);
+  const autosaveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const lastSavedSignatureRef = useRef(
+    buildRosterSaveSignature(initialEmployees, initialTasks, hoursStart, hoursEnd, rosterDateId)
+  );
 
   const dayStartMin = useMemo(() => parseTimeToMinutes(hoursStart) ?? DEFAULT_START_MIN, [hoursStart]);
   const rawEndMin = useMemo(() => parseTimeToMinutes(hoursEnd) ?? DEFAULT_END_MIN, [hoursEnd]);
@@ -273,8 +317,20 @@ export default function Grid({
     historyFutureRef.current = [];
     setSelected(undefined);
     setEmployeeSettingsId(null);
+    setHoveredCol(null);
+    if (autosaveTimerRef.current) {
+      clearTimeout(autosaveTimerRef.current);
+      autosaveTimerRef.current = null;
+    }
+    lastSavedSignatureRef.current = buildRosterSaveSignature(
+      initialEmployees,
+      initialTasks,
+      hoursStart,
+      hoursEnd,
+      rosterDateId
+    );
     setEmployeeSettingsError("");
-  }, [initialEmployees, initialTasks, rosterDateId, setRosterState]);
+  }, [initialEmployees, initialTasks, rosterDateId, hoursStart, hoursEnd, setRosterState]);
 
   useEffect(() => {
     employeesRef.current = employees;
@@ -1209,7 +1265,7 @@ export default function Grid({
     }
   }, [employees, templates, rosterDate, colorForType, maxRowEx, rowFromTime, people, applyRosterState]);
 
-  const saveRoster = useCallback(async () => {
+  const saveRoster = useCallback(async (options?: { silent?: boolean }) => {
     try {
       const res = await fetch("/api/rosters", {
         method: "POST",
@@ -1218,15 +1274,43 @@ export default function Grid({
       });
       if (!res.ok) {
         console.error("Save failed", await res.text());
-        alert("Failed to save roster");
+        if (!options?.silent) alert("Failed to save roster");
         return;
       }
-      alert("Roster saved");
+      lastSavedSignatureRef.current = buildRosterSaveSignature(
+        employees,
+        tasks,
+        hoursStart,
+        hoursEnd,
+        rosterDateId
+      );
+      if (!options?.silent) alert("Roster saved");
     } catch (err) {
       console.error(err);
-      alert("Failed to save roster");
+      if (!options?.silent) alert("Failed to save roster");
     }
   }, [employees, tasks, rosterDateId, hoursStart, hoursEnd]);
+
+  useEffect(() => {
+    const nextSignature = buildRosterSaveSignature(
+      employees,
+      tasks,
+      hoursStart,
+      hoursEnd,
+      rosterDateId
+    );
+    if (nextSignature === lastSavedSignatureRef.current) return;
+    if (autosaveTimerRef.current) clearTimeout(autosaveTimerRef.current);
+    autosaveTimerRef.current = setTimeout(() => {
+      void saveRoster({ silent: true });
+    }, 700);
+    return () => {
+      if (autosaveTimerRef.current) {
+        clearTimeout(autosaveTimerRef.current);
+        autosaveTimerRef.current = null;
+      }
+    };
+  }, [employees, tasks, hoursStart, hoursEnd, rosterDateId, saveRoster]);
 
   const clearNonLockedTasks = useCallback(() => {
     const nextTasks = tasksRef.current.filter((task) => isTaskLocked(task));
@@ -1548,7 +1632,7 @@ export default function Grid({
   }
   const lastCol = employeeCols[employeeCols.length - 1]?.col;
   const selectedTaskCol = tasks.find((t) => t.id === selected)?.col ?? null;
-  const emphasizedCol = hoveredCol ?? selectedTaskCol;
+  const emphasizedCol = selectedTaskCol;
 
   return (
     <div className="w-full overflow-x-auto">
@@ -1567,25 +1651,38 @@ export default function Grid({
           gridAutoRows: "var(--rowh)",
         }}
       >
-        <div className="sticky left-0 z-40 rounded-tl-[12px] border-b border-slate-300 bg-[var(--surface-subtle)] px-3 py-1.5 text-center shadow-[inset_-0.5px_0_0_rgba(148,163,184,0.9)]">
+        <div
+          className="sticky left-0 z-40 rounded-tl-[12px] border-b border-slate-500 bg-[var(--surface-subtle)] px-3 py-1.5 text-center"
+          style={{ boxShadow: "inset -1px 0 0 rgba(71,85,105,0.98)" }}
+        >
           <span className="text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-700">Time</span>
         </div>
         {employeeCols.map((h) => {
-          const highlighted = emphasizedCol === h.col;
+          const highlighted = hoveredCol === h.col || emphasizedCol === h.col;
           const resolved = resolveEmployeeHours(h);
           const hoursLabel = resolved.isOff ? "Off" : `${resolved.start} - ${resolved.end}`;
           return (
             <div
               key={h.id}
-              className={`group relative border-b border-slate-300 ${h.col === lastCol ? "rounded-tr-[12px]" : "border-r border-slate-300"} px-3 py-1.5 transition ${
-                highlighted ? "bg-[#eef2ff]" : "bg-[var(--surface-subtle)]"
+              className={`group relative border-b border-slate-500 ${h.col === lastCol ? "rounded-tr-[12px]" : "border-r border-slate-500"} px-3 py-1.5 transition ${
+                highlighted ? "bg-[#eef0f3]" : "bg-[var(--surface-subtle)]"
               }`}
               onMouseEnter={() => setHoveredCol(h.col)}
               onMouseLeave={() => setHoveredCol((current) => (current === h.col ? null : current))}
             >
+              <div className="min-w-0 py-0.5 pr-10">
+                <div className="min-w-0">
+                  <span className="block max-w-full truncate text-[15px] font-semibold leading-tight tracking-[0.01em] text-slate-900">
+                    {h.name}
+                  </span>
+                  <span className={`mt-0.5 block text-[12px] font-medium tabular-nums ${resolved.isOff ? "italic text-slate-500" : "text-slate-600"}`}>
+                    {hoursLabel}
+                  </span>
+                </div>
+              </div>
               <button
                 type="button"
-                className="flex h-full w-full flex-col items-start justify-center rounded-[10px] pr-2 text-left transition hover:bg-[#eef2ff] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#7283f5]/45"
+                className="absolute right-2 top-2 inline-flex h-8 w-8 items-center justify-center rounded-[10px] border border-slate-400/85 bg-white/85 text-slate-600 shadow-sm transition hover:border-slate-500 hover:bg-white hover:text-slate-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-400/55"
                 onClick={(e) => {
                   e.stopPropagation();
                   openEmployeeSettings({ id: h.id, name: h.name, startTime: h.startTime, endTime: h.endTime });
@@ -1593,12 +1690,7 @@ export default function Grid({
                 title={`Edit hours for ${h.name}`}
                 aria-label={`Edit hours for ${h.name}`}
               >
-                <span className="max-w-full truncate text-[15px] font-semibold leading-tight tracking-[0.01em] text-slate-900">
-                  {h.name}
-                </span>
-                <span className={`mt-0.5 text-[12px] font-medium tabular-nums ${resolved.isOff ? "italic text-slate-500" : "text-slate-600"}`}>
-                  {hoursLabel}
-                </span>
+                <Settings2 className="h-[16px] w-[16px]" />
               </button>
               {employeeSettingsId === h.id && (
                 <div
@@ -1677,7 +1769,8 @@ export default function Grid({
             <div
               key={`time-${r}`}
               ref={i === 0 ? firstTimeCellRef : undefined}
-              className="sticky left-0 z-20 bg-[#f8f9fc] px-2 py-2 text-center text-[12px] font-semibold tabular-nums text-slate-700 shadow-[inset_-0.5px_0_0_rgba(148,163,184,0.9),inset_0_-0.5px_0_rgba(148,163,184,0.9)]"
+              className="sticky left-0 z-20 bg-[#f8f9fc] px-2 py-2 text-center text-[12px] font-semibold tabular-nums text-slate-700"
+              style={{ boxShadow: "inset -1px 0 0 rgba(71,85,105,0.98), inset 0 -1px 0 rgba(71,85,105,0.98)" }}
             >
               {timeRangeForRow(r)}
             </div>
@@ -1685,17 +1778,14 @@ export default function Grid({
         })}
 
         {slots.map((s, idx) => {
-          const highlighted = emphasizedCol === s.col;
           return (
             <div
               key={`slot-${idx}`}
-              className={`relative cursor-pointer ${
-                highlighted ? "bg-[#eef2ff]/55" : ""
-              } hover:bg-slate-50`}
+              className="relative cursor-pointer hover:bg-slate-50"
               style={{
                 gridColumn: String(s.col),
                 gridRow: String(s.row),
-                boxShadow: `${s.col === lastCol ? "" : "inset -0.5px 0 0 rgba(148,163,184,0.9), "}inset 0 -0.5px 0 rgba(148,163,184,0.9)`,
+                boxShadow: `${s.col === lastCol ? "" : "inset -1px 0 0 rgba(71,85,105,0.98), "}inset 0 -1px 0 rgba(71,85,105,0.98)`,
               }}
               onClick={(e) => { e.stopPropagation(); openPicker(s.col, s.row); }}
               title="Add task"

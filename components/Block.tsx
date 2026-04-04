@@ -45,10 +45,9 @@ export default function Block({
 }: Props) {
   const cls = color ? "" : typeToClass[type] ?? "bg-[var(--gallery)]";
   const boxShadow = [
-    !isLastCol ? "inset -0.5px 0 0 rgba(148,163,184,0.9)" : "",
-    "inset 0 -0.5px 0 rgba(148,163,184,0.9)",
+    !isLastCol ? "inset -1px 0 0 rgba(71,85,105,0.98)" : "",
+    "inset 0 -1px 0 rgba(71,85,105,0.98)",
     selected ? "inset 0 0 0 2px rgba(15,23,42,0.82)" : "",
-    highlighted && !selected ? "inset 0 0 0 1px rgba(52,77,232,0.28)" : "",
   ]
     .filter(Boolean)
     .join(", ");
@@ -82,7 +81,7 @@ export default function Block({
         {segments.map((seg, idx) => (
           <div
             key={seg.key}
-            className={`flex items-center justify-center ${idx > 0 ? "border-t border-slate-500/60" : ""}`}
+            className={`flex items-center justify-center ${idx > 0 ? "border-t border-slate-700/80" : ""}`}
           >
             <span className="px-2 text-[13px] font-semibold uppercase tracking-wide">{seg.label}</span>
           </div>
