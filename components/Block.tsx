@@ -84,7 +84,15 @@ export default function Block({
         {segments.map((seg, idx) => (
           <div
             key={seg.key}
-            className={`flex items-center justify-center ${idx > 0 ? "border-t border-slate-700/80" : ""}`}
+            className={`flex items-center justify-center ${
+              seg.key === "waiting"
+                ? "border-b border-slate-700/90"
+                : seg.key === "packing"
+                  ? "border-t border-slate-700/90"
+                  : idx > 0
+                    ? "border-t border-slate-700/80"
+                    : ""
+            }`}
           >
             <span className="px-2 text-[13px] font-semibold uppercase tracking-wide">{seg.label}</span>
           </div>
