@@ -1652,8 +1652,8 @@ export default function Grid({
         }}
       >
         <div
-          className="sticky left-0 z-40 rounded-tl-[12px] border-b border-slate-500 bg-[var(--surface-subtle)] px-3 py-1.5 text-center"
-          style={{ boxShadow: "inset -1px 0 0 rgba(71,85,105,0.98)" }}
+          className="sticky left-0 z-40 rounded-tl-[12px] border-r border-slate-500 bg-[var(--surface-subtle)] px-3 py-1.5 text-center"
+          style={{ boxShadow: "inset 0 -1px 0 rgba(71,85,105,0.98)" }}
         >
           <span className="text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-700">Time</span>
         </div>
@@ -1664,9 +1664,12 @@ export default function Grid({
           return (
             <div
               key={h.id}
-              className={`group relative border-b border-slate-500 ${h.col === lastCol ? "rounded-tr-[12px]" : "border-r border-slate-500"} px-3 py-1.5 transition ${
+              className={`group relative ${h.col === lastCol ? "rounded-tr-[12px]" : ""} px-3 py-1.5 transition ${
                 highlighted ? "bg-[#eef0f3]" : "bg-[var(--surface-subtle)]"
               }`}
+              style={{
+                boxShadow: `${h.col === lastCol ? "" : "inset -1px 0 0 rgba(71,85,105,0.98), "}inset 0 -1px 0 rgba(71,85,105,0.98)`,
+              }}
               onMouseEnter={() => setHoveredCol(h.col)}
               onMouseLeave={() => setHoveredCol((current) => (current === h.col ? null : current))}
             >
@@ -1754,7 +1757,7 @@ export default function Grid({
                       }}
                     >
                       <Trash2 className="h-3.5 w-3.5" />
-                      Remove
+                      {`Remove ${h.name}`}
                     </button>
                   </div>
                 </div>
@@ -1769,8 +1772,8 @@ export default function Grid({
             <div
               key={`time-${r}`}
               ref={i === 0 ? firstTimeCellRef : undefined}
-              className="sticky left-0 z-20 bg-[#f8f9fc] px-2 py-2 text-center text-[12px] font-semibold tabular-nums text-slate-700"
-              style={{ boxShadow: "inset -1px 0 0 rgba(71,85,105,0.98), inset 0 -1px 0 rgba(71,85,105,0.98)" }}
+              className="sticky left-0 z-20 border-r border-slate-500 bg-[#f8f9fc] px-2 py-2 text-center text-[12px] font-semibold tabular-nums text-slate-700"
+              style={{ boxShadow: "inset 0 -1px 0 rgba(71,85,105,0.98)" }}
             >
               {timeRangeForRow(r)}
             </div>
