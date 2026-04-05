@@ -49,7 +49,7 @@ export default function RosterTable({ rosters, footer }: Props) {
   }
 
   return (
-    <div className="bg-white rounded-lg shadow-sm w-full overflow-hidden">
+    <div className="w-full overflow-hidden rounded-lg border border-[var(--border)] bg-white">
       <div className="overflow-x-auto">
         <table className="w-full text-sm border-collapse">
           <thead className="text-slate-600 text-sm">
@@ -128,7 +128,7 @@ export default function RosterTable({ rosters, footer }: Props) {
           </tbody>
         </table>
       </div>
-      <div className="px-4 py-3 text-sm text-slate-600">
+      <div className="border-t border-[var(--border)] px-4 py-3 text-sm text-slate-600">
         {footer ?? `${rosters.length} roster${rosters.length === 1 ? "" : "s"}`}
       </div>
     </div>

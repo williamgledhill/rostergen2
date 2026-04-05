@@ -8,6 +8,8 @@ import { buildEditorDraftStorageKey } from "@/lib/editorPersistence";
 import { TaskTemplate, defaultTaskTemplates } from "@/lib/taskTemplates";
 import { getDayScheduleForDate, type Person } from "@/lib/people";
 import {
+  compareFutureMinimumAvailability,
+  getFeasiblePlacementRows,
   getAutofillTemplatePriority,
   getPreferredConcurrentLimit,
 } from "@/lib/rosterAutofill";
@@ -932,27 +934,6 @@ export default function Grid({
       return busiestRow;
     };
 
-    const pickEmployeeForPlacement = (meta: TemplateMeta, row: number, span: number) => {
-      const sortedEmployees = [...employees].sort(
-        (a, b) => {
-          const countDiff = getEmpCount(meta.id, a.id) - getEmpCount(meta.id, b.id);
-          if (countDiff !== 0) return countDiff;
-          return (
-            getRotatedRank(employeeOrder.get(a.id) ?? 0, employees.length, autofillVariant) -
-            getRotatedRank(employeeOrder.get(b.id) ?? 0, employees.length, autofillVariant)
-          );
-        }
-      );
-      return sortedEmployees.find((emp) => {
-        if (getEmpCount(meta.id, emp.id) >= meta.maxPerEmp) return false;
-        const col = employeeColById.get(emp.id) ?? employees.findIndex((e) => e.id === emp.id) + 2;
-        return (
-          isFree(col, row, span, emp.id) &&
-          !exceedsConcurrentLimit(meta.id, row, span, meta.maxConcurrentPerTimeslot)
-        );
-      });
-    };
-
     const getWindow = (template: TaskTemplate) => {
       const dayWindow = template.regularDayWindows?.[dayKey];
       const startValue = dayWindow?.start || template.autogenStart || "";
@@ -1045,6 +1026,98 @@ export default function Grid({
         maxConsecutiveSpan,
         maxConcurrentPerTimeslot,
       };
+    };
+
+    const getCandidateRowsForMeta = (meta: TemplateMeta) => {
+      if (!meta.window) return [];
+      if (meta.regularTimeRows.length > 0) return meta.regularTimeRows;
+
+      const rows: number[] = [];
+      for (let row = meta.window.startRow; row + meta.span <= meta.window.endRow; row += 1) {
+        rows.push(row);
+      }
+      return rows;
+    };
+
+    const getFutureMinimumAvailabilityCounts = (
+      emp: Employee,
+      blockedRange: { startRow: number; span: number } | null,
+      futureMinimumMetas: TemplateMeta[]
+    ) => {
+      if (!futureMinimumMetas.length) return [];
+
+      const col = employeeColById.get(emp.id) ?? employees.findIndex((e) => e.id === emp.id) + 2;
+      const employeeWindow = getEmployeeWindow(emp);
+      if (!employeeWindow) return futureMinimumMetas.map(() => 0);
+
+      const occupiedRanges = (tasksByCol.get(col) ?? []).map((task) => ({
+        startRow: task.startRow,
+        span: task.span,
+      }));
+
+      return futureMinimumMetas.map((futureMeta) => {
+        if (getEmpCount(futureMeta.id, emp.id) >= futureMeta.minPerEmp) return Number.POSITIVE_INFINITY;
+        if (!futureMeta.window) return 0;
+
+        const overlapWindow = {
+          startRow: Math.max(employeeWindow.startRow, futureMeta.window.startRow),
+          endRow: Math.min(employeeWindow.endRow, futureMeta.window.endRow),
+        };
+        if (overlapWindow.endRow <= overlapWindow.startRow) return 0;
+
+        return getFeasiblePlacementRows({
+          candidateRows: getCandidateRowsForMeta(futureMeta),
+          span: futureMeta.span,
+          employeeWindow: overlapWindow,
+          occupiedRanges,
+          blockedRange,
+        }).length;
+      });
+    };
+
+    const pickEmployeeForPlacement = (
+      meta: TemplateMeta,
+      row: number,
+      span: number,
+      futureMinimumMetas: TemplateMeta[] = []
+    ) => {
+      const blockedRange = { startRow: row, span };
+      const futureAvailabilityByEmployee = new Map<string | number, number[]>();
+      const getFutureAvailability = (emp: Employee) => {
+        if (!futureAvailabilityByEmployee.has(emp.id)) {
+          futureAvailabilityByEmployee.set(
+            emp.id,
+            getFutureMinimumAvailabilityCounts(emp, blockedRange, futureMinimumMetas)
+          );
+        }
+        return futureAvailabilityByEmployee.get(emp.id) ?? [];
+      };
+
+      const feasibleEmployees = employees.filter((emp) => {
+        if (getEmpCount(meta.id, emp.id) >= meta.maxPerEmp) return false;
+        const col = employeeColById.get(emp.id) ?? employees.findIndex((e) => e.id === emp.id) + 2;
+        return (
+          isFree(col, row, span, emp.id) &&
+          !exceedsConcurrentLimit(meta.id, row, span, meta.maxConcurrentPerTimeslot)
+        );
+      });
+
+      feasibleEmployees.sort((a, b) => {
+        const futureDiff = compareFutureMinimumAvailability(
+          getFutureAvailability(a),
+          getFutureAvailability(b)
+        );
+        if (futureDiff !== 0) return futureDiff;
+
+        const countDiff = getEmpCount(meta.id, a.id) - getEmpCount(meta.id, b.id);
+        if (countDiff !== 0) return countDiff;
+        return (
+          getRotatedRank(employeeOrder.get(a.id) ?? 0, employees.length, autofillVariant) -
+          getRotatedRank(employeeOrder.get(b.id) ?? 0, employees.length, autofillVariant)
+        );
+      });
+
+      return feasibleEmployees[0];
     };
 
     const templatesToSchedule = templates
@@ -1153,7 +1226,7 @@ export default function Grid({
 
     const unmetMinimums: string[] = [];
 
-    for (const meta of templatesToSchedule) {
+    for (const [metaIndex, meta] of templatesToSchedule.entries()) {
       const window = meta.window;
       if (!window) continue;
       const span = meta.span;
@@ -1162,6 +1235,9 @@ export default function Grid({
       const minPerEmp = meta.minPerEmp;
 
       if (meta.mustManned) {
+        const futureMinimumMetas = templatesToSchedule
+          .slice(metaIndex + 1)
+          .filter((candidate) => !candidate.mustManned && candidate.minPerEmp > 0);
         const requiredRows =
           meta.regularTimeRows.length > 0
             ? meta.regularTimeRows
@@ -1179,7 +1255,7 @@ export default function Grid({
               ? generated.some((task) => task.type === meta.id && task.startRow === row)
               : isTypeCoveredAt(meta.id, row);
           if (alreadyCovered) continue;
-          const picked = pickEmployeeForPlacement(meta, row, requiredSpan);
+          const picked = pickEmployeeForPlacement(meta, row, requiredSpan, futureMinimumMetas);
           if (!picked) continue;
           const col = employeeColById.get(picked.id) ?? employees.findIndex((e) => e.id === picked.id) + 2;
           addTask(meta, col, row, requiredSpan, picked.id);
@@ -1880,13 +1956,14 @@ export default function Grid({
   const firstEmployeeCol = employeeCols[0]?.col;
   const selectedTaskCol = tasks.find((t) => t.id === selected)?.col ?? null;
   const emphasizedCol = selectedTaskCol;
+  const gridLineColor = "rgba(71,85,105,0.98)";
 
   return (
     <div className="w-full overflow-x-auto">
       <div
         ref={containerRef}
         className="card p-0 inline-block overflow-hidden"
-        style={{ borderBottomWidth: 0 }}
+        style={{ borderColor: gridLineColor }}
         onClick={() => setSelected(undefined)}
       >
       {/* grid */}
@@ -1899,8 +1976,8 @@ export default function Grid({
         }}
       >
         <div
-          className="sticky left-0 z-40 rounded-tl-[12px] border-r border-slate-500 bg-[var(--surface-subtle)] px-3 py-1.5 text-center"
-          style={{ boxShadow: "inset 0 -1px 0 rgba(71,85,105,0.98)" }}
+          className="sticky left-0 z-40 rounded-tl-[12px] border-r bg-[var(--surface-subtle)] px-3 py-1.5 text-center"
+          style={{ borderRightColor: gridLineColor, boxShadow: `inset 0 -1px 0 ${gridLineColor}` }}
         >
           <span className="text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-700">Time</span>
         </div>
@@ -1915,7 +1992,7 @@ export default function Grid({
                 highlighted ? "bg-[#eef0f3]" : "bg-[var(--surface-subtle)]"
               }`}
               style={{
-                boxShadow: `${h.col === firstEmployeeCol ? "inset 1px 0 0 rgba(71,85,105,0.98), " : ""}${h.col === lastCol ? "" : "inset -1px 0 0 rgba(71,85,105,0.98), "}inset 0 -1px 0 rgba(71,85,105,0.98)`,
+                boxShadow: `${h.col === firstEmployeeCol ? `inset 1px 0 0 ${gridLineColor}, ` : ""}${h.col === lastCol ? "" : `inset -1px 0 0 ${gridLineColor}, `}inset 0 -1px 0 ${gridLineColor}`,
               }}
               onMouseEnter={() => setHoveredCol(h.col)}
               onMouseLeave={() => setHoveredCol((current) => (current === h.col ? null : current))}
@@ -2019,8 +2096,8 @@ export default function Grid({
             <div
               key={`time-${r}`}
               ref={i === 0 ? firstTimeCellRef : undefined}
-              className="sticky left-0 z-20 border-r border-slate-500 bg-[#f8f9fc] px-2 py-2 text-center text-[12px] font-semibold tabular-nums text-slate-700"
-              style={{ boxShadow: "inset 0 -1px 0 rgba(71,85,105,0.98)" }}
+              className="sticky left-0 z-20 border-r bg-[#f8f9fc] px-2 py-2 text-center text-[12px] font-semibold tabular-nums text-slate-700"
+              style={{ borderRightColor: gridLineColor, boxShadow: `inset 0 -1px 0 ${gridLineColor}` }}
             >
               {timeRangeForRow(r)}
             </div>
@@ -2035,7 +2112,7 @@ export default function Grid({
               style={{
                 gridColumn: String(s.col),
                 gridRow: String(s.row),
-                boxShadow: `${s.col === firstEmployeeCol ? "inset 1px 0 0 rgba(71,85,105,0.98), " : ""}${s.col === lastCol ? "" : "inset -1px 0 0 rgba(71,85,105,0.98), "}inset 0 -1px 0 rgba(71,85,105,0.98)`,
+                boxShadow: `${s.col === firstEmployeeCol ? `inset 1px 0 0 ${gridLineColor}, ` : ""}${s.col === lastCol ? "" : `inset -1px 0 0 ${gridLineColor}, `}inset 0 -1px 0 ${gridLineColor}`,
               }}
               onClick={(e) => { e.stopPropagation(); openPicker(s.col, s.row); }}
               title="Add task"

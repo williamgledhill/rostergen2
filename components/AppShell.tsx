@@ -39,7 +39,7 @@ export default function AppShell({
 
   return (
     <NavProvider value={{ navOpen, toggleNav }}>
-      <div className="relative min-h-screen bg-[#f5f6fa]">
+      <div className="relative min-h-screen bg-white">
         <GlobalTopBar userName={initialUserName ?? null} />
         {isMobile && navOpen && (
           <button
@@ -49,7 +49,7 @@ export default function AppShell({
             onClick={() => setNavOpen(false)}
           />
         )}
-        <div className="flex min-h-[calc(100vh-56px)] bg-[#f5f6fa]">
+        <div className="flex min-h-[calc(100vh-56px)] bg-white">
           <SideNav
             open={navOpen}
             mobile={isMobile}
@@ -57,7 +57,7 @@ export default function AppShell({
               if (isMobile) setNavOpen(false);
             }}
           />
-          <div className="flex min-h-[calc(100vh-56px)] flex-1 flex-col bg-[#f5f6fa]">
+          <div className="flex min-h-[calc(100vh-56px)] flex-1 flex-col bg-white">
           <main className={isWidePage ? "px-2 py-3 sm:px-3 sm:py-4 md:px-5 md:py-5" : "px-2 py-3 sm:px-3 sm:py-4 md:px-6 md:py-5"}>
             <div className="w-full space-y-4">
               {children}

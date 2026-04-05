@@ -107,7 +107,7 @@ export default function PeopleClient({ initialPeople }: { initialPeople: Person[
           </button>
         </div>
 
-        <div className="bg-white rounded-lg shadow-sm w-full overflow-hidden">
+        <div className="w-full overflow-hidden rounded-lg border border-[var(--border)] bg-white">
           <div className="overflow-x-auto">
             <table className="w-full table-fixed text-sm border-collapse">
               <colgroup>
@@ -173,7 +173,7 @@ export default function PeopleClient({ initialPeople }: { initialPeople: Person[
               </tbody>
             </table>
           </div>
-          <div className="px-4 py-3 text-sm text-slate-600">{summaries.length} employee{summaries.length === 1 ? "" : "s"}</div>
+          <div className="border-t border-[var(--border)] px-4 py-3 text-sm text-slate-600">{summaries.length} employee{summaries.length === 1 ? "" : "s"}</div>
         </div>
 
         {modalOpen && (
