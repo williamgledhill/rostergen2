@@ -550,6 +550,11 @@ export default function Grid({
   }, [templates]);
 
   const colorForType = useCallback((type: string) => templateById.get(type)?.color || defaultColorByType[type], [templateById]);
+  const colorForTask = useCallback(
+    (task: Pick<GridTask, "type" | "color">) =>
+      templateById.get(task.type)?.color || task.color || defaultColorByType[task.type],
+    [templateById]
+  );
 
   const employeeCols = useMemo(
     () => employees.map((e, idx) => ({ id: e.id, name: e.name, startTime: e.startTime, endTime: e.endTime, col: idx + 2 })),
@@ -1829,7 +1834,7 @@ export default function Grid({
         const task = tasksByColStart.get(emp.col)?.get(rowNumber);
         if (task) {
           rowSpans[colIdx] = task.span - 1;
-          const bg = task.color || colorForType(task.type) || "#d3e6d5";
+          const bg = colorForTask(task) || "#d3e6d5";
           const template = templateById.get(task.type);
           const waitingRowsRaw = Math.max(0, Math.round((template?.waitingMinutes || 0) / 15));
           const packingRowsRaw = Math.max(0, Math.round((template?.packingMinutes || 0) / 15));
@@ -1882,7 +1887,7 @@ export default function Grid({
       .format(rosterDate)
       .replace(",", "");
     onExportXLS(html, fileName);
-  }, [employeeCols, tasks, onExportXLS, colorForType, timeRangeForSpan, maxRowEx, dayStartMin, dayEndMin, rosterDate, getEmployeeHoursLabel, templateById]);
+  }, [employeeCols, tasks, onExportXLS, colorForTask, timeRangeForSpan, maxRowEx, dayStartMin, dayEndMin, rosterDate, getEmployeeHoursLabel, templateById]);
 
   useEffect(() => {
     const onExport = () => exportExcel();
@@ -2212,7 +2217,7 @@ export default function Grid({
               col={t.col}
               startRow={t.startRow}
               span={t.span}
-              color={t.color || colorForType(t.type)}
+              color={colorForTask(t)}
               waitingMinutes={template?.waitingMinutes}
               packingMinutes={template?.packingMinutes}
               selected={t.id === selected}
