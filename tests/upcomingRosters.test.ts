@@ -90,5 +90,23 @@ describe("buildUpcomingRosterWindow", () => {
     expect(rows[1].tours).toBe(1);
     expect(rows[1].people).toBe(1);
   });
-});
 
+  it("rehydrates serialized roster dates and timestamps", () => {
+    const today = atLocalNoon(2026, 3, 23);
+    const serialized = {
+      ...makeRoster(today, {
+        id: "custom-id",
+        start: "2026-03-23T00:00:00.000Z" as unknown as Date,
+        end: "2026-03-23T00:00:00.000Z" as unknown as Date,
+        updatedAt: "2026-03-23T07:45:00.000Z" as unknown as Date,
+      }),
+    };
+
+    const rows = buildUpcomingRosterWindow([serialized], 1, today);
+
+    expect(rows[0].start).toBeInstanceOf(Date);
+    expect(rows[0].end).toBeInstanceOf(Date);
+    expect(rows[0].updatedAt).toBeInstanceOf(Date);
+    expect(rows[0].updatedAt?.toISOString()).toBe("2026-03-23T07:45:00.000Z");
+  });
+});

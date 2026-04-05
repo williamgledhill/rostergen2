@@ -347,14 +347,14 @@ export default function SettingsClient({
             </div>
           </div>
           <div className="divide-y divide-[var(--border)]">
-            <div className="grid grid-cols-[160px,1fr,1fr] gap-3 px-4 py-2 text-[12px] text-slate-500 bg-[var(--surface-subtle)]">
+            <div className="grid grid-cols-[160px,1fr,1fr] gap-3 bg-[var(--surface-subtle)] px-4 py-2 text-[12px] font-semibold text-slate-700">
               <span>Day</span>
               <span>From</span>
               <span>To</span>
             </div>
             {DAY_KEYS.map((day) => (
               <div key={day} className="grid grid-cols-[160px,1fr,1fr] items-center gap-3 px-4 py-3">
-                <span className="text-sm font-semibold">{DAY_LABELS[day]}</span>
+                <span className="text-sm font-normal text-slate-700">{DAY_LABELS[day]}</span>
                 <input
                   type="time"
                   className="input text-[14px] w-[140px]"

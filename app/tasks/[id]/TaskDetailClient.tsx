@@ -273,8 +273,8 @@ export default function TaskDetailClient({ id, initialTask }: { id: string; init
               <div>
                 <label className="block text-sm font-semibold mb-2">Regularity</label>
                 <div className="border border-[var(--border)] rounded-md divide-y divide-[var(--border)] max-w-[520px] overflow-hidden">
-                  <div className="grid grid-cols-[140px,120px,120px] gap-3 px-3 py-2 text-[12px] text-slate-500 bg-[var(--surface-subtle)]">
-                    <label className="inline-flex items-center gap-2 font-medium text-slate-600">
+                  <div className="grid grid-cols-[140px,120px,120px] gap-3 bg-[var(--surface-subtle)] px-3 py-2 text-[12px] font-semibold text-slate-700">
+                    <label className="inline-flex items-center gap-2 font-semibold text-slate-700">
                       <input type="checkbox" className="h-4 w-4" checked={REGULAR_DAYS.every((d) => (task.regularDays || []).includes(d.key))} onChange={(e) => toggleAllDays(e.target.checked)} style={{ accentColor: "rgb(103, 93, 255)" }} />
                       <span>All days</span>
                     </label>
@@ -286,7 +286,7 @@ export default function TaskDetailClient({ id, initialTask }: { id: string; init
                     const dayWindow = task.regularDayWindows?.[day.key] || {};
                     return (
                       <div key={day.key} className="grid grid-cols-[140px,120px,120px] items-center gap-3 px-3 py-3">
-                        <label className="flex items-center gap-2 text-sm font-semibold">
+                        <label className="flex items-center gap-2 text-sm font-normal text-slate-700">
                           <input type="checkbox" className="h-4 w-4" checked={checked} onChange={() => toggleRegularDay(day.key)} style={{ accentColor: "rgb(103, 93, 255)" }} />
                           <span>{day.label}</span>
                         </label>

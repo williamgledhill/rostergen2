@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useMemo, useRef, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Plus } from "lucide-react";
 import { type TaskTemplate } from "@/lib/taskTemplates";
@@ -10,13 +10,10 @@ const WEEKENDS = ["Sat", "Sun"];
 
 export default function TasksClient({ initialTasks }: { initialTasks: TaskTemplate[] }) {
   const [tasks, setTasks] = useState<TaskTemplate[]>(initialTasks);
-  const [selectedIds, setSelectedIds] = useState<string[]>([]);
-  const selectAllRef = useRef<HTMLInputElement | null>(null);
   const router = useRouter();
 
   useEffect(() => {
     setTasks(initialTasks);
-    setSelectedIds([]);
   }, [initialTasks]);
 
   function formatOccurrence(days: string[] | undefined) {
@@ -38,12 +35,6 @@ export default function TasksClient({ initialTasks }: { initialTasks: TaskTempla
       })),
     [tasks]
   );
-
-  useEffect(() => {
-    const el = selectAllRef.current;
-    if (!el) return;
-    el.indeterminate = selectedIds.length > 0 && selectedIds.length < summaries.length;
-  }, [selectedIds, summaries.length]);
 
   async function addTask() {
     const name = prompt("New task name?");
@@ -85,31 +76,20 @@ export default function TasksClient({ initialTasks }: { initialTasks: TaskTempla
 
         <div className="w-full overflow-hidden rounded-lg border border-[var(--border)] bg-white">
           <div className="overflow-x-auto">
-            <table className="w-full table-fixed text-sm border-collapse">
+            <table className="w-full table-fixed border-collapse text-[15px]">
               <colgroup>
-                <col className="w-10" />
-                <col className="w-[34%]" />
+                <col className="w-[40%]" />
                 <col className="w-[24%]" />
                 <col />
               </colgroup>
-              <thead className="text-slate-600 text-sm">
+              <thead className="text-[15px] text-slate-900">
                 <tr className="border-b border-[#E6EAF0]">
-                  <th className="w-10 px-3 py-3 text-left font-semibold">
-                    <input
-                      ref={selectAllRef}
-                      type="checkbox"
-                      className="h-4 w-4"
-                      aria-label="Select all"
-                      checked={selectedIds.length > 0 && selectedIds.length === summaries.length}
-                      onChange={(e) => setSelectedIds(e.target.checked ? summaries.map((s) => String(s.id)) : [])}
-                    />
-                  </th>
-                  <th className="px-3 py-3 text-left font-semibold">Task</th>
-                  <th className="px-3 py-3 text-left font-semibold">Status</th>
-                  <th className="px-3 py-3 text-left font-semibold">Occurance</th>
+                  <th className="px-4 py-4 text-left font-bold tracking-[0.01em]">Task</th>
+                  <th className="px-4 py-4 text-left font-bold tracking-[0.01em]">Status</th>
+                  <th className="px-4 py-4 text-left font-bold tracking-[0.01em]">Occurance</th>
                 </tr>
               </thead>
-              <tbody>
+              <tbody className="[&_tr:last-child]:border-b-0">
                 {summaries.map((t) => (
                   <tr
                     key={t.id}
@@ -117,27 +97,10 @@ export default function TasksClient({ initialTasks }: { initialTasks: TaskTempla
                     onMouseEnter={() => router.prefetch(`/tasks/${t.id}`)}
                     onClick={() => router.push(`/tasks/${t.id}`)}
                   >
-                    <td className="align-middle px-3 py-3">
-                      <input
-                        type="checkbox"
-                        className="h-4 w-4"
-                        aria-label={`Select ${t.name}`}
-                        checked={selectedIds.includes(String(t.id))}
-                        onClick={(e) => e.stopPropagation()}
-                        onChange={(e) => {
-                          setSelectedIds((prev) => {
-                            const set = new Set(prev);
-                            if (e.target.checked) set.add(String(t.id));
-                            else set.delete(String(t.id));
-                            return Array.from(set);
-                          });
-                        }}
-                      />
-                    </td>
-                    <td className="align-middle px-3 py-3">
-                      <span className="flex min-w-0 items-center gap-2 font-semibold text-slate-800">
+                    <td className="align-middle px-4 py-4">
+                      <span className="flex min-w-0 items-center gap-3 text-[15px] font-normal text-slate-700">
                         <span
-                          className="inline-block w-[18px] h-[18px] rounded-full border border-slate-400"
+                          className="inline-block h-5 w-5 rounded-full border border-slate-400"
                           style={{ backgroundColor: t.color || "#fff" }}
                           aria-label={`Colour ${t.color || "default"}`}
                           title={t.color || "default"}
@@ -145,23 +108,23 @@ export default function TasksClient({ initialTasks }: { initialTasks: TaskTempla
                         <span className="truncate">{t.name}</span>
                       </span>
                     </td>
-                    <td className="align-middle px-3 py-3 text-slate-600">
+                    <td className="align-middle px-4 py-4 text-[15px] font-normal text-slate-700">
                       <span className="block truncate">{t.enabled === false ? "Disabled" : "Enabled"}</span>
                     </td>
-                    <td className="align-middle px-3 py-3 text-slate-600">
+                    <td className="align-middle px-4 py-4 text-[15px] font-normal text-slate-700">
                       <span className="block truncate">{t.occurrence}</span>
                     </td>
                   </tr>
                 ))}
                 {summaries.length === 0 && (
                   <tr>
-                    <td colSpan={4} className="py-6 text-center text-slate-600">No tasks yet. Add one to get started.</td>
+                    <td colSpan={3} className="py-8 text-center text-[15px] text-slate-600">No tasks yet. Add one to get started.</td>
                   </tr>
                 )}
               </tbody>
             </table>
           </div>
-          <div className="border-t border-[var(--border)] px-4 py-3 text-sm text-slate-600">{summaries.length} task{summaries.length === 1 ? "" : "s"}</div>
+          <div className="border-t border-[#E6EAF0] px-4 py-3 text-sm text-slate-600">{summaries.length} task{summaries.length === 1 ? "" : "s"}</div>
         </div>
       </div>
     </div>

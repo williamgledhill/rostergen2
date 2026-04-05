@@ -9,12 +9,10 @@ export default function PeopleClient({ initialPeople }: { initialPeople: Person[
   const [people, setPeople] = useState<Person[]>(initialPeople);
   const [modalOpen, setModalOpen] = useState(false);
   const [form, setForm] = useState<Person>({ id: "", name: "", email: "", schedule: defaultSchedule([]) });
-  const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const router = useRouter();
 
   useEffect(() => {
     setPeople(initialPeople);
-    setSelectedIds([]);
   }, [initialPeople]);
 
   const dayRows: { key: DayKey; label: string }[] = [
@@ -109,28 +107,18 @@ export default function PeopleClient({ initialPeople }: { initialPeople: Person[
 
         <div className="w-full overflow-hidden rounded-lg border border-[var(--border)] bg-white">
           <div className="overflow-x-auto">
-            <table className="w-full table-fixed text-sm border-collapse">
+            <table className="w-full table-fixed border-collapse text-[15px]">
               <colgroup>
-                <col className="w-10" />
-                <col className="w-[38%]" />
+                <col className="w-[42%]" />
                 <col />
               </colgroup>
-              <thead className="text-slate-600 text-sm">
+              <thead className="text-[15px] text-slate-900">
                 <tr className="border-b border-[#E6EAF0]">
-                  <th className="w-10 px-3 py-3 text-left font-semibold">
-                    <input
-                      type="checkbox"
-                      className="h-4 w-4"
-                      aria-label="Select all"
-                      checked={selectedIds.length > 0 && selectedIds.length === summaries.length}
-                      onChange={(e) => setSelectedIds(e.target.checked ? summaries.map((s) => String(s.id)) : [])}
-                    />
-                  </th>
-                  <th className="px-3 py-3 text-left font-semibold">Employee</th>
-                  <th className="px-3 py-3 text-left font-semibold">Default days</th>
+                  <th className="px-4 py-4 text-left font-bold tracking-[0.01em]">Employee</th>
+                  <th className="px-4 py-4 text-left font-bold tracking-[0.01em]">Default days</th>
                 </tr>
               </thead>
-              <tbody>
+              <tbody className="[&_tr:last-child]:border-b-0">
                 {summaries.map((p) => (
                   <tr
                     key={p.id}
@@ -138,42 +126,25 @@ export default function PeopleClient({ initialPeople }: { initialPeople: Person[
                     onMouseEnter={() => router.prefetch(`/people/${p.id}`)}
                     onClick={() => router.push(`/people/${p.id}`)}
                   >
-                    <td className="align-middle px-3 py-3">
-                      <input
-                        type="checkbox"
-                        className="h-4 w-4"
-                        aria-label={`Select ${p.name}`}
-                        checked={selectedIds.includes(String(p.id))}
-                        onClick={(e) => e.stopPropagation()}
-                        onChange={(e) => {
-                          setSelectedIds((prev) => {
-                            const set = new Set(prev);
-                            if (e.target.checked) set.add(String(p.id));
-                            else set.delete(String(p.id));
-                            return Array.from(set);
-                          });
-                        }}
-                      />
-                    </td>
-                    <td className="align-middle px-3 py-3">
-                      <div className="inline-flex items-center gap-2 font-semibold text-slate-800">
+                    <td className="align-middle px-4 py-4">
+                      <div className="inline-flex items-center gap-2 text-[15px] font-normal text-slate-700">
                         <span className="block truncate">{p.name}</span>
                       </div>
                     </td>
-                    <td className="align-middle px-3 py-3 text-slate-600">
+                    <td className="align-middle px-4 py-4 text-[15px] font-normal text-slate-700">
                       <span className="block truncate">{p.days || ""}</span>
                     </td>
                   </tr>
                 ))}
                 {summaries.length === 0 && (
                   <tr>
-                    <td colSpan={3} className="py-6 text-center text-slate-600">No people yet.</td>
+                    <td colSpan={2} className="py-8 text-center text-[15px] text-slate-600">No people yet.</td>
                   </tr>
                 )}
               </tbody>
             </table>
           </div>
-          <div className="border-t border-[var(--border)] px-4 py-3 text-sm text-slate-600">{summaries.length} employee{summaries.length === 1 ? "" : "s"}</div>
+          <div className="border-t border-[#E6EAF0] px-4 py-3 text-sm text-slate-600">{summaries.length} employee{summaries.length === 1 ? "" : "s"}</div>
         </div>
 
         {modalOpen && (

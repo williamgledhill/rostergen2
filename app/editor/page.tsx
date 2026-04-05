@@ -65,6 +65,12 @@ export default async function Page({
   const hasSavedLayout = hasMeaningfulSavedLayout(savedRoster);
   const baseEmployees = hasSavedLayout ? savedEmployees : defaultEmployees;
   const baseTasks = hasSavedLayout ? savedTasks : [];
+  const savedAt =
+    savedRoster?.updatedAt instanceof Date
+      ? savedRoster.updatedAt.toISOString()
+      : typeof savedRoster?.updatedAt === "string"
+        ? savedRoster.updatedAt
+        : undefined;
 
   return (
     <EditorClient
@@ -77,7 +83,7 @@ export default async function Page({
         tasks: baseTasks,
         hoursStart: savedRoster?.hoursStart,
         hoursEnd: savedRoster?.hoursEnd,
-        savedAt: savedRoster?.updatedAt ? savedRoster.updatedAt.toISOString() : undefined,
+        savedAt,
       }}
     />
   );

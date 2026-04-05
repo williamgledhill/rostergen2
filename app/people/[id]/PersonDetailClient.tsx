@@ -288,7 +288,7 @@ export default function PersonDetailClient({ id, initialPerson }: { id: string; 
           </div>
 
           <div className="p-3 sm:p-4">
-            <div className="hidden grid-cols-[130px_1fr_1fr] gap-2 px-1 pb-1 text-xs font-semibold uppercase tracking-[0.08em] text-slate-500 md:grid">
+            <div className="hidden grid-cols-[130px_1fr_1fr] gap-2 px-1 pb-1 text-xs font-semibold uppercase tracking-[0.08em] text-slate-700 md:grid">
               <div>Day</div>
               {WEEK_OPTIONS.map((week) => (
                 <div key={week.key}>{week.label}</div>
@@ -299,7 +299,7 @@ export default function PersonDetailClient({ id, initialPerson }: { id: string; 
               {DAY_ROWS.map(({ key, label }) => (
                 <div key={key} className="rounded-[10px] border border-[var(--border)] bg-white px-2 py-2 sm:px-3">
                   <div className="grid gap-2 md:grid-cols-[130px_1fr_1fr] md:items-center">
-                    <div className="px-1 text-[15px] font-semibold text-slate-800">{label}</div>
+                    <div className="px-1 text-[15px] font-normal text-slate-700">{label}</div>
                     {WEEK_OPTIONS.map((week) => {
                       const sched = person.fortnight[week.key][key];
                       return (

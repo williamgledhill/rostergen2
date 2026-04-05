@@ -15,6 +15,7 @@ type Props = {
   highlighted?: boolean;
   isFirstCol?: boolean;
   isLastCol?: boolean;
+  touchesBottomEdge?: boolean;
   onSelect?: () => void;
   onStartResize?: (which: "top" | "bottom", e: React.MouseEvent) => void;
 };
@@ -38,6 +39,7 @@ export default function Block({
   selected,
   highlighted,
   isFirstCol,
+  touchesBottomEdge,
   onSelect,
   onStartResize,
   isLastCol,
@@ -49,7 +51,7 @@ export default function Block({
   const boxShadow = [
     isFirstCol ? "inset 1px 0 0 rgba(71,85,105,0.98)" : "",
     !isLastCol ? "inset -1px 0 0 rgba(71,85,105,0.98)" : "",
-    "inset 0 -1px 0 rgba(71,85,105,0.98)",
+    !touchesBottomEdge ? "inset 0 -1px 0 rgba(71,85,105,0.98)" : "",
     selected ? "inset 0 0 0 2px rgba(15,23,42,0.82)" : "",
   ]
     .filter(Boolean)

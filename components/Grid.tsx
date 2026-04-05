@@ -1,6 +1,6 @@
 "use client";
 import React, { useMemo, useState, useRef, useEffect, useCallback } from "react";
-import { X, Trash2, Search, Settings2 } from "lucide-react";
+import { X, Trash2, Search, Settings2, Plus } from "lucide-react";
 import Block from "@/components/Block";
 import Modal from "@/components/Modal";
 import { AutosaveState, readDraftRecord, writeDraftRecord } from "@/lib/clientDrafts";
@@ -47,6 +47,7 @@ const DEFAULT_START_MIN = 9 * 60 + 30;
 const DEFAULT_END_MIN = 16 * 60;
 const DAY_KEYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 const MAX_HISTORY_ENTRIES = 100;
+const EXTRA_ADD_PERSON_COLUMNS = 2;
 
 function parseTimeToMinutes(value?: string) {
   if (!value) return null;
@@ -178,6 +179,7 @@ const defaultColorByType: Record<string, string> = Object.fromEntries(
 );
 
 export default function Grid({
+  toolbar,
   employees: initialEmployees,
   initialTasks,
   rosterDateId,
@@ -191,6 +193,7 @@ export default function Grid({
   people: initialPeople,
   templates: initialTemplates,
 }: {
+  toolbar?: React.ReactNode;
   employees: Employee[];
   initialTasks: GridTask[];
   rosterDateId: string;
@@ -552,6 +555,17 @@ export default function Grid({
     () => employees.map((e, idx) => ({ id: e.id, name: e.name, startTime: e.startTime, endTime: e.endTime, col: idx + 2 })),
     [employees]
   );
+  const addPersonCols = useMemo(
+    () => Array.from({ length: EXTRA_ADD_PERSON_COLUMNS }, (_, idx) => ({ id: `add-person-${idx}`, col: employees.length + idx + 2 })),
+    [employees.length]
+  );
+  const displayCols = useMemo(
+    () => [
+      ...employeeCols.map((employee) => ({ kind: "employee" as const, ...employee })),
+      ...addPersonCols.map((col) => ({ kind: "placeholder" as const, ...col })),
+    ],
+    [employeeCols, addPersonCols]
+  );
   const peopleById = useMemo(() => new Map(people.map((p) => [String(p.id), p])), [people]);
   const peopleByName = useMemo(
     () => new Map(people.map((p) => [p.name.toLowerCase(), p])),
@@ -659,6 +673,9 @@ export default function Grid({
   function blocksInCol(col: number) {
     return tasks.filter(t => t.col === col).sort((a, b) => a.startRow - b.startRow);
   }
+  const openAddEmployeePicker = useCallback(() => {
+    setAddOpen(true);
+  }, []);
 
   const addEmployee = useCallback((person: Person) => {
     const prevEmployees = employeesRef.current;
@@ -1952,11 +1969,19 @@ export default function Grid({
       if (!exists) slots.push({ col: c.col, row });
     }
   }
-  const lastCol = employeeCols[employeeCols.length - 1]?.col;
+  const addPersonSlots: { col: number; row: number }[] = [];
+  for (let row = MIN_ROW; row < maxRowEx; row++) {
+    for (const c of addPersonCols) {
+      addPersonSlots.push({ col: c.col, row });
+    }
+  }
+  const lastCol = displayCols[displayCols.length - 1]?.col;
   const firstEmployeeCol = employeeCols[0]?.col;
   const selectedTaskCol = tasks.find((t) => t.id === selected)?.col ?? null;
   const emphasizedCol = selectedTaskCol;
   const gridLineColor = "rgba(71,85,105,0.98)";
+  const lastGridRow = maxRowEx - 1;
+  const hasToolbar = toolbar != null;
 
   return (
     <div className="w-full overflow-x-auto">
@@ -1966,41 +1991,63 @@ export default function Grid({
         style={{ borderColor: gridLineColor }}
         onClick={() => setSelected(undefined)}
       >
+      {toolbar}
       {/* grid */}
       <div
         className="grid inline-grid"
         style={{
-          gridTemplateColumns: `var(--timew) repeat(${employees.length}, var(--empw))`,
+          gridTemplateColumns: `var(--timew) repeat(${displayCols.length}, var(--empw))`,
           gridTemplateRows: "68px",
           gridAutoRows: "var(--rowh)",
         }}
       >
         <div
-          className="sticky left-0 z-40 rounded-tl-[12px] border-r bg-[var(--surface-subtle)] px-3 py-1.5 text-center"
+          className={`sticky left-0 z-40 border-r bg-[var(--surface-subtle)] px-3 py-1.5 text-center ${hasToolbar ? "" : "rounded-tl-[12px]"}`}
           style={{ borderRightColor: gridLineColor, boxShadow: `inset 0 -1px 0 ${gridLineColor}` }}
         >
           <span className="text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-700">Time</span>
         </div>
-        {employeeCols.map((h) => {
-          const highlighted = hoveredCol === h.col || emphasizedCol === h.col;
-          const resolved = resolveEmployeeHours(h);
+        {displayCols.map((column) => {
+          if (column.kind === "placeholder") {
+            const isHovered = hoveredCol === column.col;
+            return (
+              <button
+                key={column.id}
+                type="button"
+                className={`group relative flex items-center justify-center bg-white px-3 py-1.5 text-center transition ${column.col === lastCol && !hasToolbar ? "rounded-tr-[12px]" : ""}`}
+                style={{
+                  boxShadow: `${column.col === lastCol ? "" : `inset -1px 0 0 ${gridLineColor}, `}inset 0 -1px 0 ${gridLineColor}`,
+                }}
+                onMouseEnter={() => setHoveredCol(column.col)}
+                onMouseLeave={() => setHoveredCol((current) => (current === column.col ? null : current))}
+                onClick={(event) => {
+                  event.stopPropagation();
+                  openAddEmployeePicker();
+                }}
+                aria-label="Add person"
+              >
+                <span className={`inline-flex items-center gap-2 rounded-full border px-3 py-2 text-[13px] font-semibold transition ${isHovered ? "border-[#ccd8ff] bg-[#eef3ff] text-[var(--accent)] opacity-100" : "border-transparent bg-transparent text-[#8390ae] opacity-0"}`}>
+                  <Plus className="h-4 w-4" />
+                  Add person
+                </span>
+              </button>
+            );
+          }
+
+          const resolved = resolveEmployeeHours(column);
           const hoursLabel = resolved.isOff ? "Off" : `${resolved.start} - ${resolved.end}`;
           return (
             <div
-              key={h.id}
-              className={`group relative ${h.col === lastCol ? "rounded-tr-[12px]" : ""} px-3 py-1.5 transition ${
-                highlighted ? "bg-[#eef0f3]" : "bg-[var(--surface-subtle)]"
-              }`}
+              key={column.id}
+              className={`group relative bg-[var(--surface-subtle)] px-3 py-1.5 transition ${column.col === lastCol && !hasToolbar ? "rounded-tr-[12px]" : ""}`}
               style={{
-                boxShadow: `${h.col === firstEmployeeCol ? `inset 1px 0 0 ${gridLineColor}, ` : ""}${h.col === lastCol ? "" : `inset -1px 0 0 ${gridLineColor}, `}inset 0 -1px 0 ${gridLineColor}`,
+                boxShadow: `${column.col === firstEmployeeCol ? `inset 1px 0 0 ${gridLineColor}, ` : ""}${column.col === lastCol ? "" : `inset -1px 0 0 ${gridLineColor}, `}inset 0 -1px 0 ${gridLineColor}`,
               }}
-              onMouseEnter={() => setHoveredCol(h.col)}
-              onMouseLeave={() => setHoveredCol((current) => (current === h.col ? null : current))}
             >
               <div className="min-w-0 py-0.5 pr-10">
                 <div className="min-w-0">
                   <span className="block max-w-full truncate text-[15px] font-semibold leading-tight tracking-[0.01em] text-slate-900">
-                    {h.name}
+                    {column.name}
                   </span>
                   <span className={`mt-0.5 block text-[12px] font-medium tabular-nums ${resolved.isOff ? "italic text-slate-500" : "text-slate-600"}`}>
                     {hoursLabel}
@@ -2012,21 +2059,21 @@ export default function Grid({
                 className="absolute right-2 top-2 inline-flex h-8 w-8 items-center justify-center rounded-[10px] border border-slate-400/85 bg-white/85 text-slate-600 shadow-sm transition hover:border-slate-500 hover:bg-white hover:text-slate-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-400/55"
                 onClick={(e) => {
                   e.stopPropagation();
-                  openEmployeeSettings({ id: h.id, name: h.name, startTime: h.startTime, endTime: h.endTime });
+                  openEmployeeSettings({ id: column.id, name: column.name, startTime: column.startTime, endTime: column.endTime });
                 }}
-                title={`Edit hours for ${h.name}`}
-                aria-label={`Edit hours for ${h.name}`}
+                title={`Edit hours for ${column.name}`}
+                aria-label={`Edit hours for ${column.name}`}
               >
                 <Settings2 className="h-[16px] w-[16px]" />
               </button>
-              {employeeSettingsId === h.id && (
+              {employeeSettingsId === column.id && (
                 <div
                   ref={employeeSettingsRef}
                   className="absolute right-2 top-9 z-50 w-[280px] max-w-[calc(100vw-1.5rem)] rounded-[10px] border border-[var(--border)] bg-white p-3 shadow-xl"
                   onClick={(e) => e.stopPropagation()}
                 >
                   <div className="mb-2">
-                    <p className="text-[13px] font-semibold text-slate-800">{h.name}</p>
+                    <p className="text-[13px] font-semibold text-slate-800">{column.name}</p>
                     <p className="text-[11px] text-slate-500">Day time override</p>
                   </div>
                   <div className="grid grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-end gap-2">
@@ -2077,7 +2124,7 @@ export default function Grid({
                         setEmployeeSettingsId(null);
                         setEmployeeSettingsDirty(false);
                         setEmployeeSettingsError("");
-                        removeEmployee(h.id);
+                        removeEmployee(column.id);
                       }}
                     >
                       <Trash2 className="h-3.5 w-3.5" />
@@ -2092,12 +2139,16 @@ export default function Grid({
 
         {Array.from({ length: maxRowEx - MIN_ROW }).map((_, i) => {
           const r = MIN_ROW + i;
+          const isBottomRow = r === lastGridRow;
           return (
             <div
               key={`time-${r}`}
               ref={i === 0 ? firstTimeCellRef : undefined}
               className="sticky left-0 z-20 border-r bg-[#f8f9fc] px-2 py-2 text-center text-[12px] font-semibold tabular-nums text-slate-700"
-              style={{ borderRightColor: gridLineColor, boxShadow: `inset 0 -1px 0 ${gridLineColor}` }}
+              style={{
+                borderRightColor: gridLineColor,
+                boxShadow: isBottomRow ? undefined : `inset 0 -1px 0 ${gridLineColor}`,
+              }}
             >
               {timeRangeForRow(r)}
             </div>
@@ -2105,20 +2156,57 @@ export default function Grid({
         })}
 
         {slots.map((s, idx) => {
+          const isBottomRow = s.row === lastGridRow;
+          const slotBoxShadow = [
+            s.col === firstEmployeeCol ? `inset 1px 0 0 ${gridLineColor}` : "",
+            s.col !== lastCol ? `inset -1px 0 0 ${gridLineColor}` : "",
+            !isBottomRow ? `inset 0 -1px 0 ${gridLineColor}` : "",
+          ]
+            .filter(Boolean)
+            .join(", ");
           return (
             <div
               key={`slot-${idx}`}
-              className="relative cursor-pointer hover:bg-slate-50"
+              className="relative cursor-pointer bg-white"
               style={{
                 gridColumn: String(s.col),
                 gridRow: String(s.row),
-                boxShadow: `${s.col === firstEmployeeCol ? `inset 1px 0 0 ${gridLineColor}, ` : ""}${s.col === lastCol ? "" : `inset -1px 0 0 ${gridLineColor}, `}inset 0 -1px 0 ${gridLineColor}`,
+                boxShadow: slotBoxShadow,
               }}
               onClick={(e) => { e.stopPropagation(); openPicker(s.col, s.row); }}
               title="Add task"
             >
-              <span className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 text-lg font-extrabold opacity-25">+</span>
+              <span className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 text-lg font-extrabold opacity-20">+</span>
             </div>
+          );
+        })}
+
+        {addPersonSlots.map((slot, idx) => {
+          const isBottomRow = slot.row === lastGridRow;
+          const slotBoxShadow = [
+            slot.col !== lastCol ? `inset -1px 0 0 ${gridLineColor}` : "",
+            !isBottomRow ? `inset 0 -1px 0 ${gridLineColor}` : "",
+          ]
+            .filter(Boolean)
+            .join(", ");
+          return (
+            <button
+              key={`add-person-slot-${idx}`}
+              type="button"
+              className="relative bg-white"
+              style={{
+                gridColumn: String(slot.col),
+                gridRow: String(slot.row),
+                boxShadow: slotBoxShadow,
+              }}
+              onMouseEnter={() => setHoveredCol(slot.col)}
+              onMouseLeave={() => setHoveredCol((current) => (current === slot.col ? null : current))}
+              onClick={(event) => {
+                event.stopPropagation();
+                openAddEmployeePicker();
+              }}
+              aria-label="Add person"
+            />
           );
         })}
 
@@ -2139,6 +2227,7 @@ export default function Grid({
               selected={t.id === selected}
               highlighted={emphasizedCol === t.col}
               isFirstCol={t.col === firstEmployeeCol}
+              touchesBottomEdge={t.startRow + t.span >= maxRowEx}
               onSelect={() => setSelected(t.id)}
               isLastCol={t.col === lastCol}
               onStartResize={(which, e) => onStartResize(which, t.id, e)}

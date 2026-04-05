@@ -116,25 +116,25 @@ export default function EditorClient({
           </div>
         </div>
 
-        <div className="sticky top-2 z-30 w-full max-w-full overflow-hidden md:top-3">
-          <TopBar
-            hours={hours}
-            onHoursStartChange={(value) => {
-              setHoursTouched(true);
-              setHours((prev) => ({ ...prev, start: value }));
-            }}
-            onHoursEndChange={(value) => {
-              setHoursTouched(true);
-              setHours((prev) => ({ ...prev, end: value }));
-            }}
-            onHoursDefault={() => {
-              setHoursTouched(false);
-              setHours({ start: defaultHoursForDay.start, end: defaultHoursForDay.end });
-            }}
-          />
-        </div>
-
         <Grid
+          toolbar={
+            <TopBar
+              merged
+              hours={hours}
+              onHoursStartChange={(value) => {
+                setHoursTouched(true);
+                setHours((prev) => ({ ...prev, start: value }));
+              }}
+              onHoursEndChange={(value) => {
+                setHoursTouched(true);
+                setHours((prev) => ({ ...prev, end: value }));
+              }}
+              onHoursDefault={() => {
+                setHoursTouched(false);
+                setHours({ start: defaultHoursForDay.start, end: defaultHoursForDay.end });
+              }}
+            />
+          }
           employees={initialRoster.employees}
           initialTasks={initialRoster.tasks}
           rosterDateId={rosterDateId}

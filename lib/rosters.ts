@@ -20,6 +20,13 @@ export type RosterFile = {
   updatedAt?: Date;
 };
 
+function toValidDate(value: unknown) {
+  if (!value) return undefined;
+  const parsed = value instanceof Date ? new Date(value.getTime()) : new Date(value as string);
+  if (Number.isNaN(parsed.getTime())) return undefined;
+  return parsed;
+}
+
 function monthId(date: Date) {
   const y = date.getFullYear();
   const m = String(date.getMonth() + 1).padStart(2, "0");
@@ -56,8 +63,8 @@ function normalizeUpcomingWindowDays(input: number) {
 }
 
 function toLocalStartDate(value: Date | string | undefined) {
-  if (!value) return null;
-  const parsed = value instanceof Date ? new Date(value.getTime()) : new Date(value);
+  const parsed = toValidDate(value);
+  if (!parsed) return null;
   if (Number.isNaN(parsed.getTime())) return null;
   parsed.setHours(0, 0, 0, 0);
   return parsed;
@@ -101,8 +108,18 @@ function normalizeRosterForDate(roster: RosterFile, date: Date): RosterFile {
     people,
     employees,
     tasks,
-    updatedAt: roster.updatedAt instanceof Date ? roster.updatedAt : undefined,
+    updatedAt: toValidDate(roster.updatedAt),
   };
+}
+
+function rehydrateRoster(roster: RosterFile | null): RosterFile | null {
+  if (!roster) return null;
+  const date = parseLocalId(roster.id) ?? toLocalStartDate(roster.start) ?? new Date();
+  return normalizeRosterForDate(roster, date);
+}
+
+function rehydrateRosters(rosters: RosterFile[]) {
+  return rosters.map((roster) => rehydrateRoster(roster) as RosterFile);
 }
 
 function mapLegacyRosterRecord(record: any): RosterFile {
@@ -226,7 +243,7 @@ const buildRosterListCached = unstable_cache(
 );
 
 export async function buildRosterList(limit?: number): Promise<RosterFile[]> {
-  return buildRosterListCached(limit);
+  return rehydrateRosters(await buildRosterListCached(limit));
 }
 
 export function formatRange(start: Date, end: Date) {
@@ -261,7 +278,7 @@ const getRosterByIdCached = unstable_cache(
 );
 
 export async function getRosterById(id: string): Promise<RosterFile | null> {
-  return getRosterByIdCached(id);
+  return rehydrateRoster(await getRosterByIdCached(id));
 }
 
 export async function getRosterMonths(limit = 200) {
@@ -312,7 +329,7 @@ const getRostersForMonthCached = unstable_cache(
 );
 
 export async function getRostersForMonth(month: string, limit = 200): Promise<RosterFile[]> {
-  return getRostersForMonthCached(month, limit);
+  return rehydrateRosters(await getRostersForMonthCached(month, limit));
 }
 
 export function buildUpcomingRosterWindow(
@@ -377,7 +394,9 @@ const getUpcomingRostersCached = unstable_cache(
 );
 
 export async function getUpcomingRosters(upcomingDays = 7): Promise<RosterFile[]> {
-  return getUpcomingRostersCached(upcomingDays, formatLocalId(startOfDay(new Date())));
+  return rehydrateRosters(
+    await getUpcomingRostersCached(upcomingDays, formatLocalId(startOfDay(new Date())))
+  );
 }
 
 export function formatMonthLabel(month: string) {

@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useMemo, useRef, useState } from "react";
+import { useMemo } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import type { RosterFile } from "@/lib/rosters";
@@ -12,37 +12,8 @@ type Props = {
 };
 
 export default function RosterTable({ rosters, footer }: Props) {
-  const [selectedIds, setSelectedIds] = useState<string[]>([]);
-  const headerCheckboxRef = useRef<HTMLInputElement>(null);
   const today = useMemo(() => new Date(), []);
   const router = useRouter();
-
-  const allIds = useMemo(() => rosters.map((r) => r.id), [rosters]);
-  const allSelected = selectedIds.length > 0 && selectedIds.length === allIds.length;
-  const isIndeterminate = selectedIds.length > 0 && selectedIds.length < allIds.length;
-
-  useEffect(() => {
-    if (headerCheckboxRef.current) {
-      headerCheckboxRef.current.indeterminate = isIndeterminate;
-    }
-  }, [isIndeterminate]);
-
-  useEffect(() => {
-    // prune selections when the roster list changes
-    setSelectedIds((prev) => prev.filter((id) => allIds.includes(id)));
-  }, [allIds]);
-
-  function toggleAll(checked: boolean) {
-    setSelectedIds(checked ? allIds : []);
-  }
-
-  function toggleOne(id: string, checked: boolean) {
-    setSelectedIds((prev) => {
-      const set = new Set(prev);
-      if (checked) set.add(id); else set.delete(id);
-      return Array.from(set);
-    });
-  }
 
   function handleRowClick(id: string) {
     router.push(buildEditorHref(id));
@@ -51,32 +22,21 @@ export default function RosterTable({ rosters, footer }: Props) {
   return (
     <div className="w-full overflow-hidden rounded-lg border border-[var(--border)] bg-white">
       <div className="overflow-x-auto">
-        <table className="w-full text-sm border-collapse">
-          <thead className="text-slate-600 text-sm">
+        <table className="w-full border-collapse text-[15px]">
+          <thead className="text-[15px] text-slate-900">
             <tr className="border-b border-[#E6EAF0]">
-              <th className="w-10 px-3 py-3 text-left font-semibold">
-                <input
-                  ref={headerCheckboxRef}
-                  type="checkbox"
-                  className="h-4 w-4"
-                  aria-label="Select all rosters"
-                  checked={allSelected}
-                  onChange={(e) => toggleAll(e.target.checked)}
-                />
-              </th>
-              <th className="px-3 py-3 text-left font-semibold">Roster</th>
-              <th className="px-3 py-3 text-left font-semibold">Tours</th>
-              <th className="px-3 py-3 text-left font-semibold">People</th>
-              <th className="px-3 py-3 text-left font-semibold">Status</th>
-              <th className="px-3 py-3 text-left font-semibold">Updated</th>
+              <th className="px-4 py-4 text-left font-bold tracking-[0.01em]">Roster</th>
+              <th className="px-4 py-4 text-left font-bold tracking-[0.01em]">Tours</th>
+              <th className="px-4 py-4 text-left font-bold tracking-[0.01em]">People</th>
+              <th className="px-4 py-4 text-left font-bold tracking-[0.01em]">Status</th>
+              <th className="px-4 py-4 text-left font-bold tracking-[0.01em]">Updated</th>
             </tr>
           </thead>
-          <tbody>
+          <tbody className="[&_tr:last-child]:border-b-0">
             {rosters.map((r) => {
               const startDate = r.start instanceof Date ? r.start : new Date(r.start);
               const isCurrent = today.toDateString() === startDate.toDateString();
               const rowStyles = isCurrent ? "bg-amber-50" : "";
-              const checked = selectedIds.includes(r.id);
               return (
                 <tr
                   key={r.id}
@@ -84,30 +44,20 @@ export default function RosterTable({ rosters, footer }: Props) {
                   onMouseEnter={() => router.prefetch(buildEditorHref(r.id))}
                   onClick={() => handleRowClick(r.id)}
                 >
-                  <td className="align-middle px-3 py-3">
-                    <input
-                      type="checkbox"
-                      className="h-4 w-4"
-                      aria-label={`Select roster ${r.title}`}
-                      checked={checked}
-                      onClick={(e) => e.stopPropagation()}
-                      onChange={(e) => toggleOne(r.id, e.target.checked)}
-                    />
-                  </td>
-                  <td className="align-middle px-3 py-3">
+                  <td className="align-middle px-4 py-4">
                     <Link
                       href={buildEditorHref(r.id)}
-                      className="block truncate font-semibold text-slate-800 hover:underline group-hover:underline"
+                      className="block truncate text-[15px] font-normal text-slate-700 hover:underline group-hover:underline"
                       onClick={(e) => e.stopPropagation()}
                     >
                       {r.title}
                     </Link>
                   </td>
-                  <td className="align-middle px-3 py-3 text-slate-700">{r.tours} tours</td>
-                  <td className="align-middle px-3 py-3 text-slate-700">{r.people} people</td>
-                  <td className="align-middle px-3 py-3">
+                  <td className="align-middle px-4 py-4 text-[15px] font-normal text-slate-700">{r.tours} tours</td>
+                  <td className="align-middle px-4 py-4 text-[15px] font-normal text-slate-700">{r.people} people</td>
+                  <td className="align-middle px-4 py-4">
                     <span
-                      className={`text-xs px-2 py-1 rounded-sm border ${
+                      className={`rounded-sm border px-2.5 py-1 text-[13px] ${
                         r.status === "Published"
                           ? "border-green-700 text-green-800 bg-green-50"
                           : "border-slate-400 text-slate-700 bg-slate-50"
@@ -116,19 +66,19 @@ export default function RosterTable({ rosters, footer }: Props) {
                       {r.status}
                     </span>
                   </td>
-                  <td className="align-middle px-3 py-3 text-slate-600">{r.updated}</td>
+                  <td className="align-middle px-4 py-4 text-[15px] font-normal text-slate-600">{r.updated}</td>
                 </tr>
               );
             })}
             {rosters.length === 0 && (
               <tr>
-                <td colSpan={6} className="py-6 text-center text-slate-600">No rosters yet.</td>
+                <td colSpan={5} className="py-8 text-center text-[15px] text-slate-600">No rosters yet.</td>
               </tr>
             )}
           </tbody>
         </table>
       </div>
-      <div className="border-t border-[var(--border)] px-4 py-3 text-sm text-slate-600">
+      <div className="border-t border-[#E6EAF0] px-4 py-3 text-sm text-slate-600">
         {footer ?? `${rosters.length} roster${rosters.length === 1 ? "" : "s"}`}
       </div>
     </div>

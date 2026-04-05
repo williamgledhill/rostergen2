@@ -4,12 +4,14 @@ import { Download, Plus, Sparkles, Save, RotateCcw, Trash2, Undo2, Redo2 } from 
 
 export default function TopBar({
   showActions = true,
+  merged = false,
   hours,
   onHoursStartChange,
   onHoursEndChange,
   onHoursDefault,
 }: {
   showActions?: boolean;
+  merged?: boolean;
   hours?: { start: string; end: string };
   onHoursStartChange?: (value: string) => void;
   onHoursEndChange?: (value: string) => void;
@@ -61,9 +63,12 @@ export default function TopBar({
     typeof onHoursStartChange === "function" &&
     typeof onHoursEndChange === "function" &&
     typeof onHoursDefault === "function";
+  const containerClassName = merged
+    ? "border-b border-[#d7deea] bg-[var(--surface-subtle)] px-3 py-2 sm:px-4 sm:py-3"
+    : "rounded-[12px] border border-[var(--border)] bg-[var(--surface-subtle)] px-3 py-2";
 
   return (
-    <header className="rounded-[12px] border border-[var(--border)] bg-[var(--surface-subtle)] px-3 py-2">
+    <header className={containerClassName}>
       <div className="flex min-h-[38px] w-full items-start gap-2 sm:items-center">
         {showActions && (
           <div className="min-w-0 flex-1">
@@ -90,7 +95,7 @@ export default function TopBar({
                 <Download className="w-4 h-4" /> Export
               </button>
               <button
-                className="btn h-9 w-full justify-center whitespace-nowrap text-[13px] sm:ml-1 sm:w-auto sm:border-l sm:border-[var(--border)] sm:pl-3"
+                className="btn h-9 w-full justify-center whitespace-nowrap text-[13px] sm:ml-1 sm:w-auto sm:border-l sm:border-[#d7deea] sm:pl-3"
                 onClick={handleReset}
               >
                 <RotateCcw className="w-4 h-4" /> Reset
@@ -99,7 +104,7 @@ export default function TopBar({
           </div>
         )}
         {showHoursControls && (
-          <div className="ml-auto hidden items-center gap-2 border-l border-[var(--border)] pl-3 sm:flex">
+          <div className="ml-auto hidden items-center gap-2 border-l border-[#d7deea] pl-3 sm:flex">
             <span className="text-[14px] font-semibold text-slate-700 whitespace-nowrap">Hours</span>
             <input
               type="time"
@@ -123,7 +128,7 @@ export default function TopBar({
         )}
       </div>
       {showHoursControls && (
-        <div className="mt-2 border-t border-[var(--border)] pt-2 sm:hidden">
+        <div className="mt-2 border-t border-[#d7deea] pt-2 sm:hidden">
           <div className="space-y-2">
             <div className="flex items-center justify-between">
               <span className="text-[14px] font-semibold text-slate-700">Hours</span>
@@ -150,7 +155,7 @@ export default function TopBar({
           </div>
         </div>
       )}
-      {!showHoursControls && <div className="h-1" />}
+      {!showHoursControls && <div className={merged ? "h-0.5" : "h-1"} />}
     </header>
   );
 }
