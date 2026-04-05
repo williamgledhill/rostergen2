@@ -49,7 +49,6 @@ export default function Block({
 }: Props) {
   const cls = color ? "" : typeToClass[type] ?? "bg-[var(--gallery)]";
   const boxShadow = [
-    isFirstCol ? "inset 1px 0 0 rgba(71,85,105,0.98)" : "",
     !isLastCol ? "inset -1px 0 0 rgba(71,85,105,0.98)" : "",
     !touchesBottomEdge ? "inset 0 -1px 0 rgba(71,85,105,0.98)" : "",
     selected ? "inset 0 0 0 2px rgba(15,23,42,0.82)" : "",

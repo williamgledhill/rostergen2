@@ -15,6 +15,9 @@ export default async function Page() {
         <div className="w-full flex items-start justify-between gap-3">
           <div>
             <h1 className="text-2xl font-semibold">Upcoming Rosters</h1>
+            <p className="mt-1 text-[14px] text-slate-600">
+              Review the next {settings.upcomingDays} roster{settings.upcomingDays === 1 ? "" : "s"} and jump straight into the editor.
+            </p>
           </div>
           <Link href="/rosters/old" className="btn h-9 px-4 whitespace-nowrap">
             Old Rosters

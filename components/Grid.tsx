@@ -1969,12 +1969,6 @@ export default function Grid({
       if (!exists) slots.push({ col: c.col, row });
     }
   }
-  const addPersonSlots: { col: number; row: number }[] = [];
-  for (let row = MIN_ROW; row < maxRowEx; row++) {
-    for (const c of addPersonCols) {
-      addPersonSlots.push({ col: c.col, row });
-    }
-  }
   const lastCol = displayCols[displayCols.length - 1]?.col;
   const firstEmployeeCol = employeeCols[0]?.col;
   const selectedTaskCol = tasks.find((t) => t.id === selected)?.col ?? null;
@@ -2002,35 +1996,25 @@ export default function Grid({
         }}
       >
         <div
-          className={`sticky left-0 z-40 border-r bg-[var(--surface-subtle)] px-3 py-1.5 text-center ${hasToolbar ? "" : "rounded-tl-[12px]"}`}
+          className={`sticky left-0 z-40 border-r bg-white px-3 py-1.5 text-center ${hasToolbar ? "" : "rounded-tl-[12px]"}`}
           style={{ borderRightColor: gridLineColor, boxShadow: `inset 0 -1px 0 ${gridLineColor}` }}
         >
           <span className="text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-700">Time</span>
         </div>
         {displayCols.map((column) => {
           if (column.kind === "placeholder") {
-            const isHovered = hoveredCol === column.col;
             return (
-              <button
+              <div
                 key={column.id}
-                type="button"
-                className={`group relative flex items-center justify-center bg-white px-3 py-1.5 text-center transition ${column.col === lastCol && !hasToolbar ? "rounded-tr-[12px]" : ""}`}
+                className={`relative bg-white px-3 py-1.5 ${column.col === lastCol && !hasToolbar ? "rounded-tr-[12px]" : ""}`}
                 style={{
                   boxShadow: `${column.col === lastCol ? "" : `inset -1px 0 0 ${gridLineColor}, `}inset 0 -1px 0 ${gridLineColor}`,
                 }}
                 onMouseEnter={() => setHoveredCol(column.col)}
                 onMouseLeave={() => setHoveredCol((current) => (current === column.col ? null : current))}
-                onClick={(event) => {
-                  event.stopPropagation();
-                  openAddEmployeePicker();
-                }}
-                aria-label="Add person"
               >
-                <span className={`inline-flex items-center gap-2 rounded-full border px-3 py-2 text-[13px] font-semibold transition ${isHovered ? "border-[#ccd8ff] bg-[#eef3ff] text-[var(--accent)] opacity-100" : "border-transparent bg-transparent text-[#8390ae] opacity-0"}`}>
-                  <Plus className="h-4 w-4" />
-                  Add person
-                </span>
-              </button>
+                <span className="sr-only">Add person column</span>
+              </div>
             );
           }
 
@@ -2039,9 +2023,9 @@ export default function Grid({
           return (
             <div
               key={column.id}
-              className={`group relative bg-[var(--surface-subtle)] px-3 py-1.5 transition ${column.col === lastCol && !hasToolbar ? "rounded-tr-[12px]" : ""}`}
+              className={`group relative bg-white px-3 py-1.5 transition ${column.col === lastCol && !hasToolbar ? "rounded-tr-[12px]" : ""}`}
               style={{
-                boxShadow: `${column.col === firstEmployeeCol ? `inset 1px 0 0 ${gridLineColor}, ` : ""}${column.col === lastCol ? "" : `inset -1px 0 0 ${gridLineColor}, `}inset 0 -1px 0 ${gridLineColor}`,
+                boxShadow: `${column.col === lastCol ? "" : `inset -1px 0 0 ${gridLineColor}, `}inset 0 -1px 0 ${gridLineColor}`,
               }}
             >
               <div className="min-w-0 py-0.5 pr-10">
@@ -2144,7 +2128,7 @@ export default function Grid({
             <div
               key={`time-${r}`}
               ref={i === 0 ? firstTimeCellRef : undefined}
-              className="sticky left-0 z-20 border-r bg-[#f8f9fc] px-2 py-2 text-center text-[12px] font-semibold tabular-nums text-slate-700"
+              className="sticky left-0 z-20 border-r bg-white px-2 py-2 text-center text-[12px] font-semibold tabular-nums text-slate-700"
               style={{
                 borderRightColor: gridLineColor,
                 boxShadow: isBottomRow ? undefined : `inset 0 -1px 0 ${gridLineColor}`,
@@ -2158,7 +2142,6 @@ export default function Grid({
         {slots.map((s, idx) => {
           const isBottomRow = s.row === lastGridRow;
           const slotBoxShadow = [
-            s.col === firstEmployeeCol ? `inset 1px 0 0 ${gridLineColor}` : "",
             s.col !== lastCol ? `inset -1px 0 0 ${gridLineColor}` : "",
             !isBottomRow ? `inset 0 -1px 0 ${gridLineColor}` : "",
           ]
@@ -2181,32 +2164,40 @@ export default function Grid({
           );
         })}
 
-        {addPersonSlots.map((slot, idx) => {
-          const isBottomRow = slot.row === lastGridRow;
-          const slotBoxShadow = [
-            slot.col !== lastCol ? `inset -1px 0 0 ${gridLineColor}` : "",
-            !isBottomRow ? `inset 0 -1px 0 ${gridLineColor}` : "",
-          ]
+        {addPersonCols.map((column) => {
+          const isHovered = hoveredCol === column.col;
+          const slotBoxShadow = [column.col !== lastCol ? `inset -1px 0 0 ${gridLineColor}` : ""]
             .filter(Boolean)
             .join(", ");
           return (
             <button
-              key={`add-person-slot-${idx}`}
+              key={`add-person-column-${column.id}`}
               type="button"
-              className="relative bg-white"
+              className="relative flex items-center justify-center bg-white transition hover:bg-[#fbfcfe]"
               style={{
-                gridColumn: String(slot.col),
-                gridRow: String(slot.row),
+                gridColumn: String(column.col),
+                gridRow: `${MIN_ROW} / ${maxRowEx}`,
                 boxShadow: slotBoxShadow,
               }}
-              onMouseEnter={() => setHoveredCol(slot.col)}
-              onMouseLeave={() => setHoveredCol((current) => (current === slot.col ? null : current))}
+              onMouseEnter={() => setHoveredCol(column.col)}
+              onMouseLeave={() => setHoveredCol((current) => (current === column.col ? null : current))}
               onClick={(event) => {
                 event.stopPropagation();
                 openAddEmployeePicker();
               }}
               aria-label="Add person"
-            />
+            >
+              <span
+                className={`pointer-events-none inline-flex items-center gap-2 rounded-full border px-3.5 py-2 text-[13px] font-medium transition ${
+                  isHovered
+                    ? "border-slate-300 bg-white text-slate-700 opacity-100 shadow-[0_1px_2px_rgba(15,23,42,0.05)]"
+                    : "border-transparent bg-transparent text-slate-400 opacity-0"
+                }`}
+              >
+                <Plus className="h-4 w-4" />
+                Add person
+              </span>
+            </button>
           );
         })}
 

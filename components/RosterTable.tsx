@@ -28,7 +28,6 @@ export default function RosterTable({ rosters, footer }: Props) {
               <th className="px-4 py-4 text-left font-bold tracking-[0.01em]">Roster</th>
               <th className="px-4 py-4 text-left font-bold tracking-[0.01em]">Tours</th>
               <th className="px-4 py-4 text-left font-bold tracking-[0.01em]">People</th>
-              <th className="px-4 py-4 text-left font-bold tracking-[0.01em]">Status</th>
               <th className="px-4 py-4 text-left font-bold tracking-[0.01em]">Updated</th>
             </tr>
           </thead>
@@ -47,32 +46,21 @@ export default function RosterTable({ rosters, footer }: Props) {
                   <td className="align-middle px-4 py-4">
                     <Link
                       href={buildEditorHref(r.id)}
-                      className="block truncate text-[15px] font-normal text-slate-700 hover:underline group-hover:underline"
+                      className="block truncate text-[15px] font-medium text-slate-700 hover:underline group-hover:underline"
                       onClick={(e) => e.stopPropagation()}
                     >
                       {r.title}
                     </Link>
                   </td>
-                  <td className="align-middle px-4 py-4 text-[15px] font-normal text-slate-700">{r.tours} tours</td>
-                  <td className="align-middle px-4 py-4 text-[15px] font-normal text-slate-700">{r.people} people</td>
-                  <td className="align-middle px-4 py-4">
-                    <span
-                      className={`rounded-sm border px-2.5 py-1 text-[13px] ${
-                        r.status === "Published"
-                          ? "border-green-700 text-green-800 bg-green-50"
-                          : "border-slate-400 text-slate-700 bg-slate-50"
-                      }`}
-                    >
-                      {r.status}
-                    </span>
-                  </td>
-                  <td className="align-middle px-4 py-4 text-[15px] font-normal text-slate-600">{r.updated}</td>
+                  <td className="align-middle px-4 py-4 text-[15px] font-medium text-slate-700">{r.tours} tours</td>
+                  <td className="align-middle px-4 py-4 text-[15px] font-medium text-slate-700">{r.people} people</td>
+                  <td className="align-middle px-4 py-4 text-[15px] font-medium text-slate-600">{r.updated}</td>
                 </tr>
               );
             })}
             {rosters.length === 0 && (
               <tr>
-                <td colSpan={5} className="py-8 text-center text-[15px] text-slate-600">No rosters yet.</td>
+                <td colSpan={4} className="py-8 text-center text-[15px] text-slate-600">No rosters yet.</td>
               </tr>
             )}
           </tbody>

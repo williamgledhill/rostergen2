@@ -106,7 +106,7 @@ export default function EditorClient({
   }, []);
 
   return (
-    <div className="w-full overflow-x-hidden px-1 py-2 sm:px-2 sm:py-3 md:px-3 md:py-4">
+    <div className="w-full overflow-x-hidden px-3 py-3">
       <div className="space-y-4 flex flex-col items-start">
         <div className="flex flex-col w-full gap-2">
           <div className="flex flex-col leading-tight">

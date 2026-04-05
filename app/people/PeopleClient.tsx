@@ -127,11 +127,11 @@ export default function PeopleClient({ initialPeople }: { initialPeople: Person[
                     onClick={() => router.push(`/people/${p.id}`)}
                   >
                     <td className="align-middle px-4 py-4">
-                      <div className="inline-flex items-center gap-2 text-[15px] font-normal text-slate-700">
+                      <div className="inline-flex items-center gap-2 text-[15px] font-medium text-slate-700">
                         <span className="block truncate">{p.name}</span>
                       </div>
                     </td>
-                    <td className="align-middle px-4 py-4 text-[15px] font-normal text-slate-700">
+                    <td className="align-middle px-4 py-4 text-[15px] font-medium text-slate-700">
                       <span className="block truncate">{p.days || ""}</span>
                     </td>
                   </tr>

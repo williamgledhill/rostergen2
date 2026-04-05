@@ -98,7 +98,7 @@ export default function TasksClient({ initialTasks }: { initialTasks: TaskTempla
                     onClick={() => router.push(`/tasks/${t.id}`)}
                   >
                     <td className="align-middle px-4 py-4">
-                      <span className="flex min-w-0 items-center gap-3 text-[15px] font-normal text-slate-700">
+                      <span className="flex min-w-0 items-center gap-3 text-[15px] font-medium text-slate-700">
                         <span
                           className="inline-block h-5 w-5 rounded-full border border-slate-400"
                           style={{ backgroundColor: t.color || "#fff" }}
@@ -108,10 +108,10 @@ export default function TasksClient({ initialTasks }: { initialTasks: TaskTempla
                         <span className="truncate">{t.name}</span>
                       </span>
                     </td>
-                    <td className="align-middle px-4 py-4 text-[15px] font-normal text-slate-700">
+                    <td className="align-middle px-4 py-4 text-[15px] font-medium text-slate-700">
                       <span className="block truncate">{t.enabled === false ? "Disabled" : "Enabled"}</span>
                     </td>
-                    <td className="align-middle px-4 py-4 text-[15px] font-normal text-slate-700">
+                    <td className="align-middle px-4 py-4 text-[15px] font-medium text-slate-700">
                       <span className="block truncate">{t.occurrence}</span>
                     </td>
                   </tr>

@@ -17,7 +17,6 @@ export default function AppShell({
   const toggleNav = useCallback(() => setNavOpen((o) => !o), []);
   const pathname = usePathname();
   const isPublic = pathname === "/" || pathname.startsWith("/signup");
-  const isWidePage = pathname === "/editor" || pathname.startsWith("/rosters/");
 
   useEffect(() => {
     const mediaQuery = window.matchMedia("(max-width: 767px)");
@@ -58,7 +57,7 @@ export default function AppShell({
             }}
           />
           <div className="flex min-h-[calc(100vh-56px)] flex-1 flex-col bg-white">
-          <main className={isWidePage ? "px-2 py-3 sm:px-3 sm:py-4 md:px-5 md:py-5" : "px-2 py-3 sm:px-3 sm:py-4 md:px-6 md:py-5"}>
+          <main className="px-2 py-3 sm:px-3 sm:py-4 md:px-6 md:py-5">
             <div className="w-full space-y-4">
               {children}
             </div>
