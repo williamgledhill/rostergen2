@@ -1370,8 +1370,37 @@ export default function Grid({
                 { length: Math.max(0, window.endRow - window.startRow) },
                 (_, index) => window.startRow + index
               );
+        const orderedRequiredRows =
+          meta.regularTimeRows.length === 0 && Number.isFinite(limitPerDay) && limitPerDay < requiredRows.length
+            ? [...requiredRows].sort((a, b) => {
+                const spanA = getSpanForMeta(meta, a, window.endRow, { ignoreWindow: false });
+                const spanB = getSpanForMeta(meta, b, window.endRow, { ignoreWindow: false });
+                const feasibleA = spanA
+                  ? employees.filter((emp) => {
+                      if (getEmpCount(meta.id, emp.id) >= meta.maxPerEmp) return false;
+                      const col = employeeColById.get(emp.id) ?? employees.findIndex((entry) => entry.id === emp.id) + 2;
+                      return (
+                        isFree(col, a, spanA, emp.id) &&
+                        !exceedsConcurrentLimit(meta.id, a, spanA, meta.maxConcurrentPerTimeslot)
+                      );
+                    }).length
+                  : Number.POSITIVE_INFINITY;
+                const feasibleB = spanB
+                  ? employees.filter((emp) => {
+                      if (getEmpCount(meta.id, emp.id) >= meta.maxPerEmp) return false;
+                      const col = employeeColById.get(emp.id) ?? employees.findIndex((entry) => entry.id === emp.id) + 2;
+                      return (
+                        isFree(col, b, spanB, emp.id) &&
+                        !exceedsConcurrentLimit(meta.id, b, spanB, meta.maxConcurrentPerTimeslot)
+                      );
+                    }).length
+                  : Number.POSITIVE_INFINITY;
+                if (feasibleA !== feasibleB) return feasibleA - feasibleB;
+                return b - a;
+              })
+            : requiredRows;
 
-        for (const row of requiredRows) {
+        for (const row of orderedRequiredRows) {
           if (getTotal(meta.id) >= limitPerDay) break;
           const requiredSpan = getSpanForMeta(meta, row, window.endRow, { ignoreWindow: false });
           if (!requiredSpan) continue;
@@ -2060,23 +2089,23 @@ export default function Grid({
           const packingRows = Math.min(packingRowsRaw, Math.max(0, task.span - 1 - waitingRows));
           const mainRows = Math.max(1, task.span - waitingRows - packingRows);
           const segStyle =
-            "display:flex;align-items:center;justify-content:center;padding:4px 2px;font-weight:600;font-size:12px;font-family:Arial, sans-serif;text-align:center;";
+            `padding:4px 2px;font-weight:600;font-size:12px;font-family:Arial, sans-serif;text-align:center;vertical-align:middle;background:${bg};`;
           const segments: string[] = [];
           if (waitingRows > 0) {
             segments.push(
-              `<div style="${segStyle}border-bottom:1px solid ${border};">Waiting for</div>`
+              `<tr><td style="${segStyle}height:${(waitingRows / task.span) * 100}%;border-bottom:1px solid ${border};">Waiting for</td></tr>`
             );
           }
           segments.push(
-            `<div style="${segStyle}${waitingRows > 0 ? `border-top:1px solid ${border};` : ""}${packingRows > 0 ? `border-bottom:1px solid ${border};` : ""}">${task.label}</div>`
+            `<tr><td style="${segStyle}height:${(mainRows / task.span) * 100}%;${packingRows > 0 ? `border-bottom:1px solid ${border};` : ""}">${task.label}</td></tr>`
           );
           if (packingRows > 0) {
             segments.push(
-              `<div style="${segStyle}border-top:1px solid ${border};">Packing up</div>`
+              `<tr><td style="${segStyle}height:${(packingRows / task.span) * 100}%;">Packing up</td></tr>`
             );
           }
           const inner = segments.length
-            ? `<div style="display:flex;flex-direction:column;justify-content:center;height:100%;">${segments.join("")}</div>`
+            ? `<table style="width:100%;height:100%;border-collapse:collapse;table-layout:fixed;"><tbody>${segments.join("")}</tbody></table>`
             : task.label;
           rowHtml += `<td class="task-cell" rowspan="${task.span}" style="background:${bg}; font-weight:600; text-align:center; border:1px solid ${border};">${inner}</td>`;
         } else {
