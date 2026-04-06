@@ -35,11 +35,11 @@ function SectionCard({
 }) {
   return (
     <section className="card overflow-hidden">
-      <div className="border-b border-[var(--border)] bg-[var(--surface-subtle)] px-4 py-3 sm:px-5">
-        <h2 className="text-[17px] font-semibold text-slate-900">{title}</h2>
-        {description ? <p className="mt-1 text-[13px] text-slate-600">{description}</p> : null}
+      <div className="border-b border-[var(--border)] bg-[var(--surface-subtle)] px-4 py-2.5">
+        <h2 className="text-[18px] font-bold text-slate-900">{title}</h2>
+        {description ? <p className="mt-0.5 text-[13px] font-medium text-slate-600">{description}</p> : null}
       </div>
-      <div className="p-4 sm:p-5">{children}</div>
+      <div className="p-3.5 sm:p-4">{children}</div>
     </section>
   );
 }
@@ -57,9 +57,9 @@ function FieldBlock({
 }) {
   return (
     <div className={`space-y-1.5 ${className}`}>
-      <label className="block text-[13px] font-semibold text-slate-800">{label}</label>
+      <label className="block text-[14px] font-semibold text-slate-900">{label}</label>
       {children}
-      {hint ? <p className="text-[12px] leading-5 text-slate-500">{hint}</p> : null}
+      {hint ? <p className="text-[12px] font-medium leading-5 text-slate-500">{hint}</p> : null}
     </div>
   );
 }
@@ -78,12 +78,12 @@ function ToggleRow({
   onChange: (checked: boolean) => void;
 }) {
   return (
-    <div className="grid gap-3 px-4 py-3 md:grid-cols-[minmax(0,1fr)_auto] md:items-center">
+    <div className="grid gap-3 px-4 py-2.5 md:grid-cols-[minmax(0,1fr)_auto] md:items-center">
       <div className="min-w-0">
-        <label htmlFor={id} className="block text-[13px] font-semibold text-slate-900">
+        <label htmlFor={id} className="block text-[14px] font-semibold text-slate-900">
           {label}
         </label>
-        <p className="mt-0.5 text-[12px] leading-5 text-slate-500">{description}</p>
+        <p className="mt-0.5 text-[13px] font-medium leading-5 text-slate-600">{description}</p>
       </div>
       <label htmlFor={id} className="relative inline-flex cursor-pointer items-center">
         <input
@@ -110,7 +110,7 @@ function SlotChip({
   onRemove: () => void;
 }) {
   return (
-    <span className="inline-flex h-8 items-center gap-2 rounded-full border border-[var(--border)] bg-[var(--surface-subtle)] px-3 text-[12px] font-medium text-slate-700">
+    <span className="inline-flex h-8 items-center gap-2 rounded-full border border-[var(--border)] bg-[var(--surface-subtle)] px-3 text-[13px] font-medium text-slate-700">
       <span>{label}</span>
       <button
         type="button"
@@ -275,7 +275,7 @@ export default function TaskDetailClient({ id, initialTask }: { id: string; init
 
   return (
     <div className="w-full px-3 py-4">
-      <div className="mx-auto flex w-full max-w-[1160px] flex-col gap-4">
+      <div className="flex w-full max-w-[1080px] flex-col gap-3">
         <div className="flex items-center gap-1 text-[14px]">
           <Link href="/tasks" className="font-semibold text-[#675dff] hover:underline">
             Tasks
@@ -284,12 +284,12 @@ export default function TaskDetailClient({ id, initialTask }: { id: string; init
           <span className="font-medium text-slate-600">{task.name || "Task"}</span>
         </div>
 
-        <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
+        <div className="flex flex-col gap-2 lg:flex-row lg:items-start lg:justify-between">
           <div className="min-w-0 space-y-1">
-            <h1 className="break-words text-[clamp(1.4rem,4vw,2rem)] font-semibold leading-tight text-slate-900">
+            <h1 className="break-words text-[clamp(1.5rem,4vw,2.05rem)] font-bold leading-tight text-slate-900">
               {task.name || "Task"}
             </h1>
-            <p className="text-sm text-slate-600">Rules, timing, and autofill behavior for this task.</p>
+            <p className="text-[15px] font-medium text-slate-600">Rules, timing, and autofill behavior for this task.</p>
             <p className={`text-[12px] font-medium ${saveStatusClassName}`}>{saveStatusText}</p>
           </div>
 
@@ -312,12 +312,12 @@ export default function TaskDetailClient({ id, initialTask }: { id: string; init
           </div>
         </div>
 
-        <div className="grid gap-4 xl:grid-cols-[minmax(0,1.1fr)_420px]">
+        <div className="grid gap-3 xl:grid-cols-[minmax(0,1.15fr)_380px]">
           <SectionCard
             title="Task details"
             description="Keep the core task settings together so the roster uses the right colour, duration, and coverage rules."
           >
-            <div className="space-y-5">
+            <div className="space-y-4">
               <FieldBlock label="Name">
                 <input
                   className="input h-10 w-full text-[14px]"
@@ -326,7 +326,7 @@ export default function TaskDetailClient({ id, initialTask }: { id: string; init
                 />
               </FieldBlock>
 
-              <div className="grid gap-4 md:grid-cols-3">
+              <div className="grid gap-3 md:grid-cols-3">
                 <FieldBlock label="Colour">
                   <input
                     type="color"
@@ -437,7 +437,7 @@ export default function TaskDetailClient({ id, initialTask }: { id: string; init
         >
           <div className="overflow-x-auto">
             <div className="min-w-[560px] overflow-hidden rounded-[10px] border border-[var(--border)]">
-              <div className="grid grid-cols-[minmax(0,1fr)_140px_140px] gap-3 bg-[var(--surface-subtle)] px-4 py-3 text-[12px] font-semibold text-slate-700">
+              <div className="grid grid-cols-[minmax(0,1fr)_140px_140px] gap-3 bg-[var(--surface-subtle)] px-4 py-2.5 text-[13px] font-semibold text-slate-700">
                 <label className="inline-flex items-center gap-2 font-semibold text-slate-700">
                   <input
                     type="checkbox"
@@ -457,11 +457,11 @@ export default function TaskDetailClient({ id, initialTask }: { id: string; init
                 return (
                   <div
                     key={day.key}
-                    className={`grid grid-cols-[minmax(0,1fr)_140px_140px] items-center gap-3 px-4 py-3 ${
+                    className={`grid grid-cols-[minmax(0,1fr)_140px_140px] items-center gap-3 px-4 py-2.5 ${
                       index === 0 ? "" : "border-t border-[var(--border)]"
                     }`}
                   >
-                    <label className="inline-flex items-center gap-2 text-[14px] text-slate-700">
+                    <label className="inline-flex items-center gap-2 text-[15px] text-slate-700">
                       <input
                         type="checkbox"
                         checked={checked}
@@ -499,8 +499,8 @@ export default function TaskDetailClient({ id, initialTask }: { id: string; init
           title="Time slots"
           description="Use default slots when the task repeats across days, then add day-specific slots only where a day needs an exception."
         >
-          <div className="grid gap-5 xl:grid-cols-[320px_minmax(0,1fr)]">
-            <div className="space-y-4">
+          <div className="grid gap-4 xl:grid-cols-[290px_minmax(0,1fr)]">
+            <div className="space-y-3">
               <FieldBlock
                 label="Default time slots"
                 hint="These slots are available on any selected day unless a day-specific list is used instead."
@@ -540,11 +540,11 @@ export default function TaskDetailClient({ id, initialTask }: { id: string; init
                 return (
                   <div
                     key={day.key}
-                    className={`grid gap-3 px-4 py-3 md:grid-cols-[130px_minmax(0,1fr)] ${
+                    className={`grid gap-3 px-4 py-2.5 md:grid-cols-[120px_minmax(0,1fr)] ${
                       index === 0 ? "" : "border-t border-[var(--border)]"
                     }`}
                   >
-                    <div className="pt-1 text-[14px] font-semibold text-slate-800">{day.label}</div>
+                    <div className="pt-1 text-[15px] font-semibold text-slate-800">{day.label}</div>
                     <div className="space-y-2">
                       <div className="flex flex-wrap items-center gap-2">
                         <input
@@ -591,7 +591,7 @@ export default function TaskDetailClient({ id, initialTask }: { id: string; init
           title="Limits"
           description="Set hard caps when this task should appear a fixed number of times across the day or per employee."
         >
-          <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+          <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
             <FieldBlock label="Minimum per employee per day" hint="How many times each employee should get this task.">
               <div className="flex items-center gap-3">
                 <input
