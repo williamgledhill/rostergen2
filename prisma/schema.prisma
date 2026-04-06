@@ -84,6 +84,8 @@ model AppTaskTemplate {
   category               String?
   color                  String?
   mustManned             Boolean  @default(false)
+  overwriteExistingTasks Boolean  @default(false)
+  attendedByAll          Boolean  @default(false)
   autogenStart           String?
   autogenEnd             String?
   regularDays            Json?
@@ -228,6 +230,8 @@ model AppRosterTask {
   startRow            Int
   span                Int
   color               String?
+  waitingMinutes      Int        @default(0)
+  packingMinutes      Int        @default(0)
   employeeId          String?
   locked              Boolean    @default(false)
   isLocked            Boolean    @default(false)

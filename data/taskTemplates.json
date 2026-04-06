@@ -455,6 +455,8 @@
     "category": "Custom",
     "color": "#ff5b14",
     "mustManned": false,
+    "overwriteExistingTasks": true,
+    "attendedByAll": true,
     "autogenStart": "",
     "autogenEnd": "",
     "regularDays": [

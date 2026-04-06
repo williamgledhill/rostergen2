@@ -13,6 +13,7 @@ import {
 } from "@/lib/taskTemplates";
 import { getDayScheduleForDate, type Person } from "@/lib/people";
 import {
+  clipTaskAroundBlockedRange,
   compareFutureMinimumAvailability,
   getFeasiblePlacementRows,
   getAutofillTemplatePriority,
@@ -28,7 +29,9 @@ type GridTask = {
   startRow: number;
   span: number;
   color?: string;
-  employeeId?: number;
+  waitingMinutes?: number;
+  packingMinutes?: number;
+  employeeId?: string | number;
   locked?: boolean;
   isLocked?: boolean;
   readOnly?: boolean;
@@ -767,6 +770,8 @@ export default function Grid({
       id: string;
       template: TaskTemplate;
       span: number;
+      waitingMinutes: number;
+      packingMinutes: number;
       window: { startRow: number; endRow: number } | null;
       regularTimeRows: number[];
       hasFixedTimes: boolean;
@@ -774,6 +779,8 @@ export default function Grid({
       maxPerEmp: number;
       minPerEmp: number;
       mustManned: boolean;
+      overwriteExistingTasks: boolean;
+      attendedByAll: boolean;
       allowShrink: boolean;
       maxConsecutiveSpan: number;
       maxConcurrentPerTimeslot: number;
@@ -906,7 +913,17 @@ export default function Grid({
       return false;
     };
 
-    const addTask = (meta: TemplateMeta, col: number, startRow: number, span: number, empId: string | number) => {
+    const sortTasks = (list: GridTask[]) =>
+      list.sort((a, b) => (a.col - b.col) || (a.startRow - b.startRow) || String(a.id).localeCompare(String(b.id)));
+
+    const addTask = (
+      meta: TemplateMeta,
+      col: number,
+      startRow: number,
+      span: number,
+      empId: string | number,
+      overrides?: { waitingMinutes?: number; packingMinutes?: number }
+    ) => {
       const id = crypto.randomUUID?.() ?? String(Math.random());
       const label = meta.template.name || "Task";
       const type = meta.template.id || label;
@@ -918,11 +935,15 @@ export default function Grid({
         startRow,
         span,
         color: meta.template.color || colorForType(type),
-        employeeId: Number(empId),
+        waitingMinutes: overrides?.waitingMinutes ?? meta.waitingMinutes,
+        packingMinutes: overrides?.packingMinutes ?? meta.packingMinutes,
+        employeeId: empId,
       };
       generated.push(task);
       if (!tasksByCol.has(col)) tasksByCol.set(col, []);
       tasksByCol.get(col)!.push(task);
+      sortTasks(tasksByCol.get(col)!);
+      sortTasks(generated);
       incEmpCount(meta.id, empId);
       incTotal(meta.id);
       return task;
@@ -938,6 +959,55 @@ export default function Grid({
       }
       decEmpCount(meta.id, empId);
       decTotal(meta.id);
+    };
+
+    const replaceTasksInColumn = (col: number, nextTasks: GridTask[]) => {
+      const currentIds = new Set((tasksByCol.get(col) ?? []).map((task) => task.id));
+      for (let index = generated.length - 1; index >= 0; index -= 1) {
+        if (currentIds.has(generated[index].id)) {
+          generated.splice(index, 1);
+        }
+      }
+      const sorted = sortTasks(nextTasks);
+      tasksByCol.set(col, sorted);
+      generated.push(...sorted);
+      sortTasks(generated);
+    };
+
+    const clipConflictsInColumn = (col: number, startRow: number, span: number) => {
+      const blockedRange = { startRow, span };
+      const existing = tasksByCol.get(col) ?? [];
+      const nextTasks: GridTask[] = [];
+
+      for (const task of existing) {
+        const fragments = clipTaskAroundBlockedRange(
+          {
+            startRow: task.startRow,
+            span: task.span,
+            waitingMinutes: task.waitingMinutes ?? 0,
+            packingMinutes: task.packingMinutes ?? 0,
+          },
+          blockedRange
+        );
+
+        if (fragments.length === 1 && fragments[0].startRow === task.startRow && fragments[0].span === task.span) {
+          nextTasks.push(task);
+          continue;
+        }
+
+        fragments.forEach((fragment, index) => {
+          nextTasks.push({
+            ...task,
+            id: index === 0 ? task.id : (crypto.randomUUID?.() ?? String(Math.random())),
+            startRow: fragment.startRow,
+            span: fragment.span,
+            waitingMinutes: fragment.waitingMinutes ?? 0,
+            packingMinutes: fragment.packingMinutes ?? 0,
+          });
+        });
+      }
+
+      replaceTasksInColumn(col, nextTasks);
     };
 
     const getSpanForMeta = (
@@ -1054,6 +1124,8 @@ export default function Grid({
         id: template.id || template.name || "task",
         template,
         span,
+        waitingMinutes,
+        packingMinutes,
         window,
         regularTimeRows: Array.from(new Set(regularTimeRows)).sort((a, b) => a - b),
         hasFixedTimes: regularTimes.length > 0,
@@ -1061,6 +1133,8 @@ export default function Grid({
         maxPerEmp,
         minPerEmp,
         mustManned: !!template.mustManned,
+        overwriteExistingTasks: !!template.overwriteExistingTasks,
+        attendedByAll: !!template.attendedByAll,
         allowShrink,
         maxConsecutiveSpan,
         maxConcurrentPerTimeslot,
@@ -1170,6 +1244,12 @@ export default function Grid({
         if (aPriority !== bPriority) return bPriority - aPriority;
         return 0;
       });
+    const finalPassTemplates = templatesToSchedule.filter(
+      (meta) => meta.attendedByAll || meta.overwriteExistingTasks
+    );
+    const templatesForPrimaryPass = templatesToSchedule.filter(
+      (meta) => !meta.attendedByAll && !meta.overwriteExistingTasks
+    );
 
     const getCandidateRowsForEmployee = (
       meta: TemplateMeta,
@@ -1265,7 +1345,7 @@ export default function Grid({
 
     const unmetMinimums: string[] = [];
 
-    for (const [metaIndex, meta] of templatesToSchedule.entries()) {
+    for (const [metaIndex, meta] of templatesForPrimaryPass.entries()) {
       const window = meta.window;
       if (!window) continue;
       const span = meta.span;
@@ -1274,7 +1354,7 @@ export default function Grid({
       const minPerEmp = meta.minPerEmp;
 
       if (meta.mustManned) {
-        const futureMinimumMetas = templatesToSchedule
+        const futureMinimumMetas = templatesForPrimaryPass
           .slice(metaIndex + 1)
           .filter((candidate) => !candidate.mustManned && candidate.minPerEmp > 0);
         const requiredRows =
@@ -1364,8 +1444,8 @@ export default function Grid({
       }
     }
 
-    const flexibleTemplates = templatesToSchedule.filter((t) => !t.hasFixedTimes);
-    const fillTemplates = flexibleTemplates.length ? flexibleTemplates : templatesToSchedule;
+    const flexibleTemplates = templatesForPrimaryPass.filter((t) => !t.hasFixedTimes);
+    const fillTemplates = flexibleTemplates.length ? flexibleTemplates : templatesForPrimaryPass;
     const ignoreFixedTimes = flexibleTemplates.length === 0;
 
     const getConsecutiveSpan = (col: number, type: string, startRow: number, span: number) => {
@@ -1472,7 +1552,118 @@ export default function Grid({
       }
     });
 
-    const unmetCoverage = templatesToSchedule
+    const getDesiredPlacements = (meta: TemplateMeta, candidateRows: number[]) => {
+      let desiredCount = 1;
+      if (meta.regularTimeRows.length > 0 || meta.mustManned) {
+        desiredCount = candidateRows.length;
+      } else if (Number.isFinite(meta.template.limitPerDay) && (meta.template.limitPerDay ?? 0) > 0) {
+        desiredCount = meta.template.limitPerDay as number;
+      } else if (meta.minPerEmp > 0) {
+        desiredCount = meta.minPerEmp * employees.length;
+      }
+      return Math.min(desiredCount, meta.limitPerDay);
+    };
+
+    const getEligibleEmployeesForRow = (row: number, span: number) =>
+      employees.filter((emp) => {
+        const window = getEmployeeWindow(emp);
+        return !!window && row >= window.startRow && row + span <= window.endRow;
+      });
+
+    const getConflictCount = (col: number, startRow: number, span: number) =>
+      (tasksByCol.get(col) ?? []).filter(
+        (task) => startRow < task.startRow + task.span && startRow + span > task.startRow
+      ).length;
+
+    const placeFinalTask = (
+      meta: TemplateMeta,
+      col: number,
+      row: number,
+      span: number,
+      empId: string | number
+    ) => {
+      if (meta.overwriteExistingTasks) {
+        clipConflictsInColumn(col, row, span);
+      } else if (!isFree(col, row, span, empId)) {
+        return false;
+      }
+      addTask(meta, col, row, span, empId);
+      return true;
+    };
+
+    const scheduleAttendedByAllMeta = (meta: TemplateMeta) => {
+      const candidateRows = getCandidateRowsForMeta(meta);
+      const desiredPlacements = getDesiredPlacements(meta, candidateRows);
+      let placementsMade = 0;
+
+      for (const row of candidateRows) {
+        if (placementsMade >= desiredPlacements) break;
+        const span = getSpanForMeta(meta, row, meta.window?.endRow ?? maxRowEx, { ignoreWindow: false });
+        if (!span) continue;
+
+        const eligibleEmployees = getEligibleEmployeesForRow(row, span);
+        if (!eligibleEmployees.length) continue;
+        if (!meta.overwriteExistingTasks) {
+          const blocked = eligibleEmployees.some((emp) => {
+            const col = employeeColById.get(emp.id) ?? employees.findIndex((entry) => entry.id === emp.id) + 2;
+            return !isFree(col, row, span, emp.id);
+          });
+          if (blocked) continue;
+        }
+
+        eligibleEmployees.forEach((emp) => {
+          const col = employeeColById.get(emp.id) ?? employees.findIndex((entry) => entry.id === emp.id) + 2;
+          placeFinalTask(meta, col, row, span, emp.id);
+        });
+        placementsMade += 1;
+      }
+    };
+
+    const scheduleOverrideMeta = (meta: TemplateMeta) => {
+      const candidateRows = getCandidateRowsForMeta(meta);
+      const desiredPlacements = getDesiredPlacements(meta, candidateRows);
+
+      for (const row of candidateRows) {
+        if (getTotal(meta.id) >= desiredPlacements) break;
+        if (getTotal(meta.id) >= meta.limitPerDay) break;
+        const span = getSpanForMeta(meta, row, meta.window?.endRow ?? maxRowEx, { ignoreWindow: false });
+        if (!span) continue;
+
+        const sortedEmployees = getEligibleEmployeesForRow(row, span)
+          .filter((emp) => getEmpCount(meta.id, emp.id) < meta.maxPerEmp)
+          .sort((a, b) => {
+            const conflictDiff =
+              getConflictCount(employeeColById.get(a.id) ?? employees.findIndex((entry) => entry.id === a.id) + 2, row, span) -
+              getConflictCount(employeeColById.get(b.id) ?? employees.findIndex((entry) => entry.id === b.id) + 2, row, span);
+            if (conflictDiff !== 0) return conflictDiff;
+            const countDiff = getEmpCount(meta.id, a.id) - getEmpCount(meta.id, b.id);
+            if (countDiff !== 0) return countDiff;
+            return (
+              getRotatedRank(employeeOrder.get(a.id) ?? 0, employees.length, autofillVariant) -
+              getRotatedRank(employeeOrder.get(b.id) ?? 0, employees.length, autofillVariant)
+            );
+          });
+
+        const picked = sortedEmployees.find((emp) => {
+          const col = employeeColById.get(emp.id) ?? employees.findIndex((entry) => entry.id === emp.id) + 2;
+          return meta.overwriteExistingTasks || isFree(col, row, span, emp.id);
+        });
+        if (!picked) continue;
+
+        const col = employeeColById.get(picked.id) ?? employees.findIndex((entry) => entry.id === picked.id) + 2;
+        placeFinalTask(meta, col, row, span, picked.id);
+      }
+    };
+
+    finalPassTemplates.forEach((meta) => {
+      if (meta.attendedByAll) {
+        scheduleAttendedByAllMeta(meta);
+        return;
+      }
+      scheduleOverrideMeta(meta);
+    });
+
+    const unmetCoverage = templatesForPrimaryPass
       .filter((meta) => meta.mustManned && meta.window)
       .flatMap((meta) => {
         const window = meta.window!;
@@ -1847,13 +2038,13 @@ export default function Grid({
           rowSpans[colIdx]--;
           return;
         }
-        const task = tasksByColStart.get(emp.col)?.get(rowNumber);
-        if (task) {
-          rowSpans[colIdx] = task.span - 1;
+          const task = tasksByColStart.get(emp.col)?.get(rowNumber);
+          if (task) {
+            rowSpans[colIdx] = task.span - 1;
           const bg = colorForTask(task) || "#d3e6d5";
           const template = templateById.get(task.type);
-          const waitingRowsRaw = Math.max(0, Math.round((template?.waitingMinutes || 0) / 15));
-          const packingRowsRaw = Math.max(0, Math.round((template?.packingMinutes || 0) / 15));
+          const waitingRowsRaw = Math.max(0, Math.round(((task.waitingMinutes ?? template?.waitingMinutes) || 0) / 15));
+          const packingRowsRaw = Math.max(0, Math.round(((task.packingMinutes ?? template?.packingMinutes) || 0) / 15));
           const waitingRows = Math.min(waitingRowsRaw, Math.max(0, task.span - 1));
           const packingRows = Math.min(packingRowsRaw, Math.max(0, task.span - 1 - waitingRows));
           const mainRows = Math.max(1, task.span - waitingRows - packingRows);
@@ -1922,7 +2113,17 @@ export default function Grid({
     const id = crypto.randomUUID?.() ?? String(Math.random());
     const nextTasks = [
       ...tasksRef.current,
-      { id, type: cls, label, col: modal.col, startRow: modal.row, span: 1, color: template.color },
+      {
+        id,
+        type: cls,
+        label,
+        col: modal.col,
+        startRow: modal.row,
+        span: 1,
+        color: template.color,
+        waitingMinutes: template.waitingMinutes || 0,
+        packingMinutes: template.packingMinutes || 0,
+      },
     ];
     applyRosterState(employeesRef.current, nextTasks);
     setSelected(id);
@@ -2181,8 +2382,8 @@ export default function Grid({
               startRow={t.startRow}
               span={t.span}
               color={colorForTask(t)}
-              waitingMinutes={template?.waitingMinutes}
-              packingMinutes={template?.packingMinutes}
+              waitingMinutes={t.waitingMinutes ?? template?.waitingMinutes}
+              packingMinutes={t.packingMinutes ?? template?.packingMinutes}
               selected={t.id === selected}
               highlighted={emphasizedCol === t.col}
               isFirstCol={t.col === firstEmployeeCol}

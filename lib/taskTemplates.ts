@@ -5,6 +5,8 @@ export type TaskTemplate = {
   category?: string;
   color?: string;
   mustManned?: boolean;
+  overwriteExistingTasks?: boolean;
+  attendedByAll?: boolean;
   autogenStart?: string;
   autogenEnd?: string;
   regularDays?: string[];

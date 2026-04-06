@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  clipTaskAroundBlockedRange,
   compareFutureMinimumAvailability,
   getFeasiblePlacementRows,
   getAutofillTemplatePriority,
@@ -20,6 +21,22 @@ describe("roster autofill preferences", () => {
     });
 
     expect(requiredCoverage).toBeGreaterThan(lunchMinimums);
+  });
+
+  it("prioritizes all-attend templates above normal coverage", () => {
+    const briefing = getAutofillTemplatePriority({
+      mustManned: false,
+      hasFixedTimes: true,
+      minPerEmp: 0,
+      attendedByAll: true,
+    });
+    const requiredCoverage = getAutofillTemplatePriority({
+      mustManned: true,
+      hasFixedTimes: true,
+      minPerEmp: 0,
+    });
+
+    expect(briefing).toBeGreaterThan(requiredCoverage);
   });
 
   it("tries one-at-a-time breaks before allowing unlimited overlap", () => {
@@ -58,5 +75,53 @@ describe("roster autofill preferences", () => {
 
     expect(compareFutureMinimumAvailability(rowanFutureOptions, kayeFutureOptions)).toBeLessThan(0);
     expect(compareFutureMinimumAvailability(kayeFutureOptions, rowanFutureOptions)).toBeGreaterThan(0);
+  });
+
+  it("clips only the waiting segment when an override takes the lead-in slot", () => {
+    const fragments = clipTaskAroundBlockedRange(
+      {
+        startRow: 10,
+        span: 4,
+        waitingMinutes: 15,
+        packingMinutes: 0,
+      },
+      { startRow: 10, span: 1 }
+    );
+
+    expect(fragments).toEqual([
+      {
+        startRow: 11,
+        span: 3,
+        waitingMinutes: 0,
+        packingMinutes: 0,
+      },
+    ]);
+  });
+
+  it("keeps valid task fragments on both sides of a blocked middle range", () => {
+    const fragments = clipTaskAroundBlockedRange(
+      {
+        startRow: 20,
+        span: 6,
+        waitingMinutes: 15,
+        packingMinutes: 15,
+      },
+      { startRow: 22, span: 2 }
+    );
+
+    expect(fragments).toEqual([
+      {
+        startRow: 20,
+        span: 2,
+        waitingMinutes: 15,
+        packingMinutes: 0,
+      },
+      {
+        startRow: 24,
+        span: 2,
+        waitingMinutes: 0,
+        packingMinutes: 15,
+      },
+    ]);
   });
 });

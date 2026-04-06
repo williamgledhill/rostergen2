@@ -266,6 +266,40 @@ export default function TaskDetailClient({ id, initialTask }: { id: string; init
                   <span className="text-[12px] text-slate-500">Autofill preset</span>
                 </div>
               </div>
+              <div className="border border-[var(--border)] rounded-md px-3 py-2 space-y-2">
+                <label className="block text-sm font-semibold">Overwrite other tasks</label>
+                <div className="flex items-center gap-3">
+                  <label htmlFor="overwrite-existing-tasks" className="relative inline-flex items-center cursor-pointer">
+                    <input
+                      id="overwrite-existing-tasks"
+                      type="checkbox"
+                      className="sr-only peer"
+                      checked={!!task.overwriteExistingTasks}
+                      onChange={(e) => setTask((t) => (t ? { ...t, overwriteExistingTasks: e.target.checked } : t))}
+                    />
+                    <span className="w-11 h-6 rounded-full bg-slate-200 transition peer-checked:bg-[#675dff]" />
+                    <span className="absolute left-[2px] top-[2px] w-5 h-5 rounded-full bg-white shadow-sm transition peer-checked:translate-x-5" />
+                  </label>
+                  <span className="text-[12px] text-slate-500">Runs last and replaces conflicting tasks</span>
+                </div>
+              </div>
+              <div className="border border-[var(--border)] rounded-md px-3 py-2 space-y-2">
+                <label className="block text-sm font-semibold">Attended by all</label>
+                <div className="flex items-center gap-3">
+                  <label htmlFor="attended-by-all" className="relative inline-flex items-center cursor-pointer">
+                    <input
+                      id="attended-by-all"
+                      type="checkbox"
+                      className="sr-only peer"
+                      checked={!!task.attendedByAll}
+                      onChange={(e) => setTask((t) => (t ? { ...t, attendedByAll: e.target.checked } : t))}
+                    />
+                    <span className="w-11 h-6 rounded-full bg-slate-200 transition peer-checked:bg-[#675dff]" />
+                    <span className="absolute left-[2px] top-[2px] w-5 h-5 rounded-full bg-white shadow-sm transition peer-checked:translate-x-5" />
+                  </label>
+                  <span className="text-[12px] text-slate-500">Everyone working in that slot gets this task</span>
+                </div>
+              </div>
             </div>
             <div className="space-y-4 pt-4 border-t border-[var(--border)]">
               <div>

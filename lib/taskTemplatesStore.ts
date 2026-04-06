@@ -65,6 +65,14 @@ function applyDefaults(t: TaskTemplate): TaskTemplate {
     ...t,
     color: t.color || base?.color || "#e2e8f0",
     mustManned: typeof t.mustManned === "boolean" ? t.mustManned : base?.mustManned || false,
+    overwriteExistingTasks:
+      typeof t.overwriteExistingTasks === "boolean"
+        ? t.overwriteExistingTasks
+        : base?.overwriteExistingTasks || false,
+    attendedByAll:
+      typeof t.attendedByAll === "boolean"
+        ? t.attendedByAll
+        : base?.attendedByAll || false,
     autogenStart: t.autogenStart || base?.autogenStart || "",
     autogenEnd: t.autogenEnd || base?.autogenEnd || "",
     regularDays: Array.isArray(t.regularDays) ? t.regularDays : base?.regularDays || [],
@@ -91,6 +99,8 @@ function toTemplateCreateInput(template: TaskTemplate) {
     category: template.category || null,
     color: template.color || null,
     mustManned: Boolean(template.mustManned),
+    overwriteExistingTasks: Boolean(template.overwriteExistingTasks),
+    attendedByAll: Boolean(template.attendedByAll),
     autogenStart: template.autogenStart || null,
     autogenEnd: template.autogenEnd || null,
     regularDays: template.regularDays || [],
@@ -204,6 +214,8 @@ function mapLegacyTemplate(record: any): TaskTemplate {
     category: record.category || undefined,
     color: record.color || undefined,
     mustManned: record.mustManned,
+    overwriteExistingTasks: record.overwriteExistingTasks,
+    attendedByAll: record.attendedByAll,
     autogenStart: record.autogenStart || "",
     autogenEnd: record.autogenEnd || "",
     regularDays: Array.isArray(record.regularDays) ? record.regularDays : [],
@@ -266,6 +278,8 @@ function mapTemplate(record: any): TaskTemplate {
     category: record.category || undefined,
     color: record.color || undefined,
     mustManned: record.mustManned,
+    overwriteExistingTasks: record.overwriteExistingTasks,
+    attendedByAll: record.attendedByAll,
     autogenStart: record.autogenStart || "",
     autogenEnd: record.autogenEnd || "",
     regularDays,
@@ -354,6 +368,8 @@ export async function addTaskTemplate(input: {
       category: input.category?.trim() || "Custom",
       color: input.color?.trim() || "#e2e8f0",
       mustManned: false,
+      overwriteExistingTasks: false,
+      attendedByAll: false,
       autogenStart: "",
       autogenEnd: "",
       regularDays: [],
@@ -395,6 +411,10 @@ export async function updateTaskTemplate(
         ...(input.category !== undefined ? { category: input.category || null } : {}),
         ...(input.color !== undefined ? { color: input.color || null } : {}),
         ...(input.mustManned !== undefined ? { mustManned: input.mustManned } : {}),
+        ...(input.overwriteExistingTasks !== undefined
+          ? { overwriteExistingTasks: input.overwriteExistingTasks }
+          : {}),
+        ...(input.attendedByAll !== undefined ? { attendedByAll: input.attendedByAll } : {}),
         ...(input.autogenStart !== undefined ? { autogenStart: input.autogenStart || null } : {}),
         ...(input.autogenEnd !== undefined ? { autogenEnd: input.autogenEnd || null } : {}),
         ...(input.regularDays !== undefined ? { regularDays: input.regularDays } : {}),
