@@ -22,6 +22,9 @@ export type TaskTemplate = {
   enabled?: boolean;
 };
 
+export const TASK_TEMPLATE_REFRESH_EVENT = "task-templates-updated";
+export const TASK_TEMPLATE_REFRESH_STORAGE_KEY = "rosterplanner:task-templates-updated-at";
+
 export const defaultTaskTemplates: TaskTemplate[] = [
   {
     id: "front",

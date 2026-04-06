@@ -5,7 +5,12 @@ import Block from "@/components/Block";
 import Modal from "@/components/Modal";
 import { AutosaveState, readDraftRecord, writeDraftRecord } from "@/lib/clientDrafts";
 import { buildEditorDraftStorageKey } from "@/lib/editorPersistence";
-import { TaskTemplate, defaultTaskTemplates } from "@/lib/taskTemplates";
+import {
+  TASK_TEMPLATE_REFRESH_EVENT,
+  TASK_TEMPLATE_REFRESH_STORAGE_KEY,
+  TaskTemplate,
+  defaultTaskTemplates,
+} from "@/lib/taskTemplates";
 import { getDayScheduleForDate, type Person } from "@/lib/people";
 import {
   compareFutureMinimumAvailability,
@@ -517,27 +522,53 @@ export default function Grid({
       .catch(() => setPeople([]));
   }, [initialPeople]);
 
+  const refreshTemplates = useCallback(async () => {
+    try {
+      const res = await fetch("/api/task-templates", { cache: "no-store" });
+      if (!res.ok) throw new Error("Failed");
+      const data = await res.json();
+      setTemplates(Array.isArray(data) ? data : []);
+    } catch (err) {
+      console.error(err);
+      if (initialTemplates === undefined) {
+        setTemplates([]);
+      }
+    }
+  }, [initialTemplates]);
+
   useEffect(() => {
     if (initialTemplates !== undefined) {
       setTemplates(initialTemplates);
-      return;
     }
-    let active = true;
-    async function load() {
-      try {
-        const res = await fetch("/api/task-templates");
-        if (!res.ok) throw new Error("Failed");
-        const data = await res.json();
-        if (!active) return;
-        setTemplates(Array.isArray(data) ? data : []);
-      } catch (err) {
-        console.error(err);
-        if (active) setTemplates([]);
+
+    void refreshTemplates();
+
+    const handleTemplateRefresh = () => {
+      void refreshTemplates();
+    };
+    const handleStorage = (event: StorageEvent) => {
+      if (event.key === TASK_TEMPLATE_REFRESH_STORAGE_KEY) {
+        void refreshTemplates();
       }
-    }
-    load();
-    return () => { active = false; };
-  }, [initialTemplates]);
+    };
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === "visible") {
+        void refreshTemplates();
+      }
+    };
+
+    window.addEventListener("focus", handleTemplateRefresh);
+    window.addEventListener(TASK_TEMPLATE_REFRESH_EVENT, handleTemplateRefresh);
+    window.addEventListener("storage", handleStorage);
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+
+    return () => {
+      window.removeEventListener("focus", handleTemplateRefresh);
+      window.removeEventListener(TASK_TEMPLATE_REFRESH_EVENT, handleTemplateRefresh);
+      window.removeEventListener("storage", handleStorage);
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+    };
+  }, [initialTemplates, refreshTemplates]);
 
   const templateById = useMemo(() => {
     const map = new Map<string, TaskTemplate>();

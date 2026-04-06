@@ -5,7 +5,11 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { ChevronRight } from "lucide-react";
 import { buildDraftStorageKey, formatAutosaveStatusText, getAutosaveStatusClassName, removeDraftRecord } from "@/lib/clientDrafts";
-import { type TaskTemplate } from "@/lib/taskTemplates";
+import {
+  TASK_TEMPLATE_REFRESH_EVENT,
+  TASK_TEMPLATE_REFRESH_STORAGE_KEY,
+  type TaskTemplate,
+} from "@/lib/taskTemplates";
 import { usePersistedAutosave } from "@/lib/usePersistedAutosave";
 
 const REGULAR_DAYS = [
@@ -32,7 +36,7 @@ export default function TaskDetailClient({ id, initialTask }: { id: string; init
     storageKey: buildDraftStorageKey("task", id),
     initialValue: initialTaskValue,
     getSignature: (value) => JSON.stringify(value),
-    save: async (value, { keepalive }) => {
+    save: async (value, { keepalive, mode }) => {
       if (!value) return;
       const res = await fetch("/api/task-templates", {
         method: "PUT",
@@ -42,6 +46,17 @@ export default function TaskDetailClient({ id, initialTask }: { id: string; init
       });
       if (!res.ok) throw new Error("Failed to save");
       const saved = (await res.json()) as TaskTemplate;
+      if (typeof window !== "undefined") {
+        window.dispatchEvent(new Event(TASK_TEMPLATE_REFRESH_EVENT));
+        try {
+          window.localStorage.setItem(TASK_TEMPLATE_REFRESH_STORAGE_KEY, new Date().toISOString());
+        } catch (error) {
+          console.error(error);
+        }
+      }
+      if (mode === "manual") {
+        router.refresh();
+      }
       return {
         value: saved,
         savedAt: new Date().toISOString(),

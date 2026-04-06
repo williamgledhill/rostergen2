@@ -446,10 +446,17 @@ export async function updateTaskTemplate(
       await tx.appTaskTemplateDayWindow.createMany({ data: relations.dayWindows });
     }
 
-    return tx.appTaskTemplate.findUnique({ where: { id } });
+    return tx.appTaskTemplate.findUnique({
+      where: { id },
+      include: {
+        regularDayRules: true,
+        timeSlots: true,
+        dayWindows: true,
+      },
+    });
   });
 
-  return updated ? mapLegacyTemplate(updated) : null;
+  return updated ? mapTemplate(updated) : null;
 }
 
 export async function deleteTaskTemplate(id: string): Promise<boolean> {

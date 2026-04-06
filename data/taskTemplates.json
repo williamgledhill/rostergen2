@@ -370,12 +370,12 @@
         "end": "11:15"
       },
       "Sat": {
-        "start": "09:30",
-        "end": "11:15"
+        "start": "10:30",
+        "end": "11:30"
       },
       "Sun": {
-        "start": "09:30",
-        "end": "11:15"
+        "start": "10:30",
+        "end": "11:30"
       }
     },
     "minPerEmployeePerDay": 1,
