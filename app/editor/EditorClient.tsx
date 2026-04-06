@@ -107,34 +107,28 @@ export default function EditorClient({
 
   return (
     <div className="w-full overflow-x-hidden px-3 py-3">
-      <div className="space-y-4 flex flex-col items-start">
-        <div className="flex flex-col w-full gap-2">
-          <div className="flex flex-col leading-tight">
-            <h1 className="break-words text-[clamp(1.2rem,5vw,1.5rem)] font-semibold leading-tight">{dayLabel}</h1>
-            <p className="mt-1 text-[14px] text-slate-600">Edit coverage, adjust hours, and export this day&apos;s roster.</p>
-            <p className={`mt-1 text-[12px] font-medium ${saveStatusClassName}`}>{saveStatusText}</p>
-          </div>
+      <div className="flex w-full flex-col gap-3">
+        <div className="flex flex-col leading-tight">
+          <h1 className="break-words text-[clamp(1.2rem,5vw,1.5rem)] font-semibold leading-tight">{dayLabel}</h1>
+          <p className="mt-1 text-[14px] text-slate-600">Edit coverage, adjust hours, and export this day&apos;s roster.</p>
+          <p className={`mt-1 text-[12px] font-medium ${saveStatusClassName}`}>{saveStatusText}</p>
         </div>
-
+        <TopBar
+          hours={hours}
+          onHoursStartChange={(value) => {
+            setHoursTouched(true);
+            setHours((prev) => ({ ...prev, start: value }));
+          }}
+          onHoursEndChange={(value) => {
+            setHoursTouched(true);
+            setHours((prev) => ({ ...prev, end: value }));
+          }}
+          onHoursDefault={() => {
+            setHoursTouched(false);
+            setHours({ start: defaultHoursForDay.start, end: defaultHoursForDay.end });
+          }}
+        />
         <Grid
-          toolbar={
-            <TopBar
-              merged
-              hours={hours}
-              onHoursStartChange={(value) => {
-                setHoursTouched(true);
-                setHours((prev) => ({ ...prev, start: value }));
-              }}
-              onHoursEndChange={(value) => {
-                setHoursTouched(true);
-                setHours((prev) => ({ ...prev, end: value }));
-              }}
-              onHoursDefault={() => {
-                setHoursTouched(false);
-                setHours({ start: defaultHoursForDay.start, end: defaultHoursForDay.end });
-              }}
-            />
-          }
           employees={initialRoster.employees}
           initialTasks={initialRoster.tasks}
           rosterDateId={rosterDateId}
