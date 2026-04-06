@@ -49,6 +49,10 @@ type RosterDraftValue = {
 };
 
 export type RosterSaveState = AutosaveState;
+export type AutofillNotice = {
+  title: string;
+  messages: string[];
+};
 
 const MIN_ROW = 2;
 const DEFAULT_START_MIN = 9 * 60 + 30;
@@ -195,6 +199,7 @@ export default function Grid({
   initialSavedAt,
   onExportXLS,
   onSaveStateChange,
+  onAutofillNoticeChange,
   onRestoreDraftHours,
   people: initialPeople,
   templates: initialTemplates,
@@ -209,6 +214,7 @@ export default function Grid({
   initialSavedAt?: string;
   onExportXLS: (html: string, fileName: string) => void;
   onSaveStateChange?: (state: RosterSaveState) => void;
+  onAutofillNoticeChange?: (notice: AutofillNotice | null) => void;
   onRestoreDraftHours?: (hours: { start: string; end: string }) => void;
   people?: Person[];
   templates?: TaskTemplate[];
@@ -1483,8 +1489,8 @@ export default function Grid({
           if (!ignoreFixedTimes && meta.hasFixedTimes) {
             if (!meta.regularTimeRows.includes(row)) return null;
           }
+          if (getTotal(meta.id) >= meta.limitPerDay) return null;
           if (!options.ignoreLimits) {
-            if (getTotal(meta.id) >= meta.limitPerDay) return null;
             if (getEmpCount(meta.id, empId) >= meta.maxPerEmp) return null;
           }
           const span = getSpanForMeta(meta, row, endRow, { ignoreWindow: options.ignoreWindow });
@@ -1702,10 +1708,15 @@ export default function Grid({
     if (unmetCoverage.length) {
       alertMessages.push(`Autofill could not fully man: ${unmetCoverage.join(", ")}`);
     }
-    if (alertMessages.length && typeof window !== "undefined") {
-      window.alert(alertMessages.join("\n"));
-    }
-  }, [employees, templates, rosterDate, colorForType, maxRowEx, rowFromTime, people, applyRosterState]);
+    onAutofillNoticeChange?.(
+      alertMessages.length
+        ? {
+            title: "Autofill note",
+            messages: alertMessages,
+          }
+        : null
+    );
+  }, [employees, templates, rosterDate, colorForType, maxRowEx, rowFromTime, people, applyRosterState, onAutofillNoticeChange]);
 
   const saveRoster = useCallback(async (options?: { mode?: "autosave" | "manual"; keepalive?: boolean }) => {
     const mode = options?.mode ?? "manual";
