@@ -2258,7 +2258,7 @@ export default function Grid({
         }}
       >
         <div
-          className={`sticky left-0 z-40 border-r bg-white px-3 py-1.5 text-center ${hasToolbar ? "" : "rounded-tl-[12px]"}`}
+          className={`sticky left-0 z-40 flex items-center justify-center border-r bg-white px-3 py-1.5 text-center ${hasToolbar ? "" : "rounded-tl-[12px]"}`}
           style={{ borderRightColor: gridLineColor, boxShadow: `inset 0 -1px 0 ${gridLineColor}` }}
         >
           <span className="text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-700">Time</span>
@@ -2269,12 +2269,12 @@ export default function Grid({
           return (
             <div
               key={column.id}
-              className={`group relative bg-white px-3 py-1.5 transition ${column.col === lastCol && !hasToolbar ? "rounded-tr-[12px]" : ""}`}
+              className={`group relative flex items-center bg-white px-3 py-1.5 transition ${column.col === lastCol && !hasToolbar ? "rounded-tr-[12px]" : ""}`}
               style={{
                 boxShadow: `${column.col === lastCol ? "" : `inset -1px 0 0 ${gridLineColor}, `}inset 0 -1px 0 ${gridLineColor}`,
               }}
             >
-              <div className="min-w-0 py-0.5 pr-10">
+              <div className="min-w-0 w-full py-0.5 pr-10">
                 <div className="min-w-0">
                   <span className="block max-w-full truncate text-[15px] font-semibold leading-tight tracking-[0.01em] text-slate-900">
                     {column.name}

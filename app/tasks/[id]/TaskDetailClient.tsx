@@ -3,7 +3,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { ChevronRight } from "lucide-react";
+import { ChevronRight, Save, Trash2 } from "lucide-react";
 import { buildDraftStorageKey, formatAutosaveStatusText, getAutosaveStatusClassName, removeDraftRecord } from "@/lib/clientDrafts";
 import {
   TASK_TEMPLATE_REFRESH_EVENT,
@@ -23,6 +23,106 @@ const REGULAR_DAYS = [
 ];
 
 const DURATION_OPTIONS = Array.from({ length: 16 }, (_, idx) => (idx + 1) * 15);
+
+function SectionCard({
+  title,
+  description,
+  children,
+}: {
+  title: string;
+  description?: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <section className="card overflow-hidden">
+      <div className="border-b border-[var(--border)] bg-[var(--surface-subtle)] px-4 py-3 sm:px-5">
+        <h2 className="text-[17px] font-semibold text-slate-900">{title}</h2>
+        {description ? <p className="mt-1 text-[13px] text-slate-600">{description}</p> : null}
+      </div>
+      <div className="p-4 sm:p-5">{children}</div>
+    </section>
+  );
+}
+
+function FieldBlock({
+  label,
+  hint,
+  children,
+  className = "",
+}: {
+  label: string;
+  hint?: string;
+  children: React.ReactNode;
+  className?: string;
+}) {
+  return (
+    <div className={`space-y-1.5 ${className}`}>
+      <label className="block text-[13px] font-semibold text-slate-800">{label}</label>
+      {children}
+      {hint ? <p className="text-[12px] leading-5 text-slate-500">{hint}</p> : null}
+    </div>
+  );
+}
+
+function ToggleRow({
+  id,
+  label,
+  description,
+  checked,
+  onChange,
+}: {
+  id: string;
+  label: string;
+  description: string;
+  checked: boolean;
+  onChange: (checked: boolean) => void;
+}) {
+  return (
+    <div className="grid gap-3 px-4 py-3 md:grid-cols-[minmax(0,1fr)_auto] md:items-center">
+      <div className="min-w-0">
+        <label htmlFor={id} className="block text-[13px] font-semibold text-slate-900">
+          {label}
+        </label>
+        <p className="mt-0.5 text-[12px] leading-5 text-slate-500">{description}</p>
+      </div>
+      <label htmlFor={id} className="relative inline-flex cursor-pointer items-center">
+        <input
+          id={id}
+          type="checkbox"
+          className="sr-only peer"
+          checked={checked}
+          onChange={(event) => onChange(event.target.checked)}
+        />
+        <span className="h-6 w-11 rounded-full bg-slate-200 transition peer-checked:bg-[#675dff]" />
+        <span className="absolute left-[2px] top-[2px] h-5 w-5 rounded-full bg-white shadow-sm transition peer-checked:translate-x-5" />
+      </label>
+    </div>
+  );
+}
+
+function SlotChip({
+  label,
+  removeLabel,
+  onRemove,
+}: {
+  label: string;
+  removeLabel: string;
+  onRemove: () => void;
+}) {
+  return (
+    <span className="inline-flex h-8 items-center gap-2 rounded-full border border-[var(--border)] bg-[var(--surface-subtle)] px-3 text-[12px] font-medium text-slate-700">
+      <span>{label}</span>
+      <button
+        type="button"
+        className="text-[12px] font-semibold text-slate-500 transition hover:text-slate-800"
+        onClick={onRemove}
+        aria-label={removeLabel}
+      >
+        x
+      </button>
+    </span>
+  );
+}
 
 export default function TaskDetailClient({ id, initialTask }: { id: string; initialTask: TaskTemplate | null }) {
   const router = useRouter();
@@ -156,10 +256,14 @@ export default function TaskDetailClient({ id, initialTask }: { id: string; init
   if (!task) {
     return (
       <div className="w-full px-3 py-4">
-        <div className="max-w-xl rounded-lg border border-[var(--border)] bg-white p-5 shadow-sm">
+        <div className="card max-w-xl p-5">
           <h1 className="text-xl font-semibold text-slate-900">Task not found</h1>
           <p className="mt-2 text-sm text-slate-600">That task template does not exist.</p>
-          <div className="mt-4"><Link href="/tasks" className="btn h-9 px-4">Back to tasks</Link></div>
+          <div className="mt-4">
+            <Link href="/tasks" className="btn h-9 px-4">
+              Back to tasks
+            </Link>
+          </div>
         </div>
       </div>
     );
@@ -167,261 +271,403 @@ export default function TaskDetailClient({ id, initialTask }: { id: string; init
 
   const saveStatusText = formatAutosaveStatusText(saveState);
   const saveStatusClassName = getAutosaveStatusClassName(saveState);
+  const allDaysChecked = REGULAR_DAYS.every((day) => (task.regularDays || []).includes(day.key));
 
   return (
-    <div className="w-full py-3 px-3">
-      <div className="space-y-3 flex flex-col items-start w-full">
+    <div className="w-full px-3 py-4">
+      <div className="mx-auto flex w-full max-w-[1160px] flex-col gap-4">
         <div className="flex items-center gap-1 text-[14px]">
-          <Link href="/tasks" className="text-[#675dff] font-semibold hover:underline">Tasks</Link>
-          <ChevronRight className="w-4 h-4 text-slate-700" />
-          <span className="text-slate-600 font-medium">{task.name || "Task"}</span>
+          <Link href="/tasks" className="font-semibold text-[#675dff] hover:underline">
+            Tasks
+          </Link>
+          <ChevronRight className="h-4 w-4 text-slate-700" />
+          <span className="font-medium text-slate-600">{task.name || "Task"}</span>
         </div>
-        <div className="flex items-center justify-between w-full">
-          <div className="flex flex-col leading-tight">
-            <h1 className="text-2xl font-semibold">{task.name || "Task"}</h1>
-            <p className="text-slate-600 text-[14px]">Configure settings for {task.name || "this task"}</p>
-            <p className={`mt-1 text-[12px] font-medium ${saveStatusClassName}`}>{saveStatusText}</p>
+
+        <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
+          <div className="min-w-0 space-y-1">
+            <h1 className="break-words text-[clamp(1.4rem,4vw,2rem)] font-semibold leading-tight text-slate-900">
+              {task.name || "Task"}
+            </h1>
+            <p className="text-sm text-slate-600">Rules, timing, and autofill behavior for this task.</p>
+            <p className={`text-[12px] font-medium ${saveStatusClassName}`}>{saveStatusText}</p>
           </div>
-          <div className="flex items-center gap-2">
-            <button className="btn h-9" style={{ borderRadius: "6px", borderColor: "#f3b7b7", color: "#b91c1c" }} onClick={removeTask}>Delete</button>
+
+          <div className="flex flex-wrap items-center gap-2">
             <button
-              className="btn btn-primary h-9"
-              style={{ borderRadius: "6px", paddingInline: "12px" }}
+              className="inline-flex h-[34px] items-center justify-center gap-2 rounded-[var(--radius-md)] border border-red-300 bg-white px-3 text-[13px] font-medium text-red-700 transition hover:bg-red-600 hover:text-white"
+              onClick={removeTask}
+            >
+              <Trash2 className="h-4 w-4" />
+              Delete
+            </button>
+            <button
+              className="btn btn-primary"
               onClick={() => void saveNow({ mode: "manual" })}
               disabled={saveState.state === "saving"}
             >
-              <span className="text-[14px] font-medium text-white">{saveState.state === "saving" ? "Saving..." : "Save"}</span>
+              <Save className="h-4 w-4" />
+              {saveState.state === "saving" ? "Saving..." : "Save"}
             </button>
           </div>
         </div>
 
-        <div className="bg-white rounded-lg shadow-sm w-full">
-          <div className="py-4 space-y-6 text-[14px]" style={{ color: "#1A1B25" }}>
-            <div className="space-y-1">
-              <label className="block text-sm font-semibold mb-1">Name</label>
-              <input className="input w-full text-[14px]" value={task.name} onChange={(e) => setTask((t) => (t ? { ...t, name: e.target.value } : t))} />
-            </div>
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 max-w-[720px]">
-              <div className="space-y-1">
-                <label className="block text-sm font-semibold">Colour</label>
-                <input type="color" className="h-[36px] w-[120px] p-1 border border-slate-300 rounded-md bg-white" value={task.color || "#ffffff"} onChange={(e) => setTask((t) => (t ? { ...t, color: e.target.value } : t))} />
-              </div>
-              <div className="space-y-1">
-                <label className="block text-sm font-semibold">Length</label>
-                <select className="input w-[180px] text-[14px]" value={Number.isFinite(task.durationMinutes) ? task.durationMinutes : 0} onChange={(e) => setTask((t) => (t ? { ...t, durationMinutes: Number(e.target.value) } : t))}>
-                  <option value={0}>Not set</option>
-                  {DURATION_OPTIONS.map((minutes) => <option key={minutes} value={minutes}>{minutes} minutes</option>)}
-                </select>
-              </div>
-              <div className="space-y-1">
-                <label className="block text-sm font-semibold">Max consecutive time</label>
-                <select className="input w-[180px] text-[14px]" value={Number.isFinite(task.maxConsecutiveMinutes) ? task.maxConsecutiveMinutes : 0} onChange={(e) => setTask((t) => (t ? { ...t, maxConsecutiveMinutes: Number(e.target.value) } : t))}>
-                  <option value={0}>No limit</option>
-                  {DURATION_OPTIONS.map((minutes) => <option key={minutes} value={minutes}>{minutes} minutes</option>)}
-                </select>
-              </div>
-            </div>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-3 max-w-[720px]">
-              <div className="border border-[var(--border)] rounded-md px-3 py-2 space-y-2">
-                <label className="block text-sm font-semibold">Enabled</label>
-                <div className="flex items-center gap-3">
-                  <label className="relative inline-flex items-center cursor-pointer">
-                    <input type="checkbox" className="sr-only peer" checked={task.enabled !== false} onChange={(e) => setTask((t) => (t ? { ...t, enabled: e.target.checked } : t))} />
-                    <span className="w-11 h-6 rounded-full bg-slate-200 transition peer-checked:bg-[#675dff]" />
-                    <span className="absolute left-[2px] top-[2px] w-5 h-5 rounded-full bg-white shadow-sm transition peer-checked:translate-x-5" />
-                  </label>
-                  <span className="text-[12px] text-slate-500">Include in autofill</span>
-                </div>
-              </div>
-              <div className="border border-[var(--border)] rounded-md px-3 py-2 space-y-2">
-                <label className="block text-sm font-semibold">Waiting for</label>
-                <div className="flex items-center gap-3">
-                  <label className="relative inline-flex items-center cursor-pointer">
-                    <input type="checkbox" className="sr-only peer" checked={(task.waitingMinutes || 0) > 0} onChange={(e) => setTask((t) => (t ? { ...t, waitingMinutes: e.target.checked ? 15 : 0 } : t))} />
-                    <span className="w-11 h-6 rounded-full bg-slate-200 transition peer-checked:bg-[#675dff]" />
-                    <span className="absolute left-[2px] top-[2px] w-5 h-5 rounded-full bg-white shadow-sm transition peer-checked:translate-x-5" />
-                  </label>
-                  <span className="text-[12px] text-slate-500">Adds 15 minutes before</span>
-                </div>
-              </div>
-              <div className="border border-[var(--border)] rounded-md px-3 py-2 space-y-2">
-                <label className="block text-sm font-semibold">Packing up</label>
-                <div className="flex items-center gap-3">
-                  <label className="relative inline-flex items-center cursor-pointer">
-                    <input type="checkbox" className="sr-only peer" checked={(task.packingMinutes || 0) > 0} onChange={(e) => setTask((t) => (t ? { ...t, packingMinutes: e.target.checked ? 15 : 0 } : t))} />
-                    <span className="w-11 h-6 rounded-full bg-slate-200 transition peer-checked:bg-[#675dff]" />
-                    <span className="absolute left-[2px] top-[2px] w-5 h-5 rounded-full bg-white shadow-sm transition peer-checked:translate-x-5" />
-                  </label>
-                  <span className="text-[12px] text-slate-500">Adds 15 minutes after</span>
-                </div>
-              </div>
-              <div className="border border-[var(--border)] rounded-md px-3 py-2 space-y-2">
-                <label className="block text-sm font-semibold">Must always be manned</label>
-                <div className="flex items-center gap-3">
-                  <label htmlFor="must-manned" className="relative inline-flex items-center cursor-pointer">
-                    <input id="must-manned" type="checkbox" className="sr-only peer" checked={!!task.mustManned} onChange={(e) => setTask((t) => (t ? { ...t, mustManned: e.target.checked } : t))} />
-                    <span className="w-11 h-6 rounded-full bg-slate-200 transition peer-checked:bg-[#675dff]" />
-                    <span className="absolute left-[2px] top-[2px] w-5 h-5 rounded-full bg-white shadow-sm transition peer-checked:translate-x-5" />
-                  </label>
-                  <span className="text-[12px] text-slate-500">Autofill preset</span>
-                </div>
-              </div>
-              <div className="border border-[var(--border)] rounded-md px-3 py-2 space-y-2">
-                <label className="block text-sm font-semibold">Overwrite other tasks</label>
-                <div className="flex items-center gap-3">
-                  <label htmlFor="overwrite-existing-tasks" className="relative inline-flex items-center cursor-pointer">
-                    <input
-                      id="overwrite-existing-tasks"
-                      type="checkbox"
-                      className="sr-only peer"
-                      checked={!!task.overwriteExistingTasks}
-                      onChange={(e) => setTask((t) => (t ? { ...t, overwriteExistingTasks: e.target.checked } : t))}
-                    />
-                    <span className="w-11 h-6 rounded-full bg-slate-200 transition peer-checked:bg-[#675dff]" />
-                    <span className="absolute left-[2px] top-[2px] w-5 h-5 rounded-full bg-white shadow-sm transition peer-checked:translate-x-5" />
-                  </label>
-                  <span className="text-[12px] text-slate-500">Runs last and replaces conflicting tasks</span>
-                </div>
-              </div>
-              <div className="border border-[var(--border)] rounded-md px-3 py-2 space-y-2">
-                <label className="block text-sm font-semibold">Attended by all</label>
-                <div className="flex items-center gap-3">
-                  <label htmlFor="attended-by-all" className="relative inline-flex items-center cursor-pointer">
-                    <input
-                      id="attended-by-all"
-                      type="checkbox"
-                      className="sr-only peer"
-                      checked={!!task.attendedByAll}
-                      onChange={(e) => setTask((t) => (t ? { ...t, attendedByAll: e.target.checked } : t))}
-                    />
-                    <span className="w-11 h-6 rounded-full bg-slate-200 transition peer-checked:bg-[#675dff]" />
-                    <span className="absolute left-[2px] top-[2px] w-5 h-5 rounded-full bg-white shadow-sm transition peer-checked:translate-x-5" />
-                  </label>
-                  <span className="text-[12px] text-slate-500">Everyone working in that slot gets this task</span>
-                </div>
-              </div>
-            </div>
-            <div className="space-y-4 pt-4 border-t border-[var(--border)]">
-              <div>
-                <label className="block text-sm font-semibold mb-1">Default time slots</label>
-                <div className="flex flex-wrap items-center gap-2 max-w-[520px]">
-                  <input type="time" className="input w-[140px] text-[14px]" value={newTimeSlot} onChange={(e) => setNewTimeSlot(e.target.value)} />
-                  <button className="btn h-8 px-3" type="button" onClick={addTimeSlot}>Add time</button>
-                </div>
-                {(task.regularTimes || []).length > 0 && (
-                  <div className="flex flex-wrap gap-2 mt-2 max-w-[520px]">
-                    {(task.regularTimes || []).map((slot) => (
-                      <span key={slot} className="inline-flex items-center gap-2 rounded-full border border-[var(--border)] px-2 py-1 text-[12px] text-slate-700">
-                        {slot}
-                        <button type="button" className="text-slate-500 hover:text-slate-700" onClick={() => removeTimeSlot(slot)} aria-label={`Remove ${slot}`}>x</button>
-                      </span>
+        <div className="grid gap-4 xl:grid-cols-[minmax(0,1.1fr)_420px]">
+          <SectionCard
+            title="Task details"
+            description="Keep the core task settings together so the roster uses the right colour, duration, and coverage rules."
+          >
+            <div className="space-y-5">
+              <FieldBlock label="Name">
+                <input
+                  className="input h-10 w-full text-[14px]"
+                  value={task.name}
+                  onChange={(event) => setTask((t) => (t ? { ...t, name: event.target.value } : t))}
+                />
+              </FieldBlock>
+
+              <div className="grid gap-4 md:grid-cols-3">
+                <FieldBlock label="Colour">
+                  <input
+                    type="color"
+                    className="h-10 w-full max-w-[160px] rounded-[var(--radius-md)] border border-[var(--border)] bg-white p-1"
+                    value={task.color || "#ffffff"}
+                    onChange={(event) => setTask((t) => (t ? { ...t, color: event.target.value } : t))}
+                  />
+                </FieldBlock>
+
+                <FieldBlock label="Length">
+                  <select
+                    className="input h-10 w-full text-[14px]"
+                    value={Number.isFinite(task.durationMinutes) ? task.durationMinutes : 0}
+                    onChange={(event) =>
+                      setTask((t) => (t ? { ...t, durationMinutes: Number(event.target.value) } : t))
+                    }
+                  >
+                    <option value={0}>Not set</option>
+                    {DURATION_OPTIONS.map((minutes) => (
+                      <option key={minutes} value={minutes}>
+                        {minutes} minutes
+                      </option>
                     ))}
-                  </div>
-                )}
+                  </select>
+                </FieldBlock>
+
+                <FieldBlock label="Max consecutive time" hint="0 means this task can run without a consecutive cap.">
+                  <select
+                    className="input h-10 w-full text-[14px]"
+                    value={Number.isFinite(task.maxConsecutiveMinutes) ? task.maxConsecutiveMinutes : 0}
+                    onChange={(event) =>
+                      setTask((t) =>
+                        t ? { ...t, maxConsecutiveMinutes: Number(event.target.value) } : t
+                      )
+                    }
+                  >
+                    <option value={0}>No limit</option>
+                    {DURATION_OPTIONS.map((minutes) => (
+                      <option key={minutes} value={minutes}>
+                        {minutes} minutes
+                      </option>
+                    ))}
+                  </select>
+                </FieldBlock>
               </div>
-              <div>
-                <label className="block text-sm font-semibold mb-2">Regularity</label>
-                <div className="border border-[var(--border)] rounded-md divide-y divide-[var(--border)] max-w-[520px] overflow-hidden">
-                  <div className="grid grid-cols-[140px,120px,120px] gap-3 bg-[var(--surface-subtle)] px-3 py-2 text-[12px] font-semibold text-slate-700">
-                    <label className="inline-flex items-center gap-2 font-semibold text-slate-700">
-                      <input type="checkbox" className="h-4 w-4" checked={REGULAR_DAYS.every((d) => (task.regularDays || []).includes(d.key))} onChange={(e) => toggleAllDays(e.target.checked)} style={{ accentColor: "rgb(103, 93, 255)" }} />
-                      <span>All days</span>
+            </div>
+          </SectionCard>
+
+          <SectionCard
+            title="Autofill behavior"
+            description="These options control how the task participates when the roster is filled automatically."
+          >
+            <div className="overflow-hidden rounded-[10px] border border-[var(--border)] bg-white">
+              <ToggleRow
+                id="task-enabled"
+                label="Enabled"
+                description="Include this task in autofill."
+                checked={task.enabled !== false}
+                onChange={(checked) => setTask((t) => (t ? { ...t, enabled: checked } : t))}
+              />
+              <div className="border-t border-[var(--border)]" />
+              <ToggleRow
+                id="task-waiting"
+                label="Waiting for"
+                description="Adds 15 minutes before the task starts."
+                checked={(task.waitingMinutes || 0) > 0}
+                onChange={(checked) => setTask((t) => (t ? { ...t, waitingMinutes: checked ? 15 : 0 } : t))}
+              />
+              <div className="border-t border-[var(--border)]" />
+              <ToggleRow
+                id="task-packing"
+                label="Packing up"
+                description="Adds 15 minutes after the task ends."
+                checked={(task.packingMinutes || 0) > 0}
+                onChange={(checked) => setTask((t) => (t ? { ...t, packingMinutes: checked ? 15 : 0 } : t))}
+              />
+              <div className="border-t border-[var(--border)]" />
+              <ToggleRow
+                id="must-manned"
+                label="Must always be manned"
+                description="Treat this as a required coverage task during autofill."
+                checked={!!task.mustManned}
+                onChange={(checked) => setTask((t) => (t ? { ...t, mustManned: checked } : t))}
+              />
+              <div className="border-t border-[var(--border)]" />
+              <ToggleRow
+                id="overwrite-existing-tasks"
+                label="Overwrite other tasks"
+                description="Runs last and replaces conflicting tasks in the same slot."
+                checked={!!task.overwriteExistingTasks}
+                onChange={(checked) => setTask((t) => (t ? { ...t, overwriteExistingTasks: checked } : t))}
+              />
+              <div className="border-t border-[var(--border)]" />
+              <ToggleRow
+                id="attended-by-all"
+                label="Attended by all"
+                description="Everyone working in that slot gets this task."
+                checked={!!task.attendedByAll}
+                onChange={(checked) => setTask((t) => (t ? { ...t, attendedByAll: checked } : t))}
+              />
+            </div>
+          </SectionCard>
+        </div>
+
+        <SectionCard
+          title="Regularity"
+          description="Choose the days this task is allowed on and the hard start and end window for each day."
+        >
+          <div className="overflow-x-auto">
+            <div className="min-w-[560px] overflow-hidden rounded-[10px] border border-[var(--border)]">
+              <div className="grid grid-cols-[minmax(0,1fr)_140px_140px] gap-3 bg-[var(--surface-subtle)] px-4 py-3 text-[12px] font-semibold text-slate-700">
+                <label className="inline-flex items-center gap-2 font-semibold text-slate-700">
+                  <input
+                    type="checkbox"
+                    checked={allDaysChecked}
+                    onChange={(event) => toggleAllDays(event.target.checked)}
+                    style={{ accentColor: "rgb(103, 93, 255)" }}
+                  />
+                  <span>All days</span>
+                </label>
+                <span>From</span>
+                <span>To</span>
+              </div>
+
+              {REGULAR_DAYS.map((day, index) => {
+                const checked = (task.regularDays || []).includes(day.key);
+                const dayWindow = task.regularDayWindows?.[day.key] || {};
+                return (
+                  <div
+                    key={day.key}
+                    className={`grid grid-cols-[minmax(0,1fr)_140px_140px] items-center gap-3 px-4 py-3 ${
+                      index === 0 ? "" : "border-t border-[var(--border)]"
+                    }`}
+                  >
+                    <label className="inline-flex items-center gap-2 text-[14px] text-slate-700">
+                      <input
+                        type="checkbox"
+                        checked={checked}
+                        onChange={() => toggleRegularDay(day.key)}
+                        style={{ accentColor: "rgb(103, 93, 255)" }}
+                      />
+                      <span className={checked ? "font-medium text-slate-800" : "text-slate-500"}>
+                        {day.label}
+                      </span>
                     </label>
-                    <span>From</span>
-                    <span>To</span>
-                  </div>
-                  {REGULAR_DAYS.map((day) => {
-                    const checked = (task.regularDays || []).includes(day.key);
-                    const dayWindow = task.regularDayWindows?.[day.key] || {};
-                    return (
-                      <div key={day.key} className="grid grid-cols-[140px,120px,120px] items-center gap-3 px-3 py-3">
-                        <label className="flex items-center gap-2 text-sm font-normal text-slate-700">
-                          <input type="checkbox" className="h-4 w-4" checked={checked} onChange={() => toggleRegularDay(day.key)} style={{ accentColor: "rgb(103, 93, 255)" }} />
-                          <span>{day.label}</span>
-                        </label>
-                        <input type="time" className="input text-[14px] w-[120px]" value={dayWindow.start || ""} onChange={(e) => updateDayWindow(day.key, "start", e.target.value)} disabled={!checked} aria-label={`${day.label} start time`} />
-                        <input type="time" className="input text-[14px] w-[120px]" value={dayWindow.end || ""} onChange={(e) => updateDayWindow(day.key, "end", e.target.value)} disabled={!checked} aria-label={`${day.label} end time`} />
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-              <div>
-                <label className="block text-sm font-semibold mb-1">Time slots by day</label>
-                <div className="space-y-2 max-w-[720px]">
-                  {REGULAR_DAYS.map((day) => {
-                    const dayTimes = Array.isArray(task.regularTimesByDay?.[day.key]) ? task.regularTimesByDay?.[day.key] || [] : [];
-                    return (
-                      <div key={day.key} className="border border-[var(--border)] rounded-md px-3 py-2">
-                        <div className="flex flex-wrap items-center justify-between gap-2">
-                          <span className="text-sm font-semibold">{day.label}</span>
-                          <div className="flex items-center gap-2">
-                            <input type="time" className="input w-[140px] text-[14px]" value={newDayTimeSlots[day.key] || ""} onChange={(e) => setNewDayTimeSlots((prev) => ({ ...prev, [day.key]: e.target.value }))} />
-                            <button className="btn h-8 px-3" type="button" onClick={() => addDayTimeSlot(day.key)} disabled={!newDayTimeSlots[day.key]}>Add time</button>
-                          </div>
-                        </div>
-                        {dayTimes.length > 0 && (
-                          <div className="flex flex-wrap gap-2 mt-2">
-                            {dayTimes.map((slot) => (
-                              <span key={`${day.key}-${slot}`} className="inline-flex items-center gap-2 rounded-full border border-[var(--border)] px-2 py-1 text-[12px] text-slate-700">
-                                {slot}
-                                <button type="button" className="text-slate-500 hover:text-slate-700" onClick={() => removeDayTimeSlot(day.key, slot)} aria-label={`Remove ${slot} on ${day.label}`}>x</button>
-                              </span>
-                            ))}
-                          </div>
-                        )}
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-              <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 max-w-[980px]">
-                <div>
-                  <label className="block text-sm font-semibold mb-2">Minimum per employee per day</label>
-                  <div className="flex items-center gap-3">
-                    <input type="number" min={0} step={1} className="input w-[120px] text-[14px]" value={Number.isFinite(task.minPerEmployeePerDay) ? task.minPerEmployeePerDay : 0} onChange={(e) => setTask((t) => (t ? { ...t, minPerEmployeePerDay: Math.max(0, Number(e.target.value || 0)) } : t))} />
-                    <span className="text-[12px] text-slate-500">times</span>
-                  </div>
-                </div>
-                <div>
-                  <label className="block text-sm font-semibold mb-2">Maximum per employee per day</label>
-                  <div className="flex items-center gap-3">
-                    <input type="number" min={0} step={1} className="input w-[120px] text-[14px]" value={Number.isFinite(task.maxPerEmployeePerDay) ? task.maxPerEmployeePerDay : 0} onChange={(e) => setTask((t) => (t ? { ...t, maxPerEmployeePerDay: Math.max(0, Number(e.target.value || 0)) } : t))} />
-                    <span className="text-[12px] text-slate-500">times</span>
-                  </div>
-                </div>
-                <div>
-                  <label className="block text-sm font-semibold mb-2">Limit per day</label>
-                  <div className="flex items-center gap-3">
-                    <input type="number" min={0} step={1} className="input w-[120px] text-[14px]" value={Number.isFinite(task.limitPerDay) ? task.limitPerDay : 0} onChange={(e) => setTask((t) => (t ? { ...t, limitPerDay: Math.max(0, Number(e.target.value || 0)) } : t))} />
-                    <span className="text-[12px] text-slate-500">times</span>
-                  </div>
-                </div>
-                <div>
-                  <label className="block text-sm font-semibold mb-2">Max overlapping at once</label>
-                  <div className="flex items-center gap-3">
                     <input
-                      type="number"
-                      min={0}
-                      step={1}
-                      className="input w-[120px] text-[14px]"
-                      value={Number.isFinite(task.maxConcurrentPerTimeslot) ? task.maxConcurrentPerTimeslot : 0}
-                      onChange={(e) =>
-                        setTask((t) =>
-                          t ? { ...t, maxConcurrentPerTimeslot: Math.max(0, Number(e.target.value || 0)) } : t
-                        )
-                      }
+                      type="time"
+                      className="input time-input-no-icon h-9 w-[140px] px-3 text-[13px]"
+                      value={dayWindow.start || ""}
+                      onChange={(event) => updateDayWindow(day.key, "start", event.target.value)}
+                      disabled={!checked}
+                      aria-label={`${day.label} start time`}
                     />
-                    <span className="text-[12px] text-slate-500">0 = no limit</span>
+                    <input
+                      type="time"
+                      className="input time-input-no-icon h-9 w-[140px] px-3 text-[13px]"
+                      value={dayWindow.end || ""}
+                      onChange={(event) => updateDayWindow(day.key, "end", event.target.value)}
+                      disabled={!checked}
+                      aria-label={`${day.label} end time`}
+                    />
                   </div>
-                  <p className="mt-2 max-w-[220px] text-[12px] text-slate-500">
-                    0 = no hard cap. Autofill still tries to stagger breaks first, then condenses only if it has to.
-                  </p>
-                </div>
-              </div>
+                );
+              })}
             </div>
           </div>
-        </div>
+        </SectionCard>
+
+        <SectionCard
+          title="Time slots"
+          description="Use default slots when the task repeats across days, then add day-specific slots only where a day needs an exception."
+        >
+          <div className="grid gap-5 xl:grid-cols-[320px_minmax(0,1fr)]">
+            <div className="space-y-4">
+              <FieldBlock
+                label="Default time slots"
+                hint="These slots are available on any selected day unless a day-specific list is used instead."
+              >
+                <div className="flex flex-wrap items-center gap-2">
+                  <input
+                    type="time"
+                    className="input time-input-no-icon h-9 w-[150px] px-3 text-[13px]"
+                    value={newTimeSlot}
+                    onChange={(event) => setNewTimeSlot(event.target.value)}
+                  />
+                  <button className="btn h-9 px-3" type="button" onClick={addTimeSlot}>
+                    Add time
+                  </button>
+                </div>
+              </FieldBlock>
+
+              {(task.regularTimes || []).length > 0 ? (
+                <div className="flex flex-wrap gap-2">
+                  {(task.regularTimes || []).map((slot) => (
+                    <SlotChip
+                      key={slot}
+                      label={slot}
+                      removeLabel={`Remove ${slot}`}
+                      onRemove={() => removeTimeSlot(slot)}
+                    />
+                  ))}
+                </div>
+              ) : (
+                <p className="text-[12px] text-slate-500">No default slots yet.</p>
+              )}
+            </div>
+
+            <div className="overflow-hidden rounded-[10px] border border-[var(--border)] bg-white">
+              {REGULAR_DAYS.map((day, index) => {
+                const dayTimes = Array.isArray(task.regularTimesByDay?.[day.key]) ? task.regularTimesByDay?.[day.key] || [] : [];
+                return (
+                  <div
+                    key={day.key}
+                    className={`grid gap-3 px-4 py-3 md:grid-cols-[130px_minmax(0,1fr)] ${
+                      index === 0 ? "" : "border-t border-[var(--border)]"
+                    }`}
+                  >
+                    <div className="pt-1 text-[14px] font-semibold text-slate-800">{day.label}</div>
+                    <div className="space-y-2">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <input
+                          type="time"
+                          className="input time-input-no-icon h-9 w-[150px] px-3 text-[13px]"
+                          value={newDayTimeSlots[day.key] || ""}
+                          onChange={(event) =>
+                            setNewDayTimeSlots((prev) => ({ ...prev, [day.key]: event.target.value }))
+                          }
+                        />
+                        <button
+                          className="btn h-9 px-3"
+                          type="button"
+                          onClick={() => addDayTimeSlot(day.key)}
+                          disabled={!newDayTimeSlots[day.key]}
+                        >
+                          Add time
+                        </button>
+                      </div>
+
+                      {dayTimes.length > 0 ? (
+                        <div className="flex flex-wrap gap-2">
+                          {dayTimes.map((slot) => (
+                            <SlotChip
+                              key={`${day.key}-${slot}`}
+                              label={slot}
+                              removeLabel={`Remove ${slot} on ${day.label}`}
+                              onRemove={() => removeDayTimeSlot(day.key, slot)}
+                            />
+                          ))}
+                        </div>
+                      ) : (
+                        <p className="text-[12px] text-slate-500">No day-specific slots.</p>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        </SectionCard>
+
+        <SectionCard
+          title="Limits"
+          description="Set hard caps when this task should appear a fixed number of times across the day or per employee."
+        >
+          <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+            <FieldBlock label="Minimum per employee per day" hint="How many times each employee should get this task.">
+              <div className="flex items-center gap-3">
+                <input
+                  type="number"
+                  min={0}
+                  step={1}
+                  className="input h-10 w-[120px] text-[14px]"
+                  value={Number.isFinite(task.minPerEmployeePerDay) ? task.minPerEmployeePerDay : 0}
+                  onChange={(event) =>
+                    setTask((t) =>
+                      t ? { ...t, minPerEmployeePerDay: Math.max(0, Number(event.target.value || 0)) } : t
+                    )
+                  }
+                />
+                <span className="text-[12px] text-slate-500">times</span>
+              </div>
+            </FieldBlock>
+
+            <FieldBlock label="Maximum per employee per day" hint="Use 0 when you do not want a per-person cap.">
+              <div className="flex items-center gap-3">
+                <input
+                  type="number"
+                  min={0}
+                  step={1}
+                  className="input h-10 w-[120px] text-[14px]"
+                  value={Number.isFinite(task.maxPerEmployeePerDay) ? task.maxPerEmployeePerDay : 0}
+                  onChange={(event) =>
+                    setTask((t) =>
+                      t ? { ...t, maxPerEmployeePerDay: Math.max(0, Number(event.target.value || 0)) } : t
+                    )
+                  }
+                />
+                <span className="text-[12px] text-slate-500">times</span>
+              </div>
+            </FieldBlock>
+
+            <FieldBlock label="Limit per day" hint="This is the hard maximum number of times the task can appear.">
+              <div className="flex items-center gap-3">
+                <input
+                  type="number"
+                  min={0}
+                  step={1}
+                  className="input h-10 w-[120px] text-[14px]"
+                  value={Number.isFinite(task.limitPerDay) ? task.limitPerDay : 0}
+                  onChange={(event) =>
+                    setTask((t) => (t ? { ...t, limitPerDay: Math.max(0, Number(event.target.value || 0)) } : t))
+                  }
+                />
+                <span className="text-[12px] text-slate-500">times</span>
+              </div>
+            </FieldBlock>
+
+            <FieldBlock
+              label="Max overlapping at once"
+              hint="0 means there is no hard overlap cap, but autofill still spreads tasks first."
+            >
+              <div className="flex items-center gap-3">
+                <input
+                  type="number"
+                  min={0}
+                  step={1}
+                  className="input h-10 w-[120px] text-[14px]"
+                  value={Number.isFinite(task.maxConcurrentPerTimeslot) ? task.maxConcurrentPerTimeslot : 0}
+                  onChange={(event) =>
+                    setTask((t) =>
+                      t
+                        ? { ...t, maxConcurrentPerTimeslot: Math.max(0, Number(event.target.value || 0)) }
+                        : t
+                    )
+                  }
+                />
+                <span className="text-[12px] text-slate-500">times</span>
+              </div>
+            </FieldBlock>
+          </div>
+        </SectionCard>
       </div>
     </div>
   );
