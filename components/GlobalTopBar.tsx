@@ -50,8 +50,8 @@ export default function GlobalTopBar({ userName }: { userName?: string | null })
   }
 
   return (
-    <header className="sticky top-0 z-50 h-14 bg-[var(--accent)] px-4">
-      <div className="relative flex h-full items-center justify-center">
+    <header className="sticky inset-x-0 top-0 z-50 h-14 w-full bg-[var(--accent)] px-4">
+      <div className="relative mx-auto flex h-full w-full items-center justify-center">
         <button
           type="button"
           className="absolute left-0 flex h-10 w-10 items-center justify-center text-white transition hover:text-white/85 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/35"

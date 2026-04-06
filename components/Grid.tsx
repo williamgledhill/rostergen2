@@ -1,6 +1,6 @@
 "use client";
 import React, { useMemo, useState, useRef, useEffect, useCallback } from "react";
-import { X, Trash2, Search, Settings2, Plus } from "lucide-react";
+import { X, Trash2, Search, Settings2 } from "lucide-react";
 import Block from "@/components/Block";
 import Modal from "@/components/Modal";
 import { AutosaveState, readDraftRecord, writeDraftRecord } from "@/lib/clientDrafts";
@@ -47,8 +47,6 @@ const DEFAULT_START_MIN = 9 * 60 + 30;
 const DEFAULT_END_MIN = 16 * 60;
 const DAY_KEYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 const MAX_HISTORY_ENTRIES = 100;
-const EXTRA_ADD_PERSON_COLUMNS = 2;
-
 function parseTimeToMinutes(value?: string) {
   if (!value) return null;
   const [hStr, mStr] = value.split(":");
@@ -210,7 +208,6 @@ export default function Grid({
   const [employees, setEmployees] = useState<Employee[]>(initialEmployees);
   const [tasks, setTasks] = useState<GridTask[]>(initialTasks);
   const [selected, setSelected] = useState<string | number | undefined>();
-  const [hoveredCol, setHoveredCol] = useState<number | null>(null);
   const [employeeSettingsId, setEmployeeSettingsId] = useState<string | number | null>(null);
   const [employeeSettingsDraft, setEmployeeSettingsDraft] = useState<{ start: string; end: string }>({ start: "", end: "" });
   const [employeeSettingsDirty, setEmployeeSettingsDirty] = useState(false);
@@ -380,7 +377,6 @@ export default function Grid({
     historyFutureRef.current = [];
     setSelected(undefined);
     setEmployeeSettingsId(null);
-    setHoveredCol(null);
     if (autosaveTimerRef.current) {
       clearTimeout(autosaveTimerRef.current);
       autosaveTimerRef.current = null;
@@ -560,17 +556,6 @@ export default function Grid({
     () => employees.map((e, idx) => ({ id: e.id, name: e.name, startTime: e.startTime, endTime: e.endTime, col: idx + 2 })),
     [employees]
   );
-  const addPersonCols = useMemo(
-    () => Array.from({ length: EXTRA_ADD_PERSON_COLUMNS }, (_, idx) => ({ id: `add-person-${idx}`, col: employees.length + idx + 2 })),
-    [employees.length]
-  );
-  const displayCols = useMemo(
-    () => [
-      ...employeeCols.map((employee) => ({ kind: "employee" as const, ...employee })),
-      ...addPersonCols.map((col) => ({ kind: "placeholder" as const, ...col })),
-    ],
-    [employeeCols, addPersonCols]
-  );
   const peopleById = useMemo(() => new Map(people.map((p) => [String(p.id), p])), [people]);
   const peopleByName = useMemo(
     () => new Map(people.map((p) => [p.name.toLowerCase(), p])),
@@ -595,6 +580,7 @@ export default function Grid({
     () => new Set(employees.map((employee) => employee.name.trim().toLowerCase())),
     [employees]
   );
+  const displayCols = employeeCols;
 
   function resolveEmployeeHours(emp: Employee) {
     const overrideStart = parseTimeToMinutes(emp.startTime);
@@ -1423,8 +1409,7 @@ export default function Grid({
         }
         const pickedStrict = pickTemplate(row, empId, col, endRow, { ignoreLimits: false, ignoreWindow: false });
         const pickedRelaxed = pickTemplate(row, empId, col, endRow, { ignoreLimits: true, ignoreWindow: false });
-        const pickedIgnoreWindow = pickTemplate(row, empId, col, endRow, { ignoreLimits: true, ignoreWindow: true });
-        const picked = pickedStrict || pickedRelaxed || pickedIgnoreWindow;
+        const picked = pickedStrict || pickedRelaxed;
         if (!picked) {
           row = endRow;
           break;
@@ -1668,10 +1653,10 @@ export default function Grid({
   }, [selected, applyRosterState]);
 
   useEffect(() => {
-    const handler = () => { setAddOpen(true); };
+    const handler = () => { openAddEmployeePicker(); };
     window.addEventListener("roster:add-employee", handler);
     return () => window.removeEventListener("roster:add-employee", handler);
-  }, []);
+  }, [openAddEmployeePicker]);
 
   useEffect(() => {
     if (!addOpen) return;
@@ -2007,22 +1992,6 @@ export default function Grid({
           <span className="text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-700">Time</span>
         </div>
         {displayCols.map((column) => {
-          if (column.kind === "placeholder") {
-            return (
-              <div
-                key={column.id}
-                className={`relative bg-white px-3 py-1.5 ${column.col === lastCol && !hasToolbar ? "rounded-tr-[12px]" : ""}`}
-                style={{
-                  boxShadow: `${column.col === lastCol ? "" : `inset -1px 0 0 ${gridLineColor}, `}inset 0 -1px 0 ${gridLineColor}`,
-                }}
-                onMouseEnter={() => setHoveredCol(column.col)}
-                onMouseLeave={() => setHoveredCol((current) => (current === column.col ? null : current))}
-              >
-                <span className="sr-only">Add person column</span>
-              </div>
-            );
-          }
-
           const resolved = resolveEmployeeHours(column);
           const hoursLabel = resolved.isOff ? "Off" : `${resolved.start} - ${resolved.end}`;
           return (
@@ -2166,43 +2135,6 @@ export default function Grid({
             >
               <span className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 text-lg font-extrabold opacity-20">+</span>
             </div>
-          );
-        })}
-
-        {addPersonCols.map((column) => {
-          const isHovered = hoveredCol === column.col;
-          const slotBoxShadow = [column.col !== lastCol ? `inset -1px 0 0 ${gridLineColor}` : ""]
-            .filter(Boolean)
-            .join(", ");
-          return (
-            <button
-              key={`add-person-column-${column.id}`}
-              type="button"
-              className="relative flex items-center justify-center bg-white transition hover:bg-[#fbfcfe]"
-              style={{
-                gridColumn: String(column.col),
-                gridRow: `${MIN_ROW} / ${maxRowEx}`,
-                boxShadow: slotBoxShadow,
-              }}
-              onMouseEnter={() => setHoveredCol(column.col)}
-              onMouseLeave={() => setHoveredCol((current) => (current === column.col ? null : current))}
-              onClick={(event) => {
-                event.stopPropagation();
-                openAddEmployeePicker();
-              }}
-              aria-label="Add person"
-            >
-              <span
-                className={`pointer-events-none inline-flex items-center gap-2 rounded-full border px-3.5 py-2 text-[13px] font-medium transition ${
-                  isHovered
-                    ? "border-slate-300 bg-white text-slate-700 opacity-100 shadow-[0_1px_2px_rgba(15,23,42,0.05)]"
-                    : "border-transparent bg-transparent text-slate-400 opacity-0"
-                }`}
-              >
-                <Plus className="h-4 w-4" />
-                Add person
-              </span>
-            </button>
           );
         })}
 
