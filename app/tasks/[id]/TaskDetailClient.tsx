@@ -628,7 +628,7 @@ export default function TaskDetailClient({ id, initialTask }: { id: string; init
               </div>
             </FieldBlock>
 
-            <FieldBlock label="Limit per day" hint="This is the hard maximum number of times the task can appear.">
+            <FieldBlock label="Limit per day" hint="0 means there is no hard maximum number of times the task can appear.">
               <div className="flex items-center gap-3">
                 <input
                   type="number"

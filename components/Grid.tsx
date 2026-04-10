@@ -18,6 +18,7 @@ import {
   getFeasiblePlacementRows,
   getAutofillTemplatePriority,
   getPreferredConcurrentLimit,
+  resolveAutofillTimeSlots,
 } from "@/lib/rosterAutofill";
 
 type Employee = { id: string | number; name: string; startTime?: string; endTime?: string };
@@ -1112,13 +1113,12 @@ export default function Grid({
         template.regularTimesByDay && typeof template.regularTimesByDay === "object" && !Array.isArray(template.regularTimesByDay)
           ? template.regularTimesByDay
           : {};
-      const dayTimes = Array.isArray(regularTimesByDay?.[dayKey])
-        ? regularTimesByDay[dayKey]
-        : [];
-      const regularTimes = dayTimes.length > 0
-        ? dayTimes
-        : (Array.isArray(template.regularTimes) ? template.regularTimes : []);
-      const regularTimeRows = regularTimes
+      const timeSlotConfig = resolveAutofillTimeSlots({
+        dayKey,
+        regularTimes: Array.isArray(template.regularTimes) ? template.regularTimes : [],
+        regularTimesByDay,
+      });
+      const regularTimeRows = timeSlotConfig.regularTimes
         .map((t) => {
           const mainRow = rowFromTime(t, "floor");
           if (mainRow === null) return null;
@@ -1134,7 +1134,7 @@ export default function Grid({
         packingMinutes,
         window,
         regularTimeRows: Array.from(new Set(regularTimeRows)).sort((a, b) => a - b),
-        hasFixedTimes: regularTimes.length > 0,
+        hasFixedTimes: timeSlotConfig.hasAnyFixedTimes,
         limitPerDay,
         maxPerEmp,
         minPerEmp,
@@ -1150,6 +1150,7 @@ export default function Grid({
     const getCandidateRowsForMeta = (meta: TemplateMeta) => {
       if (!meta.window) return [];
       if (meta.regularTimeRows.length > 0) return meta.regularTimeRows;
+      if (meta.hasFixedTimes) return [];
 
       const rows: number[] = [];
       for (let row = meta.window.startRow; row + meta.span <= meta.window.endRow; row += 1) {
@@ -1364,7 +1365,7 @@ export default function Grid({
           .slice(metaIndex + 1)
           .filter((candidate) => !candidate.mustManned && candidate.minPerEmp > 0);
         const requiredRows =
-          meta.regularTimeRows.length > 0
+          meta.hasFixedTimes
             ? meta.regularTimeRows
             : Array.from(
                 { length: Math.max(0, window.endRow - window.startRow) },
@@ -1442,7 +1443,7 @@ export default function Grid({
       }
 
       let desiredCount = 1;
-      if (meta.regularTimeRows.length > 0 || meta.mustManned) {
+      if (meta.hasFixedTimes || meta.mustManned) {
         desiredCount = candidateRows.length;
       } else if (Number.isFinite(meta.template.limitPerDay) && (meta.template.limitPerDay ?? 0) > 0) {
         desiredCount = meta.template.limitPerDay as number;
@@ -1589,7 +1590,7 @@ export default function Grid({
 
     const getDesiredPlacements = (meta: TemplateMeta, candidateRows: number[]) => {
       let desiredCount = 1;
-      if (meta.regularTimeRows.length > 0 || meta.mustManned) {
+      if (meta.hasFixedTimes || meta.mustManned) {
         desiredCount = candidateRows.length;
       } else if (Number.isFinite(meta.template.limitPerDay) && (meta.template.limitPerDay ?? 0) > 0) {
         desiredCount = meta.template.limitPerDay as number;
@@ -1702,7 +1703,7 @@ export default function Grid({
       .filter((meta) => meta.mustManned && meta.window)
       .flatMap((meta) => {
         const window = meta.window!;
-        if (meta.regularTimeRows.length > 0) {
+        if (meta.hasFixedTimes) {
           return meta.regularTimeRows
             .filter((row) => !generated.some((task) => task.type === meta.id && task.startRow === row))
             .map((row) => {

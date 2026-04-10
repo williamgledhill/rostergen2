@@ -5,6 +5,7 @@ import {
   getFeasiblePlacementRows,
   getAutofillTemplatePriority,
   getPreferredConcurrentLimit,
+  resolveAutofillTimeSlots,
 } from "../lib/rosterAutofill";
 
 describe("roster autofill preferences", () => {
@@ -47,6 +48,37 @@ describe("roster autofill preferences", () => {
   it("keeps stricter configured limits intact", () => {
     expect(getPreferredConcurrentLimit(1, { preferSolo: true })).toBe(1);
     expect(getPreferredConcurrentLimit(1)).toBe(1);
+  });
+
+  it("treats day-specific slots on other days as fixed-time scheduling", () => {
+    expect(
+      resolveAutofillTimeSlots({
+        dayKey: "Thu",
+        regularTimesByDay: {
+          Mon: ["11:00"],
+          Tue: ["11:00"],
+          Fri: ["11:00"],
+        },
+      })
+    ).toEqual({
+      regularTimes: [],
+      hasAnyFixedTimes: true,
+    });
+  });
+
+  it("falls back to default slots when a day has no specific override", () => {
+    expect(
+      resolveAutofillTimeSlots({
+        dayKey: "Thu",
+        regularTimes: ["10:30"],
+        regularTimesByDay: {
+          Fri: ["11:00"],
+        },
+      })
+    ).toEqual({
+      regularTimes: ["10:30"],
+      hasAnyFixedTimes: true,
+    });
   });
 
   it("identifies when a required coverage block would remove the last lunch slot", () => {

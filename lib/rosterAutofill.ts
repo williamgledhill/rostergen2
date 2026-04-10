@@ -23,6 +23,33 @@ export function getPreferredConcurrentLimit(
   return configuredLimit;
 }
 
+export function resolveAutofillTimeSlots(input: {
+  dayKey: string;
+  regularTimes?: string[];
+  regularTimesByDay?: Record<string, string[]> | null;
+}) {
+  const defaultTimes = Array.isArray(input.regularTimes)
+    ? input.regularTimes.filter((time): time is string => typeof time === "string")
+    : [];
+  const regularTimesByDay =
+    input.regularTimesByDay &&
+    typeof input.regularTimesByDay === "object" &&
+    !Array.isArray(input.regularTimesByDay)
+      ? input.regularTimesByDay
+      : {};
+  const dayTimes = Array.isArray(regularTimesByDay[input.dayKey])
+    ? regularTimesByDay[input.dayKey].filter((time): time is string => typeof time === "string")
+    : [];
+  const hasAnyFixedTimes =
+    defaultTimes.length > 0 ||
+    Object.values(regularTimesByDay).some((times) => Array.isArray(times) && times.length > 0);
+
+  return {
+    regularTimes: dayTimes.length > 0 ? dayTimes : defaultTimes,
+    hasAnyFixedTimes,
+  };
+}
+
 export type AutofillPlacementWindow = {
   startRow: number;
   endRow: number;
