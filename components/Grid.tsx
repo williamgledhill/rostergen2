@@ -1,6 +1,6 @@
 "use client";
 import React, { useMemo, useState, useRef, useEffect, useCallback } from "react";
-import { X, Trash2, Search, Settings2 } from "lucide-react";
+import { X, Trash2, Search, Settings2, Upload, CalendarDays, Clock3, Users } from "lucide-react";
 import Block from "@/components/Block";
 import Modal from "@/components/Modal";
 import { AutosaveState, readDraftRecord, writeDraftRecord } from "@/lib/clientDrafts";
@@ -20,7 +20,7 @@ import {
   getPreferredConcurrentLimit,
   resolveAutofillTimeSlots,
 } from "@/lib/rosterAutofill";
-import { parseSchoolTourWorkbook } from "@/lib/schoolTourImports";
+import { parseSchoolTourWorkbook, type ImportedSchoolTour } from "@/lib/schoolTourImports";
 
 type Employee = { id: string | number; name: string; startTime?: string; endTime?: string };
 type GridTask = {
@@ -37,7 +37,13 @@ type GridTask = {
   locked?: boolean;
   isLocked?: boolean;
   readOnly?: boolean;
-  schoolTourImport?: boolean;
+};
+type SchoolTourEntry = {
+  id: string;
+  rosterDateId: string;
+  startTime: string;
+  schoolName: string;
+  studentCount: number;
 };
 type HistorySnapshot = {
   employees: Employee[];
@@ -47,6 +53,7 @@ type HistorySnapshot = {
 type RosterDraftValue = {
   employees: Employee[];
   tasks: GridTask[];
+  schoolTours?: SchoolTourEntry[];
   hoursStart?: string;
   hoursEnd?: string;
 };
@@ -62,6 +69,7 @@ const DEFAULT_START_MIN = 9 * 60 + 30;
 const DEFAULT_END_MIN = 16 * 60;
 const DAY_KEYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 const MAX_HISTORY_ENTRIES = 100;
+const SCHOOL_TOUR_RECORD_TYPE = "__school-tour-import";
 function parseTimeToMinutes(value?: string) {
   if (!value) return null;
   const [hStr, mStr] = value.split(":");
@@ -81,6 +89,10 @@ function cloneEmployees(input: Employee[]) {
 
 function cloneTasks(input: GridTask[]) {
   return input.map((task) => ({ ...task }));
+}
+
+function cloneSchoolTours(input: SchoolTourEntry[]) {
+  return input.map((tour) => ({ ...tour }));
 }
 
 function areEmployeesEqual(a: Employee[], b: Employee[]) {
@@ -122,6 +134,22 @@ function areTasksEqual(a: GridTask[], b: GridTask[]) {
   return true;
 }
 
+function areSchoolToursEqual(a: SchoolTourEntry[], b: SchoolTourEntry[]) {
+  if (a.length !== b.length) return false;
+  for (let i = 0; i < a.length; i += 1) {
+    if (
+      a[i].id !== b[i].id ||
+      a[i].rosterDateId !== b[i].rosterDateId ||
+      a[i].startTime !== b[i].startTime ||
+      a[i].schoolName !== b[i].schoolName ||
+      a[i].studentCount !== b[i].studentCount
+    ) {
+      return false;
+    }
+  }
+  return true;
+}
+
 function formatMinutesToTime(totalMinutes: number) {
   const h = Math.floor(totalMinutes / 60);
   const m = totalMinutes % 60;
@@ -143,21 +171,69 @@ function isEditableTarget(target: EventTarget | null) {
   return editable.getAttribute("role") === "textbox";
 }
 
-function isSchoolTourImportTask(task: Pick<GridTask, "type" | "label" | "schoolTourImport">) {
-  if (task.schoolTourImport === true) return true;
-  if (String(task.type).toLowerCase() !== "tour") return false;
-  const label = String(task.label || "").trim();
-  if (!label || label === "Public Tour" || label === "School Program" || label === "School Tour") return false;
-  return /\(\d+\)$/.test(label);
+function encodeSchoolToursAsTasks(schoolTours: SchoolTourEntry[]) {
+  return schoolTours.map((tour, index) => ({
+    id: tour.id || `school-tour-${index + 1}`,
+    type: SCHOOL_TOUR_RECORD_TYPE,
+    label: tour.schoolName,
+    col: 0,
+    startRow: 0,
+    span: 0,
+    color: null,
+    waitingMinutes: 0,
+    packingMinutes: 0,
+    employeeId: null,
+    locked: false,
+    isLocked: false,
+    readOnly: true,
+    rosterDateId: tour.rosterDateId,
+    startTime: tour.startTime,
+    schoolName: tour.schoolName,
+    studentCount: tour.studentCount,
+  }));
+}
+
+function splitGridTasksAndSchoolTours(input: any[]) {
+  const gridTasks: GridTask[] = [];
+  const schoolTours: SchoolTourEntry[] = [];
+
+  input.forEach((task, index) => {
+    if (String(task?.type) === SCHOOL_TOUR_RECORD_TYPE) {
+      const schoolName = String(task?.schoolName ?? task?.label ?? "").trim();
+      const startTime = String(task?.startTime ?? "").trim();
+      const rosterDateId = String(task?.rosterDateId ?? "").trim();
+      const studentCount = Number(task?.studentCount);
+      if (schoolName && startTime && rosterDateId && Number.isFinite(studentCount)) {
+        schoolTours.push({
+          id: String(task?.id ?? `school-tour-${index + 1}`),
+          rosterDateId,
+          startTime,
+          schoolName,
+          studentCount: Math.max(0, Math.round(studentCount)),
+        });
+      }
+      return;
+    }
+    gridTasks.push(task as GridTask);
+  });
+
+  schoolTours.sort((a, b) => {
+    if (a.startTime !== b.startTime) return a.startTime.localeCompare(b.startTime);
+    return a.schoolName.localeCompare(b.schoolName);
+  });
+
+  return { gridTasks, schoolTours };
 }
 
 function buildRosterSaveSignature(
   employeeList: Employee[],
   taskList: GridTask[],
+  schoolTours: SchoolTourEntry[],
   hoursStart?: string,
   hoursEnd?: string,
   rosterDateId?: string
 ) {
+  const persistedTasks = [...taskList, ...encodeSchoolToursAsTasks(schoolTours)];
   return JSON.stringify({
     rosterDateId,
     hoursStart: hoursStart || "",
@@ -168,7 +244,7 @@ function buildRosterSaveSignature(
       startTime: emp.startTime || "",
       endTime: emp.endTime || "",
     })),
-    tasks: taskList.map((task) => ({
+    tasks: persistedTasks.map((task) => ({
       id: task.id,
       type: task.type,
       label: task.label,
@@ -230,8 +306,13 @@ export default function Grid({
   people?: Person[];
   templates?: TaskTemplate[];
 }) {
+  const initialSplitRecords = useMemo(
+    () => splitGridTasksAndSchoolTours(initialTasks),
+    [initialTasks]
+  );
   const [employees, setEmployees] = useState<Employee[]>(initialEmployees);
-  const [tasks, setTasks] = useState<GridTask[]>(initialTasks);
+  const [tasks, setTasks] = useState<GridTask[]>(initialSplitRecords.gridTasks);
+  const [schoolTours, setSchoolTours] = useState<SchoolTourEntry[]>(initialSplitRecords.schoolTours);
   const [selected, setSelected] = useState<string | number | undefined>();
   const [employeeSettingsId, setEmployeeSettingsId] = useState<string | number | null>(null);
   const [employeeSettingsDraft, setEmployeeSettingsDraft] = useState<{ start: string; end: string }>({ start: "", end: "" });
@@ -250,7 +331,8 @@ export default function Grid({
   const prevStartRef = useRef<number | null>(null);
   const prevMaxRef = useRef<number | null>(null);
   const employeesRef = useRef<Employee[]>(initialEmployees);
-  const tasksRef = useRef<GridTask[]>(initialTasks);
+  const tasksRef = useRef<GridTask[]>(initialSplitRecords.gridTasks);
+  const schoolToursRef = useRef<SchoolTourEntry[]>(initialSplitRecords.schoolTours);
   const hoursRef = useRef<{ start?: string; end?: string }>({ start: hoursStart, end: hoursEnd });
   const historyPastRef = useRef<HistorySnapshot[]>([]);
   const historyFutureRef = useRef<HistorySnapshot[]>([]);
@@ -262,7 +344,14 @@ export default function Grid({
   const suspendDraftEffectsRef = useRef(true);
   const lastSavedAtRef = useRef(initialSavedAt);
   const lastSavedSignatureRef = useRef(
-    buildRosterSaveSignature(initialEmployees, initialTasks, hoursStart, hoursEnd, rosterDateId)
+    buildRosterSaveSignature(
+      initialEmployees,
+      initialSplitRecords.gridTasks,
+      initialSplitRecords.schoolTours,
+      hoursStart,
+      hoursEnd,
+      rosterDateId
+    )
   );
   const draftStorageKey = useMemo(() => buildEditorDraftStorageKey(rosterDateId), [rosterDateId]);
 
@@ -367,13 +456,15 @@ export default function Grid({
     suspendDraftEffectsRef.current = true;
     const serverDraftValue: RosterDraftValue = {
       employees: cloneEmployees(initialEmployees),
-      tasks: cloneTasks(initialTasks),
+      tasks: cloneTasks(initialSplitRecords.gridTasks),
+      schoolTours: cloneSchoolTours(initialSplitRecords.schoolTours),
       hoursStart,
       hoursEnd,
     };
     const serverSignature = buildRosterSaveSignature(
       serverDraftValue.employees,
       serverDraftValue.tasks,
+      serverDraftValue.schoolTours ?? [],
       serverDraftValue.hoursStart,
       serverDraftValue.hoursEnd,
       rosterDateId
@@ -383,6 +474,7 @@ export default function Grid({
     const persistedSignature = buildRosterSaveSignature(
       persistedValue.employees,
       persistedValue.tasks,
+      persistedValue.schoolTours ?? [],
       persistedValue.hoursStart,
       persistedValue.hoursEnd,
       rosterDateId
@@ -398,6 +490,9 @@ export default function Grid({
       cloneEmployees(nextDraftValue.employees),
       cloneTasks(nextDraftValue.tasks)
     );
+    const nextSchoolTours = cloneSchoolTours(nextDraftValue.schoolTours ?? []);
+    schoolToursRef.current = nextSchoolTours;
+    setSchoolTours(nextSchoolTours);
     historyPastRef.current = [];
     historyFutureRef.current = [];
     setSelected(undefined);
@@ -438,6 +533,8 @@ export default function Grid({
     initialEmployees,
     initialSavedAt,
     initialTasks,
+    initialSplitRecords.gridTasks,
+    initialSplitRecords.schoolTours,
     onRestoreDraftHours,
     onSaveStateChange,
     rosterDateId,
@@ -453,6 +550,10 @@ export default function Grid({
   }, [tasks]);
 
   useEffect(() => {
+    schoolToursRef.current = schoolTours;
+  }, [schoolTours]);
+
+  useEffect(() => {
     hoursRef.current = { start: hoursStart, end: hoursEnd };
   }, [hoursStart, hoursEnd]);
 
@@ -462,13 +563,14 @@ export default function Grid({
       value: {
         employees: cloneEmployees(employees),
         tasks: cloneTasks(tasks),
+        schoolTours: cloneSchoolTours(schoolTours),
         hoursStart,
         hoursEnd,
       },
       lastSavedSignature: lastSavedSignatureRef.current,
       savedAt: lastSavedAtRef.current,
     });
-  }, [draftStorageKey, employees, hoursEnd, hoursStart, tasks]);
+  }, [draftStorageKey, employees, hoursEnd, hoursStart, schoolTours, tasks]);
 
   useEffect(() => {
     if (selected === undefined) return;
@@ -747,6 +849,17 @@ export default function Grid({
     setSelected(undefined);
   }, [people, rosterDate, initialEmployees, applyRosterState]);
 
+  const removeSchoolTour = useCallback((id: string) => {
+    const nextSchoolTours = schoolToursRef.current.filter((tour) => tour.id !== id);
+    schoolToursRef.current = nextSchoolTours;
+    setSchoolTours(nextSchoolTours);
+  }, []);
+
+  const clearSchoolTours = useCallback(() => {
+    schoolToursRef.current = [];
+    setSchoolTours([]);
+  }, []);
+
   const removeEmployee = useCallback((id: string | number, options?: { skipConfirm?: boolean }) => {
     const prevEmployees = employeesRef.current;
     const idx = prevEmployees.findIndex((e) => e.id === id);
@@ -777,122 +890,44 @@ export default function Grid({
 
   const importSchoolTours = useCallback(
     async (file: File) => {
-      const schoolTemplate =
-        templateById.get("school-program") ||
-        templates.find((template) => template.id === "school-program") ||
-        defaultTaskTemplates.find((template) => template.id === "school-program");
-      if (!schoolTemplate) {
-        throw new Error("The School Tour template could not be found.");
-      }
-      if (employeeCols.length === 0) {
-        throw new Error("Add at least one person to the roster before importing school tours.");
-      }
-
       const importedRows = parseSchoolTourWorkbook(await file.arrayBuffer());
       if (importedRows.length === 0) {
         throw new Error("No school tour rows were found in the workbook.");
       }
 
-      const matchingRows = importedRows.filter((row) => row.rosterDateId === rosterDateId);
+      const matchingRows: ImportedSchoolTour[] = importedRows.filter((row) => row.rosterDateId === rosterDateId);
       if (matchingRows.length === 0) {
         const foundDates = Array.from(new Set(importedRows.map((row) => row.rosterDateId))).join(", ");
         throw new Error(`This workbook contains ${foundDates}, not ${rosterDateId}.`);
       }
 
-      const waitingMinutes = schoolTemplate.waitingMinutes || 0;
-      const packingMinutes = schoolTemplate.packingMinutes || 0;
-      const waitingRows = Math.max(0, Math.round(waitingMinutes / 15));
-      const baseDuration =
-        Number.isFinite(schoolTemplate.durationMinutes) && (schoolTemplate.durationMinutes ?? 0) > 0
-          ? Number(schoolTemplate.durationMinutes)
-          : 60;
-      const totalMinutes = Math.max(15, baseDuration + waitingMinutes + packingMinutes);
-      const span = Math.max(1, Math.ceil(totalMinutes / 15));
-      const color = schoolTemplate.color || colorForType("tour");
-
-      const nextTasks = tasksRef.current.filter((task) => !isSchoolTourImportTask(task));
-      const skipped: string[] = [];
-
-      const overlapsExistingTask = (col: number, startRow: number, endRow: number) =>
-        nextTasks.some((task) => {
-          if (task.col !== col) return false;
-          const taskEnd = task.startRow + task.span;
-          return startRow < taskEnd && endRow > task.startRow;
-        });
-
-      const isWithinEmployeeHours = (employee: Employee, startRow: number, endRow: number) => {
-        const resolved = resolveEmployeeHours(employee);
-        if (resolved.isOff) return false;
-        const employeeStart = parseTimeToMinutes(resolved.start);
-        const employeeEnd = parseTimeToMinutes(resolved.end);
-        if (employeeStart === null || employeeEnd === null) return true;
-        const taskStart = dayStartMin + (startRow - MIN_ROW) * 15;
-        const taskEnd = dayStartMin + (endRow - MIN_ROW) * 15;
-        return taskStart >= employeeStart && taskEnd <= employeeEnd;
-      };
-
-      const sortTasks = (list: GridTask[]) =>
-        list.sort((a, b) => (a.col - b.col) || (a.startRow - b.startRow) || String(a.id).localeCompare(String(b.id)));
-
+      const nextSchoolToursByKey = new Map(
+        schoolToursRef.current.map((tour) => [
+          `${tour.rosterDateId}|${tour.startTime}|${tour.schoolName.toLowerCase()}|${tour.studentCount}`,
+          tour,
+        ])
+      );
       matchingRows.forEach((row) => {
-        const mainStartRow = rowFromTime(row.startTime, "floor");
-        if (mainStartRow === null) {
-          skipped.push(`${row.schoolName} (${row.studentCount})`);
-          return;
+        const key = `${row.rosterDateId}|${row.startTime}|${row.schoolName.toLowerCase()}|${row.studentCount}`;
+        if (!nextSchoolToursByKey.has(key)) {
+          nextSchoolToursByKey.set(key, {
+            id: crypto.randomUUID?.() ?? String(Math.random()),
+            rosterDateId: row.rosterDateId,
+            startTime: row.startTime,
+            schoolName: row.schoolName,
+            studentCount: row.studentCount,
+          });
         }
-
-        const startRow = mainStartRow - waitingRows;
-        const endRow = startRow + span;
-        if (startRow < MIN_ROW || endRow > maxRowEx) {
-          skipped.push(`${row.schoolName} (${row.studentCount})`);
-          return;
-        }
-
-        const preferredEmployee = employeeCols.find((employee) => {
-          const employeeRecord = employeesRef.current.find((entry) => entry.id === employee.id);
-          if (!employeeRecord) return false;
-          return isWithinEmployeeHours(employeeRecord, startRow, endRow) && !overlapsExistingTask(employee.col, startRow, endRow);
-        });
-        const fallbackEmployee = employeeCols.find((employee) => !overlapsExistingTask(employee.col, startRow, endRow));
-        const chosenEmployee = preferredEmployee || fallbackEmployee;
-
-        if (!chosenEmployee) {
-          skipped.push(`${row.schoolName} (${row.studentCount})`);
-          return;
-        }
-
-        nextTasks.push({
-          id: crypto.randomUUID?.() ?? String(Math.random()),
-          type: "tour",
-          label: `${row.schoolName} (${row.studentCount})`,
-          col: chosenEmployee.col,
-          startRow,
-          span,
-          color,
-          waitingMinutes,
-          packingMinutes,
-          employeeId: chosenEmployee.id,
-          schoolTourImport: true,
-        });
       });
-
-      if (!nextTasks.some((task) => task.schoolTourImport)) {
-        throw new Error("No school tours could be placed on the roster.");
-      }
-
-      applyRosterState(employeesRef.current, sortTasks(nextTasks));
-      setSelected(undefined);
-
-      if (skipped.length > 0) {
-        window.alert(
-          `Imported ${matchingRows.length - skipped.length} school tours. Could not place: ${skipped.join(", ")}.`
-        );
-        return;
-      }
-
-      window.alert(`Imported ${matchingRows.length} school tours.`);
+      const nextSchoolTours = Array.from(nextSchoolToursByKey.values()).sort((a, b) => {
+        if (a.startTime !== b.startTime) return a.startTime.localeCompare(b.startTime);
+        return a.schoolName.localeCompare(b.schoolName);
+      });
+      schoolToursRef.current = nextSchoolTours;
+      setSchoolTours(nextSchoolTours);
+      window.alert(`Imported ${matchingRows.length} school tours into the day panel.`);
     },
-    [applyRosterState, colorForType, dayStartMin, employeeCols, maxRowEx, rosterDateId, rowFromTime, templateById, templates]
+    [rosterDateId]
   );
 
   const autofill = useCallback(() => {
@@ -1891,10 +1926,12 @@ export default function Grid({
 
     const snapshotEmployees = cloneEmployees(employeesRef.current);
     const snapshotTasks = cloneTasks(tasksRef.current);
+    const snapshotSchoolTours = cloneSchoolTours(schoolToursRef.current);
     const snapshotHours = { ...hoursRef.current };
     const nextSignature = buildRosterSaveSignature(
       snapshotEmployees,
       snapshotTasks,
+      snapshotSchoolTours,
       snapshotHours.start,
       snapshotHours.end,
       rosterDateId
@@ -1915,7 +1952,7 @@ export default function Grid({
         body: JSON.stringify({
           date: rosterDateId,
           employees: snapshotEmployees,
-          tasks: snapshotTasks,
+          tasks: [...snapshotTasks, ...encodeSchoolToursAsTasks(snapshotSchoolTours)],
           hoursStart: snapshotHours.start,
           hoursEnd: snapshotHours.end,
         }),
@@ -1938,6 +1975,7 @@ export default function Grid({
             value: {
               employees: snapshotEmployees,
               tasks: snapshotTasks,
+              schoolTours: snapshotSchoolTours,
               hoursStart: snapshotHours.start,
               hoursEnd: snapshotHours.end,
             },
@@ -1957,6 +1995,7 @@ export default function Grid({
           value: {
             employees: snapshotEmployees,
             tasks: snapshotTasks,
+            schoolTours: snapshotSchoolTours,
             hoursStart: snapshotHours.start,
             hoursEnd: snapshotHours.end,
           },
@@ -1980,6 +2019,7 @@ export default function Grid({
     const nextSignature = buildRosterSaveSignature(
       employees,
       tasks,
+      schoolTours,
       hoursStart,
       hoursEnd,
       rosterDateId
@@ -1996,13 +2036,14 @@ export default function Grid({
         autosaveTimerRef.current = null;
       }
     };
-  }, [employees, tasks, hoursStart, hoursEnd, rosterDateId, saveRoster, onSaveStateChange]);
+  }, [employees, schoolTours, tasks, hoursStart, hoursEnd, rosterDateId, saveRoster, onSaveStateChange]);
 
   useEffect(() => {
     const flushAutosave = () => {
       const nextSignature = buildRosterSaveSignature(
         employeesRef.current,
         tasksRef.current,
+        schoolToursRef.current,
         hoursRef.current.start,
         hoursRef.current.end,
         rosterDateId
@@ -2383,9 +2424,10 @@ export default function Grid({
   const gridLineColor = "rgba(71,85,105,0.98)";
   const lastGridRow = maxRowEx - 1;
   const hasToolbar = toolbar != null;
+  const schoolTourCount = schoolTours.length;
 
   return (
-    <div className="w-full overflow-x-auto">
+    <div className="flex w-full items-start gap-4 overflow-x-auto">
       <div
         ref={containerRef}
         className="card p-0 inline-block overflow-hidden"
@@ -2688,6 +2730,68 @@ export default function Grid({
           </div>
         )}
       </div>
+      <aside className="w-[320px] min-w-[320px] rounded-[16px] border border-[#d7deea] bg-white p-4 shadow-[0_12px_26px_rgba(15,23,42,0.08)]">
+        <div className="flex items-start justify-between gap-3">
+          <div>
+            <div className="flex items-center gap-2 text-slate-900">
+              <CalendarDays className="h-4 w-4" />
+              <h2 className="text-[15px] font-semibold">School Tours</h2>
+            </div>
+            <p className="mt-1 text-[13px] text-slate-600">
+              Imported tours stay saved with this day until you clear them here.
+            </p>
+          </div>
+          {schoolTourCount > 0 && (
+            <button
+              type="button"
+              onClick={clearSchoolTours}
+              className="inline-flex h-8 items-center justify-center rounded-[10px] border border-rose-300 px-3 text-[12px] font-semibold text-rose-700 transition hover:bg-rose-50"
+            >
+              Clear all
+            </button>
+          )}
+        </div>
+        <div className="mt-3 flex items-center gap-2 rounded-[12px] border border-dashed border-slate-300 bg-slate-50 px-3 py-2 text-[12px] font-medium text-slate-600">
+          <Upload className="h-4 w-4" />
+          <span>{schoolTourCount} imported tour{schoolTourCount === 1 ? "" : "s"} saved for this day</span>
+        </div>
+        {schoolTours.length === 0 ? (
+          <div className="mt-4 rounded-[12px] border border-slate-200 bg-slate-50 px-4 py-5 text-[13px] text-slate-600">
+            Upload a runsheet and the tours will appear here. Reset will not remove them.
+          </div>
+        ) : (
+          <div className="mt-4 space-y-3">
+            {schoolTours.map((tour) => (
+              <div key={tour.id} className="rounded-[14px] border border-slate-200 bg-white px-4 py-3 shadow-[0_4px_12px_rgba(15,23,42,0.04)]">
+                <div className="flex items-start justify-between gap-3">
+                  <div className="min-w-0">
+                    <p className="text-[14px] font-semibold leading-5 text-slate-900">{tour.schoolName}</p>
+                    <div className="mt-2 flex flex-wrap items-center gap-3 text-[12px] font-medium text-slate-600">
+                      <span className="inline-flex items-center gap-1">
+                        <Clock3 className="h-3.5 w-3.5" />
+                        {tour.startTime}
+                      </span>
+                      <span className="inline-flex items-center gap-1">
+                        <Users className="h-3.5 w-3.5" />
+                        {tour.studentCount} students
+                      </span>
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => removeSchoolTour(tour.id)}
+                    className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-[10px] border border-slate-200 text-slate-500 transition hover:bg-slate-50 hover:text-slate-700"
+                    aria-label={`Remove ${tour.schoolName}`}
+                    title="Remove school tour"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </aside>
     </div>
   );
 }
