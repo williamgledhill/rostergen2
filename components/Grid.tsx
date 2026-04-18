@@ -1094,11 +1094,11 @@ export default function Grid({
       startRow: number,
       span: number,
       empId: string | number,
-      overrides?: { waitingMinutes?: number; packingMinutes?: number }
+      overrides?: { waitingMinutes?: number; packingMinutes?: number; label?: string; type?: string; color?: string }
     ) => {
       const id = crypto.randomUUID?.() ?? String(Math.random());
-      const label = meta.template.name || "Task";
-      const type = meta.template.id || label;
+      const label = overrides?.label || meta.template.name || "Task";
+      const type = overrides?.type || meta.template.id || label;
       const task: GridTask = {
         id,
         type,
@@ -1106,7 +1106,7 @@ export default function Grid({
         col,
         startRow,
         span,
-        color: meta.template.color || colorForType(type),
+        color: overrides?.color || meta.template.color || colorForType(type),
         waitingMinutes: overrides?.waitingMinutes ?? meta.waitingMinutes,
         packingMinutes: overrides?.packingMinutes ?? meta.packingMinutes,
         employeeId: empId,
@@ -1324,6 +1324,67 @@ export default function Grid({
       return rows;
     };
 
+    const importedSchoolTourFailures: string[] = [];
+    const schoolTourTemplate =
+      templateById.get("school-program") ||
+      templates.find((template) => template.id === "school-program") ||
+      defaultTaskTemplates.find((template) => template.id === "school-program");
+    const schoolTourMeta = schoolTourTemplate ? buildMeta(schoolTourTemplate) : null;
+
+    const placeImportedSchoolTours = () => {
+      if (!schoolTourMeta) return;
+      const sortedSchoolTours = [...schoolTours].sort((a, b) => {
+        if (a.startTime !== b.startTime) return a.startTime.localeCompare(b.startTime);
+        return a.schoolName.localeCompare(b.schoolName);
+      });
+
+      for (const schoolTour of sortedSchoolTours) {
+        const mainStartRow = rowFromTime(schoolTour.startTime, "floor");
+        if (mainStartRow === null) {
+          importedSchoolTourFailures.push(`${schoolTour.schoolName} (${schoolTour.studentCount})`);
+          continue;
+        }
+
+        const startRow = mainStartRow - Math.max(0, Math.round((schoolTourMeta.waitingMinutes || 0) / 15));
+        const span = schoolTourMeta.span;
+        if (!span || startRow < MIN_ROW || startRow + span > maxRowEx) {
+          importedSchoolTourFailures.push(`${schoolTour.schoolName} (${schoolTour.studentCount})`);
+          continue;
+        }
+
+        const eligibleEmployees = [...employees]
+          .filter((emp) => {
+            const col = employeeColById.get(emp.id) ?? employees.findIndex((entry) => entry.id === emp.id) + 2;
+            return (
+              getEmpCount(schoolTourMeta.id, emp.id) < schoolTourMeta.maxPerEmp &&
+              isFree(col, startRow, span, emp.id) &&
+              !exceedsConcurrentLimit(schoolTourMeta.id, startRow, span, schoolTourMeta.maxConcurrentPerTimeslot)
+            );
+          })
+          .sort((a, b) => {
+            const countDiff = getEmpCount(schoolTourMeta.id, a.id) - getEmpCount(schoolTourMeta.id, b.id);
+            if (countDiff !== 0) return countDiff;
+            return (
+              getRotatedRank(employeeOrder.get(a.id) ?? 0, employees.length, autofillVariant) -
+              getRotatedRank(employeeOrder.get(b.id) ?? 0, employees.length, autofillVariant)
+            );
+          });
+
+        const picked = eligibleEmployees[0];
+        if (!picked) {
+          importedSchoolTourFailures.push(`${schoolTour.schoolName} (${schoolTour.studentCount})`);
+          continue;
+        }
+
+        const col = employeeColById.get(picked.id) ?? employees.findIndex((entry) => entry.id === picked.id) + 2;
+        addTask(schoolTourMeta, col, startRow, span, picked.id, {
+          label: `${schoolTour.schoolName} (${schoolTour.studentCount})`,
+          type: "tour",
+          color: schoolTourMeta.template.color || colorForType("tour"),
+        });
+      }
+    };
+
     const getFutureMinimumAvailabilityCounts = (
       emp: Employee,
       blockedRange: { startRow: number; span: number } | null,
@@ -1516,6 +1577,7 @@ export default function Grid({
     }
 
     const unmetMinimums: string[] = [];
+    placeImportedSchoolTours();
 
     for (const [metaIndex, meta] of templatesForPrimaryPass.entries()) {
       const window = meta.window;
@@ -1903,6 +1965,9 @@ export default function Grid({
     if (unmetCoverage.length) {
       alertMessages.push(`Autofill could not fully man: ${unmetCoverage.join(", ")}`);
     }
+    if (importedSchoolTourFailures.length) {
+      alertMessages.push(`Autofill could not place school tours: ${importedSchoolTourFailures.join(", ")}`);
+    }
     onAutofillNoticeChange?.(
       alertMessages.length
         ? {
@@ -1911,7 +1976,7 @@ export default function Grid({
           }
         : null
     );
-  }, [employees, templates, rosterDate, colorForType, maxRowEx, rowFromTime, people, applyRosterState, onAutofillNoticeChange]);
+  }, [employees, templates, schoolTours, rosterDate, colorForType, maxRowEx, rowFromTime, people, applyRosterState, onAutofillNoticeChange, templateById]);
 
   const saveRoster = useCallback(async (options?: { mode?: "autosave" | "manual"; keepalive?: boolean }) => {
     const mode = options?.mode ?? "manual";
