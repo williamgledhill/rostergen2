@@ -405,6 +405,24 @@ export default function TaskDetailClient({ id, initialTask }: { id: string; init
               />
               <div className="border-t border-[var(--border)]" />
               <ToggleRow
+                id="tour-task"
+                label="Tour task"
+                description="Protects the core tour time so other overwrite tasks do not cut through it. Waiting and packing stay outside the protected window."
+                checked={!!task.mustManned && !!task.overwriteExistingTasks}
+                onChange={(checked) =>
+                  setTask((t) =>
+                    t
+                      ? {
+                          ...t,
+                          mustManned: checked ? true : t.mustManned,
+                          overwriteExistingTasks: checked,
+                        }
+                      : t
+                  )
+                }
+              />
+              <div className="border-t border-[var(--border)]" />
+              <ToggleRow
                 id="must-manned"
                 label="Must always be manned"
                 description="Treat this as a required coverage task during autofill."
@@ -415,7 +433,7 @@ export default function TaskDetailClient({ id, initialTask }: { id: string; init
               <ToggleRow
                 id="overwrite-existing-tasks"
                 label="Overwrite other tasks"
-                description="Runs last and replaces conflicting tasks in the same slot."
+                description="For non-tour special cases, runs last and replaces conflicting tasks in the same slot."
                 checked={!!task.overwriteExistingTasks}
                 onChange={(checked) => setTask((t) => (t ? { ...t, overwriteExistingTasks: checked } : t))}
               />

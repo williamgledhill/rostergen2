@@ -956,6 +956,7 @@ export default function Grid({
       allowShrink: boolean;
       maxConsecutiveSpan: number;
       maxConcurrentPerTimeslot: number;
+      protectsTourWindow: boolean;
     };
 
     const dayKey = DAY_KEYS[rosterDate.getDay()];
@@ -973,6 +974,16 @@ export default function Grid({
       if (total <= 0) return 0;
       const normalizedOffset = ((offset % total) + total) % total;
       return (index - normalizedOffset + total) % total;
+    };
+
+    const getSegmentRows = (task: { span: number; waitingMinutes?: number; packingMinutes?: number }) => {
+      const totalRows = Math.max(1, task.span);
+      const waitingRows = Math.max(0, Math.round((task.waitingMinutes ?? 0) / 15));
+      const packingRows = Math.max(0, Math.round((task.packingMinutes ?? 0) / 15));
+      const safeWaiting = Math.min(waitingRows, totalRows - 1);
+      const safePacking = Math.min(packingRows, totalRows - safeWaiting - 1);
+      const mainRows = Math.max(1, totalRows - safeWaiting - safePacking);
+      return { waitingRows: safeWaiting, mainRows, packingRows: safePacking };
     };
 
     const getRowVariantRank = (rows: number[], row: number, offset: number) => {
@@ -1182,6 +1193,43 @@ export default function Grid({
       replaceTasksInColumn(col, nextTasks);
     };
 
+    const getProtectedRangeForMeta = (meta: TemplateMeta, startRow: number, span: number) => {
+      if (!meta.protectsTourWindow) return { startRow, span };
+      const { waitingRows, mainRows } = getSegmentRows({
+        span,
+        waitingMinutes: meta.waitingMinutes,
+        packingMinutes: meta.packingMinutes,
+      });
+      return {
+        startRow: startRow + waitingRows,
+        span: mainRows,
+      };
+    };
+
+    const getProtectedRangeForTask = (task: GridTask) => {
+      const template = templateById.get(task.type);
+      if (!template || !template.mustManned || !template.overwriteExistingTasks) return null;
+      const { waitingRows, mainRows } = getSegmentRows({
+        span: task.span,
+        waitingMinutes: task.waitingMinutes ?? template.waitingMinutes,
+        packingMinutes: task.packingMinutes ?? template.packingMinutes,
+      });
+      return {
+        startRow: task.startRow + waitingRows,
+        span: mainRows,
+      };
+    };
+
+    const overlapsProtectedTaskInColumn = (col: number, blockedRange: { startRow: number; span: number }) =>
+      (tasksByCol.get(col) ?? []).some((task) => {
+        const protectedRange = getProtectedRangeForTask(task);
+        if (!protectedRange) return false;
+        return (
+          blockedRange.startRow < protectedRange.startRow + protectedRange.span &&
+          blockedRange.startRow + blockedRange.span > protectedRange.startRow
+        );
+      });
+
     const getSpanForMeta = (
       meta: TemplateMeta,
       row: number,
@@ -1309,6 +1357,7 @@ export default function Grid({
         allowShrink,
         maxConsecutiveSpan,
         maxConcurrentPerTimeslot,
+        protectsTourWindow: !!template.mustManned && !!template.overwriteExistingTasks,
       };
     };
 
@@ -1379,8 +1428,8 @@ export default function Grid({
         const col = employeeColById.get(picked.id) ?? employees.findIndex((entry) => entry.id === picked.id) + 2;
         addTask(schoolTourMeta, col, startRow, span, picked.id, {
           label: `${schoolTour.schoolName} (${schoolTour.studentCount})`,
-          type: "tour",
-          color: schoolTourMeta.template.color || colorForType("tour"),
+          type: schoolTourMeta.id,
+          color: schoolTourMeta.template.color || colorForType(schoolTourMeta.id),
         });
       }
     };
@@ -1845,8 +1894,12 @@ export default function Grid({
       span: number,
       empId: string | number
     ) => {
+      const blockedRange = getProtectedRangeForMeta(meta, row, span);
       if (meta.overwriteExistingTasks) {
-        clipConflictsInColumn(col, row, span);
+        if (!meta.protectsTourWindow && overlapsProtectedTaskInColumn(col, blockedRange)) {
+          return false;
+        }
+        clipConflictsInColumn(col, blockedRange.startRow, blockedRange.span);
       } else if (!isFree(col, row, span, empId)) {
         return false;
       }
