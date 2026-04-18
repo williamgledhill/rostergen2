@@ -51,6 +51,10 @@ function parseExcelDate(value: unknown) {
 }
 
 function parseExcelTime(value: unknown) {
+  if (value instanceof Date && !Number.isNaN(value.getTime())) {
+    return `${padTime(value.getHours())}:${padTime(value.getMinutes())}`;
+  }
+
   if (typeof value === "number" && Number.isFinite(value)) {
     const totalMinutes = Math.round(value * 24 * 60);
     const normalized = ((totalMinutes % (24 * 60)) + (24 * 60)) % (24 * 60);

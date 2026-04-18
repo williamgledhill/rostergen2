@@ -33,6 +33,22 @@ describe("parseSchoolTourWorkbook", () => {
     ]);
   });
 
+  it("parses browser-style Date time cells", () => {
+    const buffer = buildWorkbookBuffer([
+      ["Date", "Time", "Program", "School", "Students"],
+      [new Date(2026, 3, 24), new Date(1899, 11, 30, 8, 30), "RAM - Guided School Program", "Oakhill Drive Public School", 40],
+    ]);
+
+    expect(parseSchoolTourWorkbook(buffer)).toEqual([
+      {
+        rosterDateId: "2026-04-24",
+        startTime: "08:30",
+        schoolName: "Oakhill Drive Public School",
+        studentCount: 40,
+      },
+    ]);
+  });
+
   it("throws when required columns are missing", () => {
     const buffer = buildWorkbookBuffer([
       ["Date", "Program", "School"],
