@@ -85,7 +85,7 @@ export default function Block({
         {segments.map((seg, idx) => (
           <div
             key={seg.key}
-            className="flex items-center justify-center"
+            className="flex items-center justify-center overflow-hidden"
             style={{
               height: `calc(var(--rowh) * ${seg.rows})`,
               flexShrink: 0,
@@ -93,7 +93,20 @@ export default function Block({
                 idx < segments.length - 1 ? "inset 0 -1px 0 rgba(71,85,105,0.98)" : undefined,
             }}
           >
-            <span className="px-2 text-[13px] font-semibold uppercase tracking-wide">{seg.label}</span>
+            <span
+              className={`block w-full overflow-hidden px-1.5 text-center font-semibold leading-[1.05] ${
+                seg.key === "main"
+                  ? "text-[11px] tracking-[0.02em] whitespace-normal break-words"
+                  : "text-[10px] uppercase tracking-[0.06em] whitespace-normal break-words"
+              }`}
+              style={{
+                display: "-webkit-box",
+                WebkitBoxOrient: "vertical",
+                WebkitLineClamp: seg.rows >= 3 ? 3 : seg.rows >= 2 ? 2 : 1,
+              }}
+            >
+              {seg.label}
+            </span>
           </div>
         ))}
       </div>
