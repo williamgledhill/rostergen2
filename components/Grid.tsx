@@ -2865,7 +2865,7 @@ export default function Grid({
               onClick={clearSchoolTours}
               className="inline-flex h-8 items-center justify-center rounded-[10px] border border-rose-300 px-3 text-[12px] font-semibold text-rose-700 transition hover:bg-rose-50"
             >
-              Clear all
+              Clear
             </button>
           )}
         </div>
