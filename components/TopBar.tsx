@@ -1,6 +1,6 @@
 "use client";
 import React from "react";
-import { Download, Plus, Sparkles, Save, RotateCcw, Undo2, Redo2 } from "lucide-react";
+import { Download, Plus, Sparkles, Save, RotateCcw, Undo2, Redo2, Upload } from "lucide-react";
 
 export default function TopBar({
   showActions = true,
@@ -9,6 +9,7 @@ export default function TopBar({
   onHoursStartChange,
   onHoursEndChange,
   onHoursDefault,
+  schoolTourUploadLabel = "Upload school tours",
 }: {
   showActions?: boolean;
   merged?: boolean;
@@ -16,7 +17,11 @@ export default function TopBar({
   onHoursStartChange?: (value: string) => void;
   onHoursEndChange?: (value: string) => void;
   onHoursDefault?: () => void;
+  schoolTourUploadLabel?: string;
 }) {
+  const uploadInputRef = React.useRef<HTMLInputElement>(null);
+  const [isDraggingSchoolTours, setIsDraggingSchoolTours] = React.useState(false);
+
   function handleAddEmployee(){
     if(typeof window !== "undefined"){
       window.dispatchEvent(new CustomEvent("roster:add-employee"));
@@ -52,6 +57,34 @@ export default function TopBar({
       window.dispatchEvent(new Event("roster-reset"));
     }
   }
+  function dispatchSchoolTourFile(file: File | null | undefined) {
+    if (!file || typeof window === "undefined") return;
+    window.dispatchEvent(new CustomEvent("roster:import-school-tours", { detail: { file } }));
+  }
+  function handleSchoolTourButtonClick() {
+    uploadInputRef.current?.click();
+  }
+  function handleSchoolTourInputChange(event: React.ChangeEvent<HTMLInputElement>) {
+    const file = event.target.files?.[0];
+    dispatchSchoolTourFile(file);
+    event.target.value = "";
+  }
+  function handleSchoolTourDragOver(event: React.DragEvent<HTMLButtonElement>) {
+    event.preventDefault();
+    if (!isDraggingSchoolTours) setIsDraggingSchoolTours(true);
+  }
+  function handleSchoolTourDragLeave(event: React.DragEvent<HTMLButtonElement>) {
+    if (event.currentTarget.contains(event.relatedTarget as Node | null)) return;
+    setIsDraggingSchoolTours(false);
+  }
+  function handleSchoolTourDrop(event: React.DragEvent<HTMLButtonElement>) {
+    event.preventDefault();
+    setIsDraggingSchoolTours(false);
+    const file = Array.from(event.dataTransfer.files).find((candidate) =>
+      candidate.name.toLowerCase().endsWith(".xlsx")
+    );
+    dispatchSchoolTourFile(file);
+  }
 
   const showHoursControls =
     !!hours &&
@@ -79,6 +112,11 @@ export default function TopBar({
     "inline-flex h-11 w-10 shrink-0 items-center justify-center border-r border-[#d7deea] text-slate-800 transition hover:bg-[#f8fafc] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgba(52,77,232,0.16)] focus-visible:ring-inset";
   const hoursGroupClassName =
     "flex h-11 shrink-0 items-center gap-1 border-r border-[#d7deea] bg-white px-2";
+  const uploadSegmentClassName = `inline-flex h-11 min-w-[220px] shrink-0 items-center justify-center gap-2 border-r border-dashed px-4 text-[14px] font-semibold transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgba(52,77,232,0.16)] focus-visible:ring-inset ${
+    isDraggingSchoolTours
+      ? "border-[#4f58ef] bg-[#eef1ff] text-[#3340c7]"
+      : "border-[#cbd5e1] bg-[#f8fafc] text-slate-700 hover:bg-[#f1f5f9]"
+  }`;
   const hoursSpacerClassName =
     "shrink-0 px-0.5 text-[12px] font-semibold text-slate-700";
   const hoursInputClassName =
@@ -87,6 +125,13 @@ export default function TopBar({
 
   return (
     <header className={containerClassName}>
+      <input
+        ref={uploadInputRef}
+        type="file"
+        accept=".xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+        className="sr-only"
+        onChange={handleSchoolTourInputChange}
+      />
       <div className="overflow-x-auto">
         <div className="flex min-w-max items-stretch">
           {actionButtons.map((action, index) => {
@@ -107,6 +152,19 @@ export default function TopBar({
               </button>
             );
           })}
+          <button
+            type="button"
+            className={uploadSegmentClassName}
+            onClick={handleSchoolTourButtonClick}
+            onDragOver={handleSchoolTourDragOver}
+            onDragLeave={handleSchoolTourDragLeave}
+            onDrop={handleSchoolTourDrop}
+            aria-label={schoolTourUploadLabel}
+            title="Upload or drop a school tours Excel file"
+          >
+            <Upload className="h-4 w-4" />
+            <span>{isDraggingSchoolTours ? "Drop school tours" : schoolTourUploadLabel}</span>
+          </button>
           {showHoursControls && (
             <div className={`${hoursGroupClassName} border-r-0`}>
               <input

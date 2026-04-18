@@ -20,6 +20,7 @@ import {
   getPreferredConcurrentLimit,
   resolveAutofillTimeSlots,
 } from "@/lib/rosterAutofill";
+import { parseSchoolTourWorkbook } from "@/lib/schoolTourImports";
 
 type Employee = { id: string | number; name: string; startTime?: string; endTime?: string };
 type GridTask = {
@@ -36,6 +37,7 @@ type GridTask = {
   locked?: boolean;
   isLocked?: boolean;
   readOnly?: boolean;
+  schoolTourImport?: boolean;
 };
 type HistorySnapshot = {
   employees: Employee[];
@@ -139,6 +141,14 @@ function isEditableTarget(target: EventTarget | null) {
   if (editable instanceof HTMLSelectElement) return true;
   if (editable instanceof HTMLElement && editable.isContentEditable) return true;
   return editable.getAttribute("role") === "textbox";
+}
+
+function isSchoolTourImportTask(task: Pick<GridTask, "type" | "label" | "schoolTourImport">) {
+  if (task.schoolTourImport === true) return true;
+  if (String(task.type).toLowerCase() !== "tour") return false;
+  const label = String(task.label || "").trim();
+  if (!label || label === "Public Tour" || label === "School Program" || label === "School Tour") return false;
+  return /\(\d+\)$/.test(label);
 }
 
 function buildRosterSaveSignature(
@@ -764,6 +774,126 @@ export default function Grid({
     if (!target) return;
     removeEmployee(target.id, { skipConfirm: true });
   }, [removeEmployee]);
+
+  const importSchoolTours = useCallback(
+    async (file: File) => {
+      const schoolTemplate =
+        templateById.get("school-program") ||
+        templates.find((template) => template.id === "school-program") ||
+        defaultTaskTemplates.find((template) => template.id === "school-program");
+      if (!schoolTemplate) {
+        throw new Error("The School Tour template could not be found.");
+      }
+      if (employeeCols.length === 0) {
+        throw new Error("Add at least one person to the roster before importing school tours.");
+      }
+
+      const importedRows = parseSchoolTourWorkbook(await file.arrayBuffer());
+      if (importedRows.length === 0) {
+        throw new Error("No school tour rows were found in the workbook.");
+      }
+
+      const matchingRows = importedRows.filter((row) => row.rosterDateId === rosterDateId);
+      if (matchingRows.length === 0) {
+        const foundDates = Array.from(new Set(importedRows.map((row) => row.rosterDateId))).join(", ");
+        throw new Error(`This workbook contains ${foundDates}, not ${rosterDateId}.`);
+      }
+
+      const waitingMinutes = schoolTemplate.waitingMinutes || 0;
+      const packingMinutes = schoolTemplate.packingMinutes || 0;
+      const waitingRows = Math.max(0, Math.round(waitingMinutes / 15));
+      const baseDuration =
+        Number.isFinite(schoolTemplate.durationMinutes) && (schoolTemplate.durationMinutes ?? 0) > 0
+          ? Number(schoolTemplate.durationMinutes)
+          : 60;
+      const totalMinutes = Math.max(15, baseDuration + waitingMinutes + packingMinutes);
+      const span = Math.max(1, Math.ceil(totalMinutes / 15));
+      const color = schoolTemplate.color || colorForType("tour");
+
+      const nextTasks = tasksRef.current.filter((task) => !isSchoolTourImportTask(task));
+      const skipped: string[] = [];
+
+      const overlapsExistingTask = (col: number, startRow: number, endRow: number) =>
+        nextTasks.some((task) => {
+          if (task.col !== col) return false;
+          const taskEnd = task.startRow + task.span;
+          return startRow < taskEnd && endRow > task.startRow;
+        });
+
+      const isWithinEmployeeHours = (employee: Employee, startRow: number, endRow: number) => {
+        const resolved = resolveEmployeeHours(employee);
+        if (resolved.isOff) return false;
+        const employeeStart = parseTimeToMinutes(resolved.start);
+        const employeeEnd = parseTimeToMinutes(resolved.end);
+        if (employeeStart === null || employeeEnd === null) return true;
+        const taskStart = dayStartMin + (startRow - MIN_ROW) * 15;
+        const taskEnd = dayStartMin + (endRow - MIN_ROW) * 15;
+        return taskStart >= employeeStart && taskEnd <= employeeEnd;
+      };
+
+      const sortTasks = (list: GridTask[]) =>
+        list.sort((a, b) => (a.col - b.col) || (a.startRow - b.startRow) || String(a.id).localeCompare(String(b.id)));
+
+      matchingRows.forEach((row) => {
+        const mainStartRow = rowFromTime(row.startTime, "floor");
+        if (mainStartRow === null) {
+          skipped.push(`${row.schoolName} (${row.studentCount})`);
+          return;
+        }
+
+        const startRow = mainStartRow - waitingRows;
+        const endRow = startRow + span;
+        if (startRow < MIN_ROW || endRow > maxRowEx) {
+          skipped.push(`${row.schoolName} (${row.studentCount})`);
+          return;
+        }
+
+        const preferredEmployee = employeeCols.find((employee) => {
+          const employeeRecord = employeesRef.current.find((entry) => entry.id === employee.id);
+          if (!employeeRecord) return false;
+          return isWithinEmployeeHours(employeeRecord, startRow, endRow) && !overlapsExistingTask(employee.col, startRow, endRow);
+        });
+        const fallbackEmployee = employeeCols.find((employee) => !overlapsExistingTask(employee.col, startRow, endRow));
+        const chosenEmployee = preferredEmployee || fallbackEmployee;
+
+        if (!chosenEmployee) {
+          skipped.push(`${row.schoolName} (${row.studentCount})`);
+          return;
+        }
+
+        nextTasks.push({
+          id: crypto.randomUUID?.() ?? String(Math.random()),
+          type: "tour",
+          label: `${row.schoolName} (${row.studentCount})`,
+          col: chosenEmployee.col,
+          startRow,
+          span,
+          color,
+          waitingMinutes,
+          packingMinutes,
+          employeeId: chosenEmployee.id,
+          schoolTourImport: true,
+        });
+      });
+
+      if (!nextTasks.some((task) => task.schoolTourImport)) {
+        throw new Error("No school tours could be placed on the roster.");
+      }
+
+      applyRosterState(employeesRef.current, sortTasks(nextTasks));
+      setSelected(undefined);
+
+      if (skipped.length > 0) {
+        window.alert(
+          `Imported ${matchingRows.length - skipped.length} school tours. Could not place: ${skipped.join(", ")}.`
+        );
+        return;
+      }
+
+      window.alert(`Imported ${matchingRows.length} school tours.`);
+    },
+    [applyRosterState, colorForType, dayStartMin, employeeCols, maxRowEx, rosterDateId, rowFromTime, templateById, templates]
+  );
 
   const autofill = useCallback(() => {
     const autofillVariant = autofillRunRef.current;
@@ -1920,6 +2050,20 @@ export default function Grid({
     window.addEventListener("roster:add-employee", handler);
     return () => window.removeEventListener("roster:add-employee", handler);
   }, [openAddEmployeePicker]);
+
+  useEffect(() => {
+    const handler = (event: Event) => {
+      const file = (event as CustomEvent<{ file?: File }>).detail?.file;
+      if (!file) return;
+      void importSchoolTours(file).catch((error) => {
+        console.error(error);
+        const message = error instanceof Error ? error.message : "Unable to import the school tours workbook.";
+        window.alert(message);
+      });
+    };
+    window.addEventListener("roster:import-school-tours", handler as EventListener);
+    return () => window.removeEventListener("roster:import-school-tours", handler as EventListener);
+  }, [importSchoolTours]);
 
   useEffect(() => {
     if (!addOpen) return;
