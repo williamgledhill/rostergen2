@@ -1919,13 +1919,17 @@ export default function Grid({
         if (!meta.protectsTourWindow && overlapsProtectedTaskInColumn(col, blockedRange)) {
           return false;
         }
-        if (
+        const shouldDropSupportSegments =
           meta.protectsTourWindow &&
-          getSupportRangesForProtectedMeta(meta, row, span).some((range) => !isColumnRangeFree(col, range))
-        ) {
-          return false;
-        }
+          getSupportRangesForProtectedMeta(meta, row, span).some((range) => !isColumnRangeFree(col, range));
         clipConflictsInColumn(col, blockedRange.startRow, blockedRange.span);
+        if (shouldDropSupportSegments) {
+          addTask(meta, col, blockedRange.startRow, blockedRange.span, empId, {
+            waitingMinutes: 0,
+            packingMinutes: 0,
+          });
+          return true;
+        }
       } else if (!isFree(col, row, span, empId)) {
         return false;
       }
