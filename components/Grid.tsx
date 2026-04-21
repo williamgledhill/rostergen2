@@ -1808,6 +1808,20 @@ export default function Grid({
       endRow: number,
       options: { ignoreLimits: boolean; ignoreWindow: boolean }
     ) => {
+      const getFillerSpanForMeta = (meta: TemplateMeta) => {
+        const span = getSpanForMeta(meta, row, endRow, { ignoreWindow: options.ignoreWindow });
+        if (!span) return 0;
+        return meta.allowShrink ? Math.max(1, Math.min(2, span)) : span;
+      };
+      const activeInRow = (templateId: string) =>
+        generated.filter((task) => task.type === templateId && row >= task.startRow && row < task.startRow + task.span).length;
+      const rowTemplateRank = (templateId: string) => {
+        let hash = 0;
+        for (let index = 0; index < templateId.length; index += 1) {
+          hash = (hash * 31 + templateId.charCodeAt(index)) % 997;
+        }
+        return (hash + row + autofillVariant) % 997;
+      };
       const candidates = fillTemplates
         .map((meta) => {
           if (!options.ignoreWindow && meta.window) {
@@ -1820,7 +1834,7 @@ export default function Grid({
           if (!options.ignoreLimits) {
             if (getEmpCount(meta.id, empId) >= meta.maxPerEmp) return null;
           }
-          const span = getSpanForMeta(meta, row, endRow, { ignoreWindow: options.ignoreWindow });
+          const span = getFillerSpanForMeta(meta);
           if (!span) return null;
           if (exceedsConcurrentLimit(meta.id, row, span, meta.maxConcurrentPerTimeslot)) return null;
           const exceedsConsecutive =
@@ -1834,11 +1848,15 @@ export default function Grid({
         ? candidates.filter((c) => !c.exceedsConsecutive)
         : candidates;
       preferred.sort((a, b) => {
+        const activeDiff = activeInRow(a.meta.id) - activeInRow(b.meta.id);
+        if (activeDiff !== 0) return activeDiff;
         const aEmp = getEmpCount(a.meta.id, empId);
         const bEmp = getEmpCount(b.meta.id, empId);
         if (aEmp !== bEmp) return aEmp - bEmp;
         const totalDiff = getTotal(a.meta.id) - getTotal(b.meta.id);
         if (totalDiff !== 0) return totalDiff;
+        const rowRankDiff = rowTemplateRank(a.meta.id) - rowTemplateRank(b.meta.id);
+        if (rowRankDiff !== 0) return rowRankDiff;
         return a.meta.id.localeCompare(b.meta.id);
       });
       return { meta: preferred[0].meta, options };
@@ -1858,7 +1876,10 @@ export default function Grid({
           row = endRow;
           break;
         }
-        const span = getSpanForMeta(picked.meta, row, endRow, { ignoreWindow: picked.options.ignoreWindow });
+        const availableSpan = getSpanForMeta(picked.meta, row, endRow, { ignoreWindow: picked.options.ignoreWindow });
+        const span = availableSpan && picked.meta.allowShrink
+          ? Math.max(1, Math.min(2, availableSpan))
+          : availableSpan;
         if (!span) {
           row += 1;
           continue;
@@ -1867,23 +1888,6 @@ export default function Grid({
         row += span;
       }
     };
-
-    employees.forEach((emp, idx) => {
-      const col = employeeColById.get(emp.id) ?? idx + 2;
-      const list = (tasksByCol.get(col) ?? []).slice().sort((a, b) => a.startRow - b.startRow);
-      const window = getEmployeeWindow(emp);
-      if (!window) return;
-      let cursor = window.startRow;
-      for (const task of list) {
-        if (cursor < task.startRow) {
-          fillGap(col, emp.id, cursor, task.startRow);
-        }
-        cursor = Math.max(cursor, task.startRow + task.span);
-      }
-      if (cursor < window.endRow) {
-        fillGap(col, emp.id, cursor, window.endRow);
-      }
-    });
 
     const getDesiredPlacements = (meta: TemplateMeta, candidateRows: number[]) => {
       let desiredCount = 1;
@@ -2013,6 +2017,23 @@ export default function Grid({
         return;
       }
       scheduleOverrideMeta(meta);
+    });
+
+    employees.forEach((emp, idx) => {
+      const col = employeeColById.get(emp.id) ?? idx + 2;
+      const list = (tasksByCol.get(col) ?? []).slice().sort((a, b) => a.startRow - b.startRow);
+      const window = getEmployeeWindow(emp);
+      if (!window) return;
+      let cursor = window.startRow;
+      for (const task of list) {
+        if (cursor < task.startRow) {
+          fillGap(col, emp.id, cursor, task.startRow);
+        }
+        cursor = Math.max(cursor, task.startRow + task.span);
+      }
+      if (cursor < window.endRow) {
+        fillGap(col, emp.id, cursor, window.endRow);
+      }
     });
 
     const unmetCoverage = templatesForPrimaryPass
