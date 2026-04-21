@@ -1649,6 +1649,56 @@ export default function Grid({
     const protectedTaskFailures: string[] = [];
     placeImportedSchoolTours();
 
+    const reserveProtectedFixedTimeTasks = () => {
+      const protectedFixedMetas = templatesToSchedule.filter((meta) => meta.protectsTourWindow && meta.hasFixedTimes);
+
+      for (const meta of protectedFixedMetas) {
+        const candidateRows = getCandidateRowsForMeta(meta);
+        const desiredPlacements = Math.min(candidateRows.length, meta.limitPerDay);
+
+        for (const row of candidateRows) {
+          if (getTotal(meta.id) >= desiredPlacements) break;
+          if (getTotal(meta.id) >= meta.limitPerDay) break;
+          const span = getSpanForMeta(meta, row, meta.window?.endRow ?? maxRowEx, { ignoreWindow: false });
+          if (!span) continue;
+          const protectedRange = getProtectedRangeForMeta(meta, row, span);
+          if (overlapsProtectedTaskGlobally(protectedRange)) {
+            protectedTaskFailures.push(`${meta.template.name} ${timeRangeForSpan(row, span)}`);
+            continue;
+          }
+
+          const sortedEmployees = employees
+            .filter((emp) => {
+              const window = getEmployeeWindow(emp);
+              return !!window && row >= window.startRow && row + span <= window.endRow;
+            })
+            .filter((emp) => getEmpCount(meta.id, emp.id) < meta.maxPerEmp)
+            .sort((a, b) => {
+              const countDiff = getEmpCount(meta.id, a.id) - getEmpCount(meta.id, b.id);
+              if (countDiff !== 0) return countDiff;
+              return (
+                getRotatedRank(employeeOrder.get(a.id) ?? 0, employees.length, autofillVariant) -
+                getRotatedRank(employeeOrder.get(b.id) ?? 0, employees.length, autofillVariant)
+              );
+            });
+
+          const picked = sortedEmployees.find((emp) => {
+            const col = employeeColById.get(emp.id) ?? employees.findIndex((entry) => entry.id === emp.id) + 2;
+            return isFree(col, row, span, emp.id);
+          });
+          if (!picked) {
+            protectedTaskFailures.push(`${meta.template.name} ${timeRangeForSpan(row, span)}`);
+            continue;
+          }
+
+          const col = employeeColById.get(picked.id) ?? employees.findIndex((entry) => entry.id === picked.id) + 2;
+          addTask(meta, col, row, span, picked.id);
+        }
+      }
+    };
+
+    reserveProtectedFixedTimeTasks();
+
     for (const [metaIndex, meta] of templatesForPrimaryPass.entries()) {
       const window = meta.window;
       if (!window) continue;
