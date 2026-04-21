@@ -26,6 +26,7 @@ export type TaskTemplate = {
 
 export const TASK_TEMPLATE_REFRESH_EVENT = "task-templates-updated";
 export const TASK_TEMPLATE_REFRESH_STORAGE_KEY = "rosterplanner:task-templates-updated-at";
+export const TASK_TEMPLATE_DELETED_STORAGE_KEY = "rosterplanner:task-template-deleted-id";
 
 export const defaultTaskTemplates: TaskTemplate[] = [
   {

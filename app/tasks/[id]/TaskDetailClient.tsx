@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { ChevronRight, Save, Trash2 } from "lucide-react";
 import { buildDraftStorageKey, formatAutosaveStatusText, getAutosaveStatusClassName, removeDraftRecord } from "@/lib/clientDrafts";
 import {
+  TASK_TEMPLATE_DELETED_STORAGE_KEY,
   TASK_TEMPLATE_REFRESH_EVENT,
   TASK_TEMPLATE_REFRESH_STORAGE_KEY,
   type TaskTemplate,
@@ -246,7 +247,17 @@ export default function TaskDetailClient({ id, initialTask }: { id: string; init
       const res = await fetch(`/api/task-templates?id=${id}`, { method: "DELETE" });
       if (!res.ok) throw new Error("Failed to delete");
       removeDraftRecord(buildDraftStorageKey("task", id));
+      if (typeof window !== "undefined") {
+        window.dispatchEvent(new Event(TASK_TEMPLATE_REFRESH_EVENT));
+        try {
+          window.sessionStorage.setItem(TASK_TEMPLATE_DELETED_STORAGE_KEY, id);
+          window.localStorage.setItem(TASK_TEMPLATE_REFRESH_STORAGE_KEY, new Date().toISOString());
+        } catch (error) {
+          console.error(error);
+        }
+      }
       router.push("/tasks");
+      router.refresh();
     } catch (err) {
       console.error(err);
       alert("Failed to delete");

@@ -1,9 +1,14 @@
 "use client";
 
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Plus } from "lucide-react";
-import { type TaskTemplate } from "@/lib/taskTemplates";
+import {
+  TASK_TEMPLATE_DELETED_STORAGE_KEY,
+  TASK_TEMPLATE_REFRESH_EVENT,
+  TASK_TEMPLATE_REFRESH_STORAGE_KEY,
+  type TaskTemplate,
+} from "@/lib/taskTemplates";
 
 const WEEKDAYS = ["Mon", "Tue", "Wed", "Thu", "Fri"];
 const WEEKENDS = ["Sat", "Sun"];
@@ -15,6 +20,49 @@ export default function TasksClient({ initialTasks }: { initialTasks: TaskTempla
   useEffect(() => {
     setTasks(initialTasks);
   }, [initialTasks]);
+
+  const removePendingDeletedTask = useCallback(() => {
+    if (typeof window === "undefined") return;
+    try {
+      const deletedId = window.sessionStorage.getItem(TASK_TEMPLATE_DELETED_STORAGE_KEY);
+      if (!deletedId) return;
+      window.sessionStorage.removeItem(TASK_TEMPLATE_DELETED_STORAGE_KEY);
+      setTasks((prev) => prev.filter((task) => task.id !== deletedId));
+    } catch (error) {
+      console.error(error);
+    }
+  }, []);
+
+  const refreshTasks = useCallback(async () => {
+    try {
+      const res = await fetch("/api/task-templates", { cache: "no-store" });
+      if (!res.ok) throw new Error("Failed to refresh tasks");
+      const next = (await res.json()) as TaskTemplate[];
+      setTasks(next);
+    } catch (error) {
+      console.error(error);
+    }
+  }, []);
+
+  useEffect(() => {
+    removePendingDeletedTask();
+    void refreshTasks();
+
+    const handleRefresh = () => {
+      removePendingDeletedTask();
+      void refreshTasks();
+    };
+    const handleStorage = (event: StorageEvent) => {
+      if (event.key === TASK_TEMPLATE_REFRESH_STORAGE_KEY) handleRefresh();
+    };
+
+    window.addEventListener(TASK_TEMPLATE_REFRESH_EVENT, handleRefresh);
+    window.addEventListener("storage", handleStorage);
+    return () => {
+      window.removeEventListener(TASK_TEMPLATE_REFRESH_EVENT, handleRefresh);
+      window.removeEventListener("storage", handleStorage);
+    };
+  }, [refreshTasks, removePendingDeletedTask]);
 
   function formatOccurrence(days: string[] | undefined) {
     if (!days || days.length === 0) return "Not set";
