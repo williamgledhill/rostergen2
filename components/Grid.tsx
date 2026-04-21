@@ -1224,14 +1224,22 @@ export default function Grid({
       };
     };
 
+    const rangesOverlap = (
+      a: { startRow: number; span: number },
+      b: { startRow: number; span: number }
+    ) => a.startRow < b.startRow + b.span && a.startRow + a.span > b.startRow;
+
+    const overlapsProtectedTaskGlobally = (blockedRange: { startRow: number; span: number }) =>
+      generated.some((task) => {
+        const protectedRange = getProtectedRangeForTask(task);
+        return protectedRange ? rangesOverlap(blockedRange, protectedRange) : false;
+      });
+
     const overlapsProtectedTaskInColumn = (col: number, blockedRange: { startRow: number; span: number }) =>
       (tasksByCol.get(col) ?? []).some((task) => {
         const protectedRange = getProtectedRangeForTask(task);
         if (!protectedRange) return false;
-        return (
-          blockedRange.startRow < protectedRange.startRow + protectedRange.span &&
-          blockedRange.startRow + blockedRange.span > protectedRange.startRow
-        );
+        return rangesOverlap(blockedRange, protectedRange);
       });
 
     const getSpanForMeta = (
@@ -1405,6 +1413,11 @@ export default function Grid({
           importedSchoolTourFailures.push(`${schoolTour.schoolName} (${schoolTour.studentCount})`);
           continue;
         }
+        const protectedRange = getProtectedRangeForMeta(schoolTourMeta, startRow, span);
+        if (schoolTourMeta.protectsTourWindow && overlapsProtectedTaskGlobally(protectedRange)) {
+          importedSchoolTourFailures.push(`${schoolTour.schoolName} (${schoolTour.studentCount}) overlaps another protected task`);
+          continue;
+        }
 
         const eligibleEmployees = [...employees]
           .filter((emp) => {
@@ -1482,6 +1495,8 @@ export default function Grid({
       futureMinimumMetas: TemplateMeta[] = []
     ) => {
       const blockedRange = { startRow: row, span };
+      const protectedRange = getProtectedRangeForMeta(meta, row, span);
+      if (meta.protectsTourWindow && overlapsProtectedTaskGlobally(protectedRange)) return undefined;
       const futureAvailabilityByEmployee = new Map<string | number, number[]>();
       const getFutureAvailability = (emp: Employee) => {
         if (!futureAvailabilityByEmployee.has(emp.id)) {
@@ -1631,6 +1646,7 @@ export default function Grid({
     }
 
     const unmetMinimums: string[] = [];
+    const protectedTaskFailures: string[] = [];
     placeImportedSchoolTours();
 
     for (const [metaIndex, meta] of templatesForPrimaryPass.entries()) {
@@ -1901,20 +1917,19 @@ export default function Grid({
     ) => {
       const blockedRange = getProtectedRangeForMeta(meta, row, span);
       if (meta.overwriteExistingTasks) {
+        if (meta.protectsTourWindow && overlapsProtectedTaskGlobally(blockedRange)) {
+          return false;
+        }
         if (!meta.protectsTourWindow && overlapsProtectedTaskInColumn(col, blockedRange)) {
           return false;
         }
-        const shouldDropSupportSegments =
+        const supportBlocked =
           meta.protectsTourWindow &&
           getSupportRangesForProtectedMeta(meta, row, span).some((range) => !isColumnRangeFree(col, range));
-        clipConflictsInColumn(col, blockedRange.startRow, blockedRange.span);
-        if (shouldDropSupportSegments) {
-          addTask(meta, col, blockedRange.startRow, blockedRange.span, empId, {
-            waitingMinutes: 0,
-            packingMinutes: 0,
-          });
-          return true;
+        if (supportBlocked) {
+          return false;
         }
+        clipConflictsInColumn(col, blockedRange.startRow, blockedRange.span);
       } else if (!isFree(col, row, span, empId)) {
         return false;
       }
@@ -1978,7 +1993,16 @@ export default function Grid({
         for (const emp of sortedEmployees) {
           const col = employeeColById.get(emp.id) ?? employees.findIndex((entry) => entry.id === emp.id) + 2;
           if (!meta.overwriteExistingTasks && !isFree(col, row, span, emp.id)) continue;
-          if (placeFinalTask(meta, col, row, span, emp.id)) break;
+          if (placeFinalTask(meta, col, row, span, emp.id)) {
+            break;
+          }
+        }
+
+        if (
+          meta.protectsTourWindow &&
+          !generated.some((task) => task.type === meta.id && task.startRow === row)
+        ) {
+          protectedTaskFailures.push(`${meta.template.name} ${timeRangeForSpan(row, span)}`);
         }
       }
     };
@@ -2029,6 +2053,9 @@ export default function Grid({
     }
     if (unmetCoverage.length) {
       alertMessages.push(`Autofill could not fully man: ${unmetCoverage.join(", ")}`);
+    }
+    if (protectedTaskFailures.length) {
+      alertMessages.push(`Autofill could not place protected tasks without overlap: ${protectedTaskFailures.join(", ")}`);
     }
     if (importedSchoolTourFailures.length) {
       alertMessages.push(`Autofill could not place school tours: ${importedSchoolTourFailures.join(", ")}`);
