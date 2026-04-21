@@ -1206,6 +1206,26 @@ export default function Grid({
       };
     };
 
+    const getSupportRangesForProtectedMeta = (meta: TemplateMeta, startRow: number, span: number) => {
+      if (!meta.protectsTourWindow) return [];
+      const { waitingRows, mainRows, packingRows } = getSegmentRows({
+        span,
+        waitingMinutes: meta.waitingMinutes,
+        packingMinutes: meta.packingMinutes,
+      });
+      const ranges: Array<{ startRow: number; span: number }> = [];
+      if (waitingRows > 0) ranges.push({ startRow, span: waitingRows });
+      if (packingRows > 0) ranges.push({ startRow: startRow + waitingRows + mainRows, span: packingRows });
+      return ranges;
+    };
+
+    const isColumnRangeFree = (col: number, range: { startRow: number; span: number }) => {
+      const endRow = range.startRow + range.span;
+      return !(tasksByCol.get(col) ?? []).some(
+        (task) => endRow > task.startRow && range.startRow < task.startRow + task.span
+      );
+    };
+
     const getProtectedRangeForTask = (task: GridTask) => {
       const template = templateById.get(task.type);
       if (!template || !template.mustManned || !template.overwriteExistingTasks) return null;
@@ -1899,6 +1919,12 @@ export default function Grid({
         if (!meta.protectsTourWindow && overlapsProtectedTaskInColumn(col, blockedRange)) {
           return false;
         }
+        if (
+          meta.protectsTourWindow &&
+          getSupportRangesForProtectedMeta(meta, row, span).some((range) => !isColumnRangeFree(col, range))
+        ) {
+          return false;
+        }
         clipConflictsInColumn(col, blockedRange.startRow, blockedRange.span);
       } else if (!isFree(col, row, span, empId)) {
         return false;
@@ -1960,14 +1986,11 @@ export default function Grid({
             );
           });
 
-        const picked = sortedEmployees.find((emp) => {
+        for (const emp of sortedEmployees) {
           const col = employeeColById.get(emp.id) ?? employees.findIndex((entry) => entry.id === emp.id) + 2;
-          return meta.overwriteExistingTasks || isFree(col, row, span, emp.id);
-        });
-        if (!picked) continue;
-
-        const col = employeeColById.get(picked.id) ?? employees.findIndex((entry) => entry.id === picked.id) + 2;
-        placeFinalTask(meta, col, row, span, picked.id);
+          if (!meta.overwriteExistingTasks && !isFree(col, row, span, emp.id)) continue;
+          if (placeFinalTask(meta, col, row, span, emp.id)) break;
+        }
       }
     };
 
