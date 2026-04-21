@@ -1235,6 +1235,34 @@ export default function Grid({
         return protectedRange ? rangesOverlap(blockedRange, protectedRange) : false;
       });
 
+    const getProtectedTaskConflict = (blockedRange: { startRow: number; span: number }) => {
+      const task = generated.find((entry) => {
+        const protectedRange = getProtectedRangeForTask(entry);
+        return protectedRange ? rangesOverlap(blockedRange, protectedRange) : false;
+      });
+      return task ? `${task.label} ${timeRangeForSpan(task.startRow, task.span)}` : null;
+    };
+
+    const getProtectedAdjacencyScore = (col: number, startRow: number, span: number) => {
+      const endRow = startRow + span;
+      const protectedTasks = (tasksByCol.get(col) ?? [])
+        .map((task) => ({ task, protectedRange: getProtectedRangeForTask(task) }))
+        .filter((entry): entry is { task: GridTask; protectedRange: { startRow: number; span: number } } => !!entry.protectedRange);
+
+      let score = 0;
+      for (const { protectedRange } of protectedTasks) {
+        const protectedEnd = protectedRange.startRow + protectedRange.span;
+        if (protectedEnd === startRow || protectedRange.startRow === endRow) score += 1000;
+        const gap = protectedEnd <= startRow
+          ? startRow - protectedEnd
+          : protectedRange.startRow >= endRow
+            ? protectedRange.startRow - endRow
+            : 0;
+        score += Math.max(0, 8 - gap);
+      }
+      return score;
+    };
+
     const overlapsProtectedTaskInColumn = (col: number, blockedRange: { startRow: number; span: number }) =>
       (tasksByCol.get(col) ?? []).some((task) => {
         const protectedRange = getProtectedRangeForTask(task);
@@ -1414,8 +1442,9 @@ export default function Grid({
           continue;
         }
         const protectedRange = getProtectedRangeForMeta(schoolTourMeta, startRow, span);
-        if (schoolTourMeta.protectsTourWindow && overlapsProtectedTaskGlobally(protectedRange)) {
-          importedSchoolTourFailures.push(`${schoolTour.schoolName} (${schoolTour.studentCount}) overlaps another protected task`);
+        const protectedConflict = schoolTourMeta.protectsTourWindow ? getProtectedTaskConflict(protectedRange) : null;
+        if (protectedConflict) {
+          importedSchoolTourFailures.push(`${schoolTour.schoolName} (${schoolTour.studentCount}) overlaps ${protectedConflict}`);
           continue;
         }
 
@@ -1429,6 +1458,12 @@ export default function Grid({
             );
           })
           .sort((a, b) => {
+            const colA = employeeColById.get(a.id) ?? employees.findIndex((entry) => entry.id === a.id) + 2;
+            const colB = employeeColById.get(b.id) ?? employees.findIndex((entry) => entry.id === b.id) + 2;
+            const adjacencyDiff =
+              getProtectedAdjacencyScore(colA, startRow, span) -
+              getProtectedAdjacencyScore(colB, startRow, span);
+            if (adjacencyDiff !== 0) return adjacencyDiff;
             const countDiff = getEmpCount(schoolTourMeta.id, a.id) - getEmpCount(schoolTourMeta.id, b.id);
             if (countDiff !== 0) return countDiff;
             return (
@@ -1496,7 +1531,7 @@ export default function Grid({
     ) => {
       const blockedRange = { startRow: row, span };
       const protectedRange = getProtectedRangeForMeta(meta, row, span);
-      if (meta.protectsTourWindow && overlapsProtectedTaskGlobally(protectedRange)) return undefined;
+      if (meta.protectsTourWindow && getProtectedTaskConflict(protectedRange)) return undefined;
       const futureAvailabilityByEmployee = new Map<string | number, number[]>();
       const getFutureAvailability = (emp: Employee) => {
         if (!futureAvailabilityByEmployee.has(emp.id)) {
@@ -1526,6 +1561,12 @@ export default function Grid({
 
         const countDiff = getEmpCount(meta.id, a.id) - getEmpCount(meta.id, b.id);
         if (countDiff !== 0) return countDiff;
+        const colA = employeeColById.get(a.id) ?? employees.findIndex((entry) => entry.id === a.id) + 2;
+        const colB = employeeColById.get(b.id) ?? employees.findIndex((entry) => entry.id === b.id) + 2;
+        const adjacencyDiff =
+          getProtectedAdjacencyScore(colA, row, span) -
+          getProtectedAdjacencyScore(colB, row, span);
+        if (adjacencyDiff !== 0) return adjacencyDiff;
         return (
           getRotatedRank(employeeOrder.get(a.id) ?? 0, employees.length, autofillVariant) -
           getRotatedRank(employeeOrder.get(b.id) ?? 0, employees.length, autofillVariant)
@@ -1662,8 +1703,9 @@ export default function Grid({
           const span = getSpanForMeta(meta, row, meta.window?.endRow ?? maxRowEx, { ignoreWindow: false });
           if (!span) continue;
           const protectedRange = getProtectedRangeForMeta(meta, row, span);
-          if (overlapsProtectedTaskGlobally(protectedRange)) {
-            protectedTaskFailures.push(`${meta.template.name} ${timeRangeForSpan(row, span)}`);
+          const protectedConflict = getProtectedTaskConflict(protectedRange);
+          if (protectedConflict) {
+            protectedTaskFailures.push(`${meta.template.name} ${timeRangeForSpan(row, span)} overlaps ${protectedConflict}`);
             continue;
           }
 
@@ -1674,6 +1716,12 @@ export default function Grid({
             })
             .filter((emp) => getEmpCount(meta.id, emp.id) < meta.maxPerEmp)
             .sort((a, b) => {
+              const colA = employeeColById.get(a.id) ?? employees.findIndex((entry) => entry.id === a.id) + 2;
+              const colB = employeeColById.get(b.id) ?? employees.findIndex((entry) => entry.id === b.id) + 2;
+              const adjacencyDiff =
+                getProtectedAdjacencyScore(colA, row, span) -
+                getProtectedAdjacencyScore(colB, row, span);
+              if (adjacencyDiff !== 0) return adjacencyDiff;
               const countDiff = getEmpCount(meta.id, a.id) - getEmpCount(meta.id, b.id);
               if (countDiff !== 0) return countDiff;
               return (
@@ -1971,7 +2019,7 @@ export default function Grid({
     ) => {
       const blockedRange = getProtectedRangeForMeta(meta, row, span);
       if (meta.overwriteExistingTasks) {
-        if (meta.protectsTourWindow && overlapsProtectedTaskGlobally(blockedRange)) {
+        if (meta.protectsTourWindow && getProtectedTaskConflict(blockedRange)) {
           return false;
         }
         if (!meta.protectsTourWindow && overlapsProtectedTaskInColumn(col, blockedRange)) {
