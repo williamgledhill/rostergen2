@@ -10,73 +10,59 @@ const runtimeTemplateSyncEnabled =
   process.env.APP_RUNTIME_SEED === "true" || process.env.NODE_ENV !== "production";
 
 function applyDefaults(t: TaskTemplate): TaskTemplate {
-  const base = defaultTaskTemplates.find((d) => d.id === t.id);
   const minPerEmployeePerDay = Number.isFinite(t.minPerEmployeePerDay)
     ? Number(t.minPerEmployeePerDay)
-    : Number.isFinite(base?.minPerEmployeePerDay)
-      ? Number(base?.minPerEmployeePerDay)
-      : 0;
+    : 0;
   const maxPerEmployeePerDay = Number.isFinite(t.maxPerEmployeePerDay)
     ? Number(t.maxPerEmployeePerDay)
-    : Number.isFinite(base?.maxPerEmployeePerDay)
-      ? Number(base?.maxPerEmployeePerDay)
-      : 0;
+    : 0;
   const durationMinutes = Number.isFinite(t.durationMinutes)
     ? Number(t.durationMinutes)
-    : Number.isFinite(base?.durationMinutes)
-      ? Number(base?.durationMinutes)
-      : 0;
+    : 0;
   const maxConsecutiveMinutes = Number.isFinite(t.maxConsecutiveMinutes)
     ? Number(t.maxConsecutiveMinutes)
-    : Number.isFinite(base?.maxConsecutiveMinutes)
-      ? Number(base?.maxConsecutiveMinutes)
-      : 0;
+    : 0;
   const regularDayWindows =
     t.regularDayWindows && typeof t.regularDayWindows === "object" && !Array.isArray(t.regularDayWindows)
       ? t.regularDayWindows
-      : base?.regularDayWindows || {};
+      : {};
   const regularTimesByDay =
     t.regularTimesByDay && typeof t.regularTimesByDay === "object" && !Array.isArray(t.regularTimesByDay)
       ? t.regularTimesByDay
-      : base?.regularTimesByDay || {};
+      : {};
   const waitingMinutes = Number.isFinite(t.waitingMinutes)
     ? Number(t.waitingMinutes)
-    : Number.isFinite(base?.waitingMinutes)
-      ? Number(base?.waitingMinutes)
-      : 0;
+    : 0;
   const packingMinutes = Number.isFinite(t.packingMinutes)
     ? Number(t.packingMinutes)
-    : Number.isFinite(base?.packingMinutes)
-      ? Number(base?.packingMinutes)
-      : 0;
+    : 0;
   const limitPerDay = Number.isFinite(t.limitPerDay)
     ? Number(t.limitPerDay)
-    : Number.isFinite(base?.limitPerDay)
-      ? Number(base?.limitPerDay)
-      : 0;
+    : 0;
   const maxConcurrentPerTimeslot = Number.isFinite(t.maxConcurrentPerTimeslot)
     ? Number(t.maxConcurrentPerTimeslot)
-    : Number.isFinite(base?.maxConcurrentPerTimeslot)
-      ? Number(base?.maxConcurrentPerTimeslot)
-      : 0;
-  const enabled = typeof t.enabled === "boolean" ? t.enabled : base?.enabled ?? true;
+    : 0;
+  const enabled = typeof t.enabled === "boolean" ? t.enabled : true;
+  const schoolTourImportTarget =
+    typeof t.schoolTourImportTarget === "boolean"
+      ? t.schoolTourImportTarget
+      : false;
   return {
-    ...base,
     ...t,
-    color: t.color || base?.color || "#e2e8f0",
-    mustManned: typeof t.mustManned === "boolean" ? t.mustManned : base?.mustManned || false,
+    color: t.color || "#e2e8f0",
+    mustManned: typeof t.mustManned === "boolean" ? t.mustManned : false,
     overwriteExistingTasks:
       typeof t.overwriteExistingTasks === "boolean"
         ? t.overwriteExistingTasks
-        : base?.overwriteExistingTasks || false,
+        : false,
     attendedByAll:
       typeof t.attendedByAll === "boolean"
         ? t.attendedByAll
-        : base?.attendedByAll || false,
-    autogenStart: t.autogenStart || base?.autogenStart || "",
-    autogenEnd: t.autogenEnd || base?.autogenEnd || "",
-    regularDays: Array.isArray(t.regularDays) ? t.regularDays : base?.regularDays || [],
-    regularTimes: Array.isArray(t.regularTimes) ? t.regularTimes : base?.regularTimes || [],
+        : false,
+    autogenStart: t.autogenStart || "",
+    autogenEnd: t.autogenEnd || "",
+    regularDays: Array.isArray(t.regularDays) ? t.regularDays : [],
+    regularTimes: Array.isArray(t.regularTimes) ? t.regularTimes : [],
     regularTimesByDay,
     regularDayWindows,
     minPerEmployeePerDay,
@@ -87,6 +73,7 @@ function applyDefaults(t: TaskTemplate): TaskTemplate {
     packingMinutes,
     limitPerDay,
     maxConcurrentPerTimeslot,
+    schoolTourImportTarget,
     enabled,
   };
 }
@@ -123,6 +110,7 @@ function toTemplateCreateInput(template: TaskTemplate) {
     maxConcurrentPerTimeslot: Number.isFinite(template.maxConcurrentPerTimeslot)
       ? Number(template.maxConcurrentPerTimeslot)
       : 0,
+    schoolTourImportTarget: Boolean(template.schoolTourImportTarget),
     enabled: template.enabled !== false,
   };
 }
@@ -236,6 +224,7 @@ function mapLegacyTemplate(record: any): TaskTemplate {
     packingMinutes: record.packingMinutes,
     limitPerDay: record.limitPerDay,
     maxConcurrentPerTimeslot: record.maxConcurrentPerTimeslot,
+    schoolTourImportTarget: record.schoolTourImportTarget,
     enabled: record.enabled,
   });
 }
@@ -294,6 +283,7 @@ function mapTemplate(record: any): TaskTemplate {
     packingMinutes: record.packingMinutes,
     limitPerDay: record.limitPerDay,
     maxConcurrentPerTimeslot: record.maxConcurrentPerTimeslot,
+    schoolTourImportTarget: record.schoolTourImportTarget,
     enabled: record.enabled,
   });
 }
@@ -384,6 +374,7 @@ export async function addTaskTemplate(input: {
       packingMinutes: 0,
       limitPerDay: 0,
       maxConcurrentPerTimeslot: 0,
+      schoolTourImportTarget: false,
       enabled: true,
     },
   });
@@ -403,6 +394,13 @@ export async function updateTaskTemplate(
   const existingTemplate = mapLegacyTemplate(existing);
 
   const updated = await prisma.$transaction(async (tx) => {
+    if (input.schoolTourImportTarget === true) {
+      await tx.appTaskTemplate.updateMany({
+        where: { id: { not: id }, schoolTourImportTarget: true },
+        data: { schoolTourImportTarget: false },
+      });
+    }
+
     await tx.appTaskTemplate.update({
       where: { id },
       data: {
@@ -440,6 +438,9 @@ export async function updateTaskTemplate(
         ...(input.limitPerDay !== undefined ? { limitPerDay: input.limitPerDay } : {}),
         ...(input.maxConcurrentPerTimeslot !== undefined
           ? { maxConcurrentPerTimeslot: input.maxConcurrentPerTimeslot }
+          : {}),
+        ...(input.schoolTourImportTarget !== undefined
+          ? { schoolTourImportTarget: input.schoolTourImportTarget }
           : {}),
         ...(input.enabled !== undefined ? { enabled: input.enabled } : {}),
       },

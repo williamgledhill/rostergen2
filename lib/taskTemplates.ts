@@ -21,6 +21,7 @@ export type TaskTemplate = {
   packingMinutes?: number;
   limitPerDay?: number;
   maxConcurrentPerTimeslot?: number;
+  schoolTourImportTarget?: boolean;
   enabled?: boolean;
 };
 

@@ -9,7 +9,6 @@ import {
   TASK_TEMPLATE_REFRESH_EVENT,
   TASK_TEMPLATE_REFRESH_STORAGE_KEY,
   TaskTemplate,
-  defaultTaskTemplates,
 } from "@/lib/taskTemplates";
 import { getDayScheduleForDate, type Person } from "@/lib/people";
 import {
@@ -259,21 +258,6 @@ function buildRosterSaveSignature(
     })),
   });
 }
-
-const typeToClassLabel: Record<string, [string, string]> = {
-  front: ["front", "Front Desk"],
-  tour: ["tour", "Public Tour"],
-  prep: ["prep", "Prep"],
-  gallery: ["gallery", "Gallery"],
-  break: ["break", "Break"],
-  tidy: ["tidy", "Finish"],
-  "school-pre": ["prep", "School Pre"],
-  "school-program": ["tour", "School Program"],
-};
-
-const defaultColorByType: Record<string, string> = Object.fromEntries(
-  defaultTaskTemplates.map((t) => [t.id, t.color || "#d3e6d5"])
-);
 
 export default function Grid({
   toolbar,
@@ -698,10 +682,10 @@ export default function Grid({
     return map;
   }, [templates]);
 
-  const colorForType = useCallback((type: string) => templateById.get(type)?.color || defaultColorByType[type], [templateById]);
+  const colorForType = useCallback((type: string) => templateById.get(type)?.color || "#e2e8f0", [templateById]);
   const colorForTask = useCallback(
     (task: Pick<GridTask, "type" | "color">) =>
-      templateById.get(task.type)?.color || task.color || defaultColorByType[task.type],
+      templateById.get(task.type)?.color || task.color || "#e2e8f0",
     [templateById]
   );
 
@@ -1310,9 +1294,7 @@ export default function Grid({
       const window = getWindow(template);
       if (!window) return null;
       const hasDuration = Number.isFinite(template.durationMinutes) && (template.durationMinutes ?? 0) > 0;
-      const baseDuration = hasDuration
-        ? (template.durationMinutes as number)
-        : (template.id === "front" || template.id === "gallery" ? 30 : 60);
+      const baseDuration = hasDuration ? (template.durationMinutes as number) : 60;
       const waitingMinutes = template.waitingMinutes || 0;
       const packingMinutes = template.packingMinutes || 0;
       const totalMinutes = Math.max(
@@ -1395,13 +1377,16 @@ export default function Grid({
 
     const importedSchoolTourFailures: string[] = [];
     const schoolTourTemplate =
-      templateById.get("school-program") ||
-      templates.find((template) => template.id === "school-program") ||
-      defaultTaskTemplates.find((template) => template.id === "school-program");
+      templates.find((template) => template.schoolTourImportTarget) || null;
     const schoolTourMeta = schoolTourTemplate ? buildMeta(schoolTourTemplate) : null;
 
     const placeImportedSchoolTours = () => {
-      if (!schoolTourMeta) return;
+      if (!schoolTourMeta) {
+        if (schoolTours.length) {
+          importedSchoolTourFailures.push("no task is marked as the imported school tours target");
+        }
+        return;
+      }
       const sortedSchoolTours = [...schoolTours].sort((a, b) => {
         if (a.startTime !== b.startTime) return a.startTime.localeCompare(b.startTime);
         return a.schoolName.localeCompare(b.schoolName);
@@ -2478,15 +2463,14 @@ export default function Grid({
   function closePicker() { setModal(null); }
   function createFromPicker(template: TaskTemplate) {
     if (!modal) return;
-    const fallback = typeToClassLabel[template?.id || ""] || [];
-    const cls = fallback[0] || template?.id || "gallery";
-    const label = fallback[1] || template?.name || "Task";
+    const type = template?.id || "task";
+    const label = template?.name || "Task";
     const id = crypto.randomUUID?.() ?? String(Math.random());
     const nextTasks = [
       ...tasksRef.current,
       {
         id,
-        type: cls,
+        type,
         label,
         col: modal.col,
         startRow: modal.row,

@@ -100,6 +100,7 @@ model AppTaskTemplate {
   packingMinutes         Int      @default(0)
   limitPerDay            Int      @default(0)
   maxConcurrentPerTimeslot Int    @default(0)
+  schoolTourImportTarget Boolean  @default(false)
   enabled                Boolean  @default(true)
   createdAt              DateTime @default(now())
   updatedAt              DateTime @updatedAt

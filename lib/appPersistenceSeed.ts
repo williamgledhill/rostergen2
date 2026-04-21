@@ -205,6 +205,7 @@ async function seedTaskTemplatesIfNeeded() {
       maxConcurrentPerTimeslot: Number.isFinite(template.maxConcurrentPerTimeslot)
         ? Number(template.maxConcurrentPerTimeslot)
         : 0,
+      schoolTourImportTarget: Boolean(template.schoolTourImportTarget),
       enabled: template.enabled !== false,
     })),
     skipDuplicates: true,

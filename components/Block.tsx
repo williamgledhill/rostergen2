@@ -20,15 +20,6 @@ type Props = {
   onStartResize?: (which: "top" | "bottom", e: React.MouseEvent) => void;
 };
 
-const typeToClass: Record<string, string> = {
-  front: "bg-[var(--front)]",
-  tour: "bg-[var(--tour)]",
-  prep: "bg-[var(--prep)]",
-  gallery: "bg-[var(--gallery)]",
-  break: "bg-[var(--break)]",
-  tidy: "bg-[var(--tidy)]",
-};
-
 export default function Block({
   id,
   type,
@@ -47,7 +38,7 @@ export default function Block({
   waitingMinutes,
   packingMinutes,
 }: Props) {
-  const cls = color ? "" : typeToClass[type] ?? "bg-[var(--gallery)]";
+  const cls = color ? "" : "bg-slate-200";
   const boxShadow = [
     !isLastCol ? "inset -1px 0 0 rgba(71,85,105,0.98)" : "",
     !touchesBottomEdge ? "inset 0 -1px 0 rgba(71,85,105,0.98)" : "",

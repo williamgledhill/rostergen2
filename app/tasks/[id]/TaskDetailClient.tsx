@@ -417,8 +417,8 @@ export default function TaskDetailClient({ id, initialTask }: { id: string; init
               <div className="border-t border-[var(--border)]" />
               <ToggleRow
                 id="tour-task"
-                label="Tour task"
-                description="Protects the core tour time so other overwrite tasks do not cut through it. Waiting and packing stay outside the protected window."
+                label="Protect core time"
+                description="When this task overwrites conflicts, only the main task time is protected. Waiting and packing stay outside that protected window."
                 checked={!!task.mustManned && !!task.overwriteExistingTasks}
                 onChange={(checked) =>
                   setTask((t) =>
@@ -444,9 +444,17 @@ export default function TaskDetailClient({ id, initialTask }: { id: string; init
               <ToggleRow
                 id="overwrite-existing-tasks"
                 label="Overwrite other tasks"
-                description="For non-tour special cases, runs last and replaces conflicting tasks in the same slot."
+                description="Runs late in autofill and replaces conflicting tasks in the same slot."
                 checked={!!task.overwriteExistingTasks}
                 onChange={(checked) => setTask((t) => (t ? { ...t, overwriteExistingTasks: checked } : t))}
+              />
+              <div className="border-t border-[var(--border)]" />
+              <ToggleRow
+                id="school-tour-import-target"
+                label="Use for imported school tours"
+                description="Imported school runsheets use this task's colour, duration, waiting time, and overwrite rules."
+                checked={!!task.schoolTourImportTarget}
+                onChange={(checked) => setTask((t) => (t ? { ...t, schoolTourImportTarget: checked } : t))}
               />
               <div className="border-t border-[var(--border)]" />
               <ToggleRow
