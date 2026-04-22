@@ -940,6 +940,7 @@ export default function Grid({
       allowShrink: boolean;
       maxConsecutiveSpan: number;
       maxConcurrentPerTimeslot: number;
+      fixedTimeBlock: boolean;
       protectsTourWindow: boolean;
     };
 
@@ -1377,6 +1378,21 @@ export default function Grid({
         })
         .filter((r): r is number => r !== null)
         .filter((r) => r >= window.startRow && r + span <= window.endRow);
+      const hasBoundedWindow = window.startRow > MIN_ROW || window.endRow < maxRowEx;
+      const windowRows = window.endRow - window.startRow;
+      const fixedTimeBlock =
+        regularTimeRows.length > 0 ||
+        (
+          hasBoundedWindow &&
+          minPerEmp === 0 &&
+          !allowShrink &&
+          (
+            windowRows <= span ||
+            !!template.mustManned ||
+            !!template.attendedByAll ||
+            !!template.overwriteExistingTasks
+          )
+        );
       return {
         id: template.id || template.name || "task",
         template,
@@ -1395,6 +1411,7 @@ export default function Grid({
         allowShrink,
         maxConsecutiveSpan,
         maxConcurrentPerTimeslot,
+        fixedTimeBlock,
         protectsTourWindow: !!template.mustManned && !!template.overwriteExistingTasks,
       };
     };
@@ -1690,24 +1707,34 @@ export default function Grid({
     const protectedTaskFailures: string[] = [];
     placeImportedSchoolTours();
 
-    const reserveProtectedFixedTimeTasks = () => {
-      const protectedFixedMetas = templatesToSchedule.filter((meta) => meta.protectsTourWindow && meta.hasFixedTimes);
+    const getFixedBlockCandidateRows = (meta: TemplateMeta) => {
+      if (meta.regularTimeRows.length > 0) return meta.regularTimeRows;
+      if (!meta.window) return [];
+      if (meta.mustManned) {
+        return Array.from(
+          { length: Math.max(0, meta.window.endRow - meta.window.startRow) },
+          (_, index) => meta.window!.startRow + index
+        );
+      }
+      return getCandidateRowsForMeta(meta);
+    };
 
-      for (const meta of protectedFixedMetas) {
-        const candidateRows = getCandidateRowsForMeta(meta);
-        const desiredPlacements = Math.min(candidateRows.length, meta.limitPerDay);
+    const reserveFixedTimeBlocksBeforeInfill = () => {
+      const fixedBlockMetas = templatesToSchedule.filter((meta) => meta.fixedTimeBlock);
+
+      for (const meta of fixedBlockMetas) {
+        const candidateRows = getFixedBlockCandidateRows(meta);
+        const desiredPlacements = Math.min(
+          meta.hasFixedTimes || meta.mustManned ? candidateRows.length : 1,
+          meta.limitPerDay
+        );
+        let placementsMade = 0;
 
         for (const row of candidateRows) {
-          if (getTotal(meta.id) >= desiredPlacements) break;
+          if (placementsMade >= desiredPlacements) break;
           if (getTotal(meta.id) >= meta.limitPerDay) break;
           const span = getSpanForMeta(meta, row, meta.window?.endRow ?? maxRowEx, { ignoreWindow: false });
           if (!span) continue;
-          const protectedRange = getProtectedRangeForMeta(meta, row, span);
-          const protectedConflict = getProtectedTaskConflict(protectedRange);
-          if (protectedConflict) {
-            protectedTaskFailures.push(`${meta.template.name} ${timeRangeForSpan(row, span)} overlaps ${protectedConflict}`);
-            continue;
-          }
 
           const sortedEmployees = employees
             .filter((emp) => {
@@ -1730,6 +1757,23 @@ export default function Grid({
               );
             });
 
+          if (meta.attendedByAll) {
+            const placedEmployees = sortedEmployees.filter((emp) => {
+              const col = employeeColById.get(emp.id) ?? employees.findIndex((entry) => entry.id === emp.id) + 2;
+              return isFree(col, row, span, emp.id);
+            });
+            if (!placedEmployees.length) {
+              protectedTaskFailures.push(`${meta.template.name} ${timeRangeForSpan(row, span)}`);
+              continue;
+            }
+            placedEmployees.forEach((emp) => {
+              const col = employeeColById.get(emp.id) ?? employees.findIndex((entry) => entry.id === emp.id) + 2;
+              addTask(meta, col, row, span, emp.id);
+            });
+            placementsMade += 1;
+            continue;
+          }
+
           const picked = sortedEmployees.find((emp) => {
             const col = employeeColById.get(emp.id) ?? employees.findIndex((entry) => entry.id === emp.id) + 2;
             return isFree(col, row, span, emp.id);
@@ -1741,11 +1785,12 @@ export default function Grid({
 
           const col = employeeColById.get(picked.id) ?? employees.findIndex((entry) => entry.id === picked.id) + 2;
           addTask(meta, col, row, span, picked.id);
+          placementsMade += 1;
         }
       }
     };
 
-    reserveProtectedFixedTimeTasks();
+    reserveFixedTimeBlocksBeforeInfill();
 
     for (const [metaIndex, meta] of templatesForPrimaryPass.entries()) {
       const window = meta.window;
