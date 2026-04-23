@@ -53,12 +53,35 @@ export function resolveAutofillTimeSlots(input: {
 export function regularDayAppliesToAutofill(input: {
   dayKey: string;
   regularDays?: string[] | null;
+  regularTimes?: string[] | null;
+  regularTimesByDay?: Record<string, string[]> | null;
 }) {
   const regularDays = Array.isArray(input.regularDays)
     ? input.regularDays.filter((day): day is string => typeof day === "string")
     : [];
+  const regularTimes = Array.isArray(input.regularTimes)
+    ? input.regularTimes.filter((time): time is string => typeof time === "string" && time.length > 0)
+    : [];
+  const regularTimesByDay =
+    input.regularTimesByDay &&
+    typeof input.regularTimesByDay === "object" &&
+    !Array.isArray(input.regularTimesByDay)
+      ? input.regularTimesByDay
+      : {};
+  const dayTimes = Array.isArray(regularTimesByDay[input.dayKey])
+    ? regularTimesByDay[input.dayKey].filter((time): time is string => typeof time === "string" && time.length > 0)
+    : [];
 
-  return regularDays.includes(input.dayKey);
+  return regularDays.includes(input.dayKey) || regularTimes.length > 0 || dayTimes.length > 0;
+}
+
+export function isAutofillFillerTemplate(input: {
+  hasFixedTimes: boolean;
+  mustManned: boolean;
+  minPerEmp: number;
+  fixedTimeBlock?: boolean;
+}) {
+  return !input.hasFixedTimes && !input.mustManned && input.minPerEmp <= 0 && !input.fixedTimeBlock;
 }
 
 export type AutofillPlacementWindow = {

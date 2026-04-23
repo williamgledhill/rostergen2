@@ -5,6 +5,7 @@ import {
   getFeasiblePlacementRows,
   getAutofillTemplatePriority,
   getPreferredConcurrentLimit,
+  isAutofillFillerTemplate,
   regularDayAppliesToAutofill,
   resolveAutofillTimeSlots,
 } from "../lib/rosterAutofill";
@@ -87,11 +88,13 @@ describe("roster autofill preferences", () => {
       regularDayAppliesToAutofill({
         dayKey: "Thu",
         regularDays: [],
+        regularTimes: [],
+        regularTimesByDay: {},
       })
     ).toBe(false);
   });
 
-  it("only autofills tasks on explicitly selected regular days", () => {
+  it("autofills tasks on explicitly selected regular days", () => {
     expect(
       regularDayAppliesToAutofill({
         dayKey: "Thu",
@@ -104,6 +107,50 @@ describe("roster autofill preferences", () => {
         regularDays: ["Mon", "Thu"],
       })
     ).toBe(false);
+  });
+
+  it("autofills fixed-time tasks with default slots even when no regular days are selected", () => {
+    expect(
+      regularDayAppliesToAutofill({
+        dayKey: "Thu",
+        regularDays: [],
+        regularTimes: ["10:30"],
+      })
+    ).toBe(true);
+  });
+
+  it("autofills fixed-time tasks only on matching day-specific slots", () => {
+    expect(
+      regularDayAppliesToAutofill({
+        dayKey: "Fri",
+        regularDays: [],
+        regularTimesByDay: { Fri: ["11:00"], Mon: ["11:00"] },
+      })
+    ).toBe(true);
+    expect(
+      regularDayAppliesToAutofill({
+        dayKey: "Thu",
+        regularDays: [],
+        regularTimesByDay: { Fri: ["11:00"], Mon: ["11:00"] },
+      })
+    ).toBe(false);
+  });
+
+  it("does not use required breaks as filler after their minimum placement", () => {
+    expect(
+      isAutofillFillerTemplate({
+        hasFixedTimes: false,
+        mustManned: false,
+        minPerEmp: 1,
+      })
+    ).toBe(false);
+    expect(
+      isAutofillFillerTemplate({
+        hasFixedTimes: false,
+        mustManned: false,
+        minPerEmp: 0,
+      })
+    ).toBe(true);
   });
 
   it("identifies when a required coverage block would remove the last lunch slot", () => {

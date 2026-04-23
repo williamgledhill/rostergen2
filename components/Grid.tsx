@@ -17,6 +17,7 @@ import {
   getFeasiblePlacementRows,
   getAutofillTemplatePriority,
   getPreferredConcurrentLimit,
+  isAutofillFillerTemplate,
   regularDayAppliesToAutofill,
   resolveAutofillTimeSlots,
 } from "@/lib/rosterAutofill";
@@ -1231,14 +1232,8 @@ export default function Grid({
       b: { startRow: number; span: number }
     ) => a.startRow < b.startRow + b.span && a.startRow + a.span > b.startRow;
 
-    const overlapsProtectedTaskGlobally = (blockedRange: { startRow: number; span: number }) =>
-      generated.some((task) => {
-        const protectedRange = getProtectedRangeForTask(task);
-        return protectedRange ? rangesOverlap(blockedRange, protectedRange) : false;
-      });
-
-    const getProtectedTaskConflict = (blockedRange: { startRow: number; span: number }) => {
-      const task = generated.find((entry) => {
+    const getProtectedTaskConflictInColumn = (col: number, blockedRange: { startRow: number; span: number }) => {
+      const task = (tasksByCol.get(col) ?? []).find((entry) => {
         const protectedRange = getProtectedRangeForTask(entry);
         return protectedRange ? rangesOverlap(blockedRange, protectedRange) : false;
       });
@@ -1327,6 +1322,8 @@ export default function Grid({
       return regularDayAppliesToAutofill({
         dayKey,
         regularDays: template.regularDays,
+        regularTimes: template.regularTimes,
+        regularTimesByDay: template.regularTimesByDay,
       });
     };
 
@@ -1462,16 +1459,15 @@ export default function Grid({
           continue;
         }
         const protectedRange = getProtectedRangeForMeta(schoolTourMeta, startRow, span);
-        const protectedConflict = schoolTourMeta.protectsTourWindow ? getProtectedTaskConflict(protectedRange) : null;
-        if (protectedConflict) {
-          importedSchoolTourFailures.push(`${schoolTour.schoolName} (${schoolTour.studentCount}) overlaps ${protectedConflict}`);
-          continue;
-        }
 
         const eligibleEmployees = [...employees]
           .filter((emp) => {
             const col = employeeColById.get(emp.id) ?? employees.findIndex((entry) => entry.id === emp.id) + 2;
+            const protectedConflict = schoolTourMeta.protectsTourWindow
+              ? getProtectedTaskConflictInColumn(col, protectedRange)
+              : null;
             return (
+              !protectedConflict &&
               getEmpCount(schoolTourMeta.id, emp.id) < schoolTourMeta.maxPerEmp &&
               isFree(col, startRow, span, emp.id) &&
               !exceedsConcurrentLimit(schoolTourMeta.id, startRow, span, schoolTourMeta.maxConcurrentPerTimeslot)
@@ -1551,7 +1547,6 @@ export default function Grid({
     ) => {
       const blockedRange = { startRow: row, span };
       const protectedRange = getProtectedRangeForMeta(meta, row, span);
-      if (meta.protectsTourWindow && getProtectedTaskConflict(protectedRange)) return undefined;
       const futureAvailabilityByEmployee = new Map<string | number, number[]>();
       const getFutureAvailability = (emp: Employee) => {
         if (!futureAvailabilityByEmployee.has(emp.id)) {
@@ -1566,6 +1561,7 @@ export default function Grid({
       const feasibleEmployees = employees.filter((emp) => {
         if (getEmpCount(meta.id, emp.id) >= meta.maxPerEmp) return false;
         const col = employeeColById.get(emp.id) ?? employees.findIndex((e) => e.id === emp.id) + 2;
+        if (meta.protectsTourWindow && getProtectedTaskConflictInColumn(col, protectedRange)) return false;
         return (
           isFree(col, row, span, emp.id) &&
           !exceedsConcurrentLimit(meta.id, row, span, meta.maxConcurrentPerTimeslot)
@@ -1608,7 +1604,7 @@ export default function Grid({
         return 0;
       });
     const finalPassTemplates = templatesToSchedule.filter(
-      (meta) => meta.attendedByAll || meta.overwriteExistingTasks
+      (meta) => !meta.fixedTimeBlock && (meta.attendedByAll || meta.overwriteExistingTasks)
     );
     const templatesForPrimaryPass = templatesToSchedule.filter(
       (meta) => !meta.attendedByAll && !meta.overwriteExistingTasks
@@ -1923,9 +1919,8 @@ export default function Grid({
       }
     }
 
-    const flexibleTemplates = templatesForPrimaryPass.filter((t) => !t.hasFixedTimes);
-    const fillTemplates = flexibleTemplates.length ? flexibleTemplates : templatesForPrimaryPass;
-    const ignoreFixedTimes = flexibleTemplates.length === 0;
+    const fillTemplates = templatesForPrimaryPass.filter(isAutofillFillerTemplate);
+    const ignoreFixedTimes = false;
 
     const getConsecutiveSpan = (col: number, type: string, startRow: number, span: number) => {
       const list = tasksByCol.get(col) ?? [];
@@ -2067,7 +2062,7 @@ export default function Grid({
     ) => {
       const blockedRange = getProtectedRangeForMeta(meta, row, span);
       if (meta.overwriteExistingTasks) {
-        if (meta.protectsTourWindow && getProtectedTaskConflict(blockedRange)) {
+        if (meta.protectsTourWindow && getProtectedTaskConflictInColumn(col, blockedRange)) {
           return false;
         }
         if (!meta.protectsTourWindow && overlapsProtectedTaskInColumn(col, blockedRange)) {
