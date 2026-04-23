@@ -7,7 +7,7 @@ import { Eye, EyeOff, LoaderCircle } from "lucide-react";
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
-export default function SignupPage() {
+export default function LoginView() {
   const router = useRouter();
   const searchParams = useSearchParams();
 
@@ -217,7 +217,7 @@ export default function SignupPage() {
             <button
               type="submit"
               disabled={isDisabled}
-              className="inline-flex h-[50px] w-full items-center justify-center gap-2 rounded-[14px] border border-[var(--accent)] bg-[var(--accent)] px-5 text-[1rem] font-semibold text-white transition hover:bg-[var(--accent-strong)] hover:border-[var(--accent-strong)] disabled:cursor-not-allowed disabled:opacity-70 sm:h-[52px]"
+              className="inline-flex h-[50px] w-full items-center justify-center gap-2 rounded-[14px] border border-[var(--accent)] bg-[var(--accent)] px-5 text-[1rem] font-semibold text-white transition hover:border-[var(--accent-strong)] hover:bg-[var(--accent-strong)] disabled:cursor-not-allowed disabled:opacity-70 sm:h-[52px]"
             >
               {submitting ? (
                 <>
@@ -260,7 +260,7 @@ export default function SignupPage() {
       <footer className="px-4 pb-6 pt-2 sm:px-8 sm:pb-8">
         <div className="mx-auto flex w-full max-w-6xl flex-col items-center justify-center gap-1 text-center text-xs text-[#9aa1ad] sm:flex-row sm:gap-3">
           <span>Powered by Roster Generator</span>
-          <span className="hidden sm:inline text-[#c2c8d1]">|</span>
+          <span className="hidden text-[#c2c8d1] sm:inline">|</span>
           <a href="#" className="transition hover:text-[#6b7280]">
             Terms of Use
           </a>
