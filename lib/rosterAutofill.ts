@@ -50,6 +50,17 @@ export function resolveAutofillTimeSlots(input: {
   };
 }
 
+export function regularDayAppliesToAutofill(input: {
+  dayKey: string;
+  regularDays?: string[] | null;
+}) {
+  const regularDays = Array.isArray(input.regularDays)
+    ? input.regularDays.filter((day): day is string => typeof day === "string")
+    : [];
+
+  return regularDays.includes(input.dayKey);
+}
+
 export type AutofillPlacementWindow = {
   startRow: number;
   endRow: number;

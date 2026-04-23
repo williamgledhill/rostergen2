@@ -17,6 +17,7 @@ import {
   getFeasiblePlacementRows,
   getAutofillTemplatePriority,
   getPreferredConcurrentLimit,
+  regularDayAppliesToAutofill,
   resolveAutofillTimeSlots,
 } from "@/lib/rosterAutofill";
 import { parseSchoolTourWorkbook, type ImportedSchoolTour } from "@/lib/schoolTourImports";
@@ -1323,8 +1324,10 @@ export default function Grid({
     };
 
     const templateApplies = (template: TaskTemplate) => {
-      const days = Array.isArray(template.regularDays) ? template.regularDays : [];
-      return days.length === 0 || days.includes(dayKey);
+      return regularDayAppliesToAutofill({
+        dayKey,
+        regularDays: template.regularDays,
+      });
     };
 
     const buildMeta = (template: TaskTemplate): TemplateMeta | null => {

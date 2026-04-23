@@ -5,6 +5,7 @@ import {
   getFeasiblePlacementRows,
   getAutofillTemplatePriority,
   getPreferredConcurrentLimit,
+  regularDayAppliesToAutofill,
   resolveAutofillTimeSlots,
 } from "../lib/rosterAutofill";
 
@@ -79,6 +80,30 @@ describe("roster autofill preferences", () => {
       regularTimes: ["10:30"],
       hasAnyFixedTimes: true,
     });
+  });
+
+  it("does not autofill tasks with no selected regular days", () => {
+    expect(
+      regularDayAppliesToAutofill({
+        dayKey: "Thu",
+        regularDays: [],
+      })
+    ).toBe(false);
+  });
+
+  it("only autofills tasks on explicitly selected regular days", () => {
+    expect(
+      regularDayAppliesToAutofill({
+        dayKey: "Thu",
+        regularDays: ["Mon", "Thu"],
+      })
+    ).toBe(true);
+    expect(
+      regularDayAppliesToAutofill({
+        dayKey: "Fri",
+        regularDays: ["Mon", "Thu"],
+      })
+    ).toBe(false);
   });
 
   it("identifies when a required coverage block would remove the last lunch slot", () => {
