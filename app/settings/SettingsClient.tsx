@@ -4,6 +4,7 @@ import React, { useMemo, useState } from "react";
 import { buildDraftStorageKey, formatAutosaveStatusText, getAutosaveStatusClassName } from "@/lib/clientDrafts";
 import { AppSettings, DEFAULT_SETTINGS, DAY_KEYS } from "@/lib/settingsDefaults";
 import { usePersistedAutosave } from "@/lib/usePersistedAutosave";
+import { invalidateWorkspaceResource, settingsDataKey, writeCachedResource } from "@/lib/workspaceData";
 
 const DAY_LABELS: Record<string, string> = {
   Mon: "Monday",
@@ -69,6 +70,11 @@ export default function SettingsClient({
       });
       if (!res.ok) throw new Error("Failed to save settings");
       const data = await res.json();
+      if (sessionUser) {
+        writeCachedResource(settingsDataKey(sessionUser), { settings: data, mfaStatus });
+      }
+      invalidateWorkspaceResource("rosters");
+      invalidateWorkspaceResource("editor");
       return {
         value: data,
         savedAt: new Date().toISOString(),

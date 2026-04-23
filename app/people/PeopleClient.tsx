@@ -4,6 +4,8 @@ import React, { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Plus, X } from "lucide-react";
 import { ALL_DAYS, type DayKey, type Person, defaultSchedule } from "@/lib/people";
+import { navigateWithinSpa } from "@/lib/spaNavigation";
+import { peopleDataKey, preloadWorkspaceRoute, writeCachedResource } from "@/lib/workspaceData";
 
 export default function PeopleClient({ initialPeople }: { initialPeople: Person[] }) {
   const [people, setPeople] = useState<Person[]>(initialPeople);
@@ -69,12 +71,15 @@ export default function PeopleClient({ initialPeople }: { initialPeople: Person[
       const saved = await res.json();
       setPeople((prev) => {
         const idx = prev.findIndex((p) => p.id === saved.id);
+        let next: Person[];
         if (idx >= 0) {
-          const next = [...prev];
+          next = [...prev];
           next[idx] = saved;
-          return next;
+        } else {
+          next = [...prev, saved];
         }
-        return [...prev, saved];
+        writeCachedResource(peopleDataKey(), next);
+        return next;
       });
       setModalOpen(false);
       setForm({ id: "", name: "", email: "", schedule: defaultSchedule([]) });
@@ -123,8 +128,15 @@ export default function PeopleClient({ initialPeople }: { initialPeople: Person[
                   <tr
                     key={p.id}
                     className="border-b border-[#E6EAF0] hover:bg-[#f8fafc] cursor-pointer"
-                    onMouseEnter={() => router.prefetch(`/people/${p.id}`)}
-                    onClick={() => router.push(`/people/${p.id}`)}
+                    onMouseEnter={() => {
+                      const href = `/people/${p.id}`;
+                      preloadWorkspaceRoute(href);
+                      router.prefetch(href);
+                    }}
+                    onClick={() => {
+                      const href = `/people/${p.id}`;
+                      if (!navigateWithinSpa(href)) router.push(href);
+                    }}
                   >
                     <td className="align-middle px-4 py-4">
                       <div className="inline-flex items-center gap-2 text-[15px] font-medium text-slate-700">

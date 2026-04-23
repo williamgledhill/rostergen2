@@ -3,6 +3,8 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Plus } from "lucide-react";
+import { navigateWithinSpa } from "@/lib/spaNavigation";
+import { preloadWorkspaceRoute, tasksDataKey, writeCachedResource } from "@/lib/workspaceData";
 import {
   TASK_TEMPLATE_DELETED_STORAGE_KEY,
   TASK_TEMPLATE_REFRESH_EVENT,
@@ -27,7 +29,11 @@ export default function TasksClient({ initialTasks }: { initialTasks: TaskTempla
       const deletedId = window.sessionStorage.getItem(TASK_TEMPLATE_DELETED_STORAGE_KEY);
       if (!deletedId) return;
       window.sessionStorage.removeItem(TASK_TEMPLATE_DELETED_STORAGE_KEY);
-      setTasks((prev) => prev.filter((task) => task.id !== deletedId));
+      setTasks((prev) => {
+        const next = prev.filter((task) => task.id !== deletedId);
+        writeCachedResource(tasksDataKey(), next);
+        return next;
+      });
     } catch (error) {
       console.error(error);
     }
@@ -38,6 +44,7 @@ export default function TasksClient({ initialTasks }: { initialTasks: TaskTempla
       const res = await fetch("/api/task-templates", { cache: "no-store" });
       if (!res.ok) throw new Error("Failed to refresh tasks");
       const next = (await res.json()) as TaskTemplate[];
+      writeCachedResource(tasksDataKey(), next);
       setTasks(next);
     } catch (error) {
       console.error(error);
@@ -101,7 +108,11 @@ export default function TasksClient({ initialTasks }: { initialTasks: TaskTempla
       });
       if (!res.ok) throw new Error("Failed to add template");
       const created = await res.json();
-      setTasks((prev) => [...prev, created]);
+      setTasks((prev) => {
+        const next = [...prev, created];
+        writeCachedResource(tasksDataKey(), next);
+        return next;
+      });
     } catch (err) {
       console.error(err);
       alert("Failed to add task template");
@@ -142,8 +153,15 @@ export default function TasksClient({ initialTasks }: { initialTasks: TaskTempla
                   <tr
                     key={t.id}
                     className="border-b border-[#E6EAF0] hover:bg-[#f8fafc] cursor-pointer"
-                    onMouseEnter={() => router.prefetch(`/tasks/${t.id}`)}
-                    onClick={() => router.push(`/tasks/${t.id}`)}
+                    onMouseEnter={() => {
+                      const href = `/tasks/${t.id}`;
+                      preloadWorkspaceRoute(href);
+                      router.prefetch(href);
+                    }}
+                    onClick={() => {
+                      const href = `/tasks/${t.id}`;
+                      if (!navigateWithinSpa(href)) router.push(href);
+                    }}
                   >
                     <td className="align-middle px-4 py-4">
                       <span className="flex min-w-0 items-center gap-3 text-[15px] font-medium text-slate-700">

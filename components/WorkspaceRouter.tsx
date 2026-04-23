@@ -2,7 +2,6 @@
 
 import Link from "next/link";
 import React, { useEffect, useMemo, useState } from "react";
-import { usePathname, useSearchParams } from "next/navigation";
 import { Plus } from "lucide-react";
 import EditorClient from "@/app/editor/EditorClient";
 import PeopleClient from "@/app/people/PeopleClient";
@@ -12,34 +11,73 @@ import TaskDetailClient from "@/app/tasks/[id]/TaskDetailClient";
 import TasksClient from "@/app/tasks/TasksClient";
 import RosterTable from "@/components/RosterTable";
 import { buildEditorHref } from "@/lib/editorPersistence";
-import { formatFullDay, formatLocalId, parseLocalId } from "@/lib/dateUtils";
+import { formatLocalId, parseLocalId } from "@/lib/dateUtils";
 import { getDayScheduleForDate, type Person } from "@/lib/people";
 import type { RosterFile } from "@/lib/rosters";
-import type { AppSettings } from "@/lib/settingsDefaults";
-import type { TaskTemplate } from "@/lib/taskTemplates";
 import type { AuthUser } from "@/lib/auth";
-
-type MfaStatus = {
-  enabled: boolean;
-  setupPending: boolean;
-  setupExpiresAt: string | null;
-};
-
-type UpcomingPayload = {
-  settings: AppSettings;
-  rosters: RosterFile[];
-};
+import { navigateWithinSpa, shouldHandleSpaClick, useSpaLocation } from "@/lib/spaNavigation";
+import {
+  editorDataKey,
+  loadEditorData,
+  loadMonthRostersData,
+  loadPeopleData,
+  loadPersonData,
+  loadSettingsData,
+  loadTaskData,
+  loadTasksData,
+  loadUpcomingRostersData,
+  monthRosterDataKey,
+  peopleDataKey,
+  personDataKey,
+  preloadWorkspaceRoute,
+  readCachedResource,
+  refreshEditorData,
+  refreshMonthRostersData,
+  refreshPeopleData,
+  refreshPersonData,
+  refreshSettingsData,
+  refreshTaskData,
+  refreshTasksData,
+  refreshUpcomingRostersData,
+  rosterDataKey,
+  settingsDataKey,
+  taskDataKey,
+  tasksDataKey,
+  type EditorPayload,
+  type SettingsPayload,
+  type UpcomingPayload,
+} from "@/lib/workspaceData";
+import type { TaskTemplate } from "@/lib/taskTemplates";
 
 type ResourceState<T> =
   | { status: "loading"; data: null; error: null }
   | { status: "ready"; data: T; error: null }
   | { status: "error"; data: null; error: string };
 
-function useResource<T>(key: string, load: () => Promise<T>) {
-  const [state, setState] = useState<ResourceState<T>>({ status: "loading", data: null, error: null });
+function useResource<T>(key: string, load: () => Promise<T>, refresh: () => Promise<T>) {
+  const cached = readCachedResource<T>(key);
+  const [state, setState] = useState<ResourceState<T>>(
+    cached.hit ? { status: "ready", data: cached.data, error: null } : { status: "loading", data: null, error: null }
+  );
 
   useEffect(() => {
     let cancelled = false;
+
+    const current = readCachedResource<T>(key);
+    if (current.hit) {
+      setState({ status: "ready", data: current.data, error: null });
+      refresh()
+        .then((data) => {
+          if (!cancelled) setState({ status: "ready", data, error: null });
+        })
+        .catch((error) => {
+          console.error(error);
+        });
+      return () => {
+        cancelled = true;
+      };
+    }
+
     setState({ status: "loading", data: null, error: null });
     load()
       .then((data) => {
@@ -56,20 +94,6 @@ function useResource<T>(key: string, load: () => Promise<T>) {
   return state;
 }
 
-async function fetchJson<T>(url: string, options?: { allowNotFound?: boolean }): Promise<T | null> {
-  const res = await fetch(url, { cache: "no-store" });
-  if (options?.allowNotFound && res.status === 404) return null;
-  if (res.status === 401) {
-    window.location.href = `/signup?next=${encodeURIComponent(window.location.pathname + window.location.search)}`;
-    throw new Error("Unauthorized");
-  }
-  if (!res.ok) {
-    const data = await res.json().catch(() => ({}));
-    throw new Error(data?.error || "Failed to load");
-  }
-  return (await res.json()) as T;
-}
-
 function LoadingBlock({ label = "Loading..." }: { label?: string }) {
   return (
     <div className="w-full px-3 py-4">
@@ -83,6 +107,35 @@ function ErrorBlock({ message }: { message: string }) {
     <div className="w-full px-3 py-4">
       <div className="card border-red-200 bg-red-50 p-4 text-sm text-red-700">{message}</div>
     </div>
+  );
+}
+
+function SpaLink({
+  href,
+  className,
+  style,
+  children,
+}: {
+  href: string;
+  className?: string;
+  style?: React.CSSProperties;
+  children: React.ReactNode;
+}) {
+  return (
+    <Link
+      href={href}
+      className={className}
+      style={style}
+      onMouseEnter={() => preloadWorkspaceRoute(href)}
+      onFocus={() => preloadWorkspaceRoute(href)}
+      onClick={(event) => {
+        if (shouldHandleSpaClick(event) && navigateWithinSpa(href)) {
+          event.preventDefault();
+        }
+      }}
+    >
+      {children}
+    </Link>
   );
 }
 
@@ -132,7 +185,7 @@ function hasMeaningfulSavedLayout(roster: { employees?: any[]; tasks?: any[] } |
 }
 
 function RostersView() {
-  const state = useResource("rosters", async () => fetchJson<UpcomingPayload>("/api/rosters/upcoming") as Promise<UpcomingPayload>);
+  const state = useResource<UpcomingPayload>(rosterDataKey(), loadUpcomingRostersData, refreshUpcomingRostersData);
 
   if (state.status === "loading") return <LoadingBlock label="Loading rosters..." />;
   if (state.status === "error") return <ErrorBlock message={state.error} />;
@@ -149,9 +202,9 @@ function RostersView() {
               straight into the editor.
             </p>
           </div>
-          <Link href="/rosters/old" className="btn h-9 whitespace-nowrap px-4">
+          <SpaLink href="/rosters/old" className="btn h-9 whitespace-nowrap px-4">
             Old Rosters
-          </Link>
+          </SpaLink>
         </div>
 
         <RosterTable
@@ -159,9 +212,9 @@ function RostersView() {
           footer={
             <>
               Autogenerates {settings.upcomingDays} roster{settings.upcomingDays === 1 ? "" : "s"}.{" "}
-              <Link href="/settings" className="font-medium text-[#675dff] hover:underline">
+              <SpaLink href="/settings" className="font-medium text-[#675dff] hover:underline">
                 Click to change
-              </Link>
+              </SpaLink>
             </>
           }
         />
@@ -171,9 +224,10 @@ function RostersView() {
 }
 
 function MonthRostersView({ month }: { month: string }) {
-  const state = useResource(
-    `rosters-month-${month}`,
-    async () => fetchJson<RosterFile[]>(`/api/rosters/month?month=${encodeURIComponent(month)}`) as Promise<RosterFile[]>
+  const state = useResource<RosterFile[]>(
+    monthRosterDataKey(month),
+    () => loadMonthRostersData(month),
+    () => refreshMonthRostersData(month)
   );
   const todayHref = buildEditorHref(formatLocalId(new Date()));
 
@@ -191,10 +245,10 @@ function MonthRostersView({ month }: { month: string }) {
                 Browse individual daily rosters in this month. Today is highlighted.
               </p>
             </div>
-            <Link href={todayHref} className="btn btn-primary h-9 px-3" style={{ borderRadius: "6px" }}>
+            <SpaLink href={todayHref} className="btn btn-primary h-9 px-3" style={{ borderRadius: "6px" }}>
               <Plus className="h-4 w-4 text-white" strokeWidth={2.3} />
               <span className="text-[14px] font-medium text-white">New Roster</span>
-            </Link>
+            </SpaLink>
           </div>
         </div>
         <RosterTable rosters={state.data} />
@@ -206,21 +260,11 @@ function MonthRostersView({ month }: { month: string }) {
 function EditorView({ dateId }: { dateId?: string }) {
   const selectedDate = useMemo(() => parseLocalId(dateId || "") ?? new Date(), [dateId]);
   const rosterDateId = useMemo(() => formatLocalId(selectedDate), [selectedDate]);
-  const state = useResource(`editor-${rosterDateId}`, async () => {
-    const [people, settings, templates, savedRoster] = await Promise.all([
-      fetchJson<Person[]>("/api/people"),
-      fetchJson<AppSettings>("/api/settings"),
-      fetchJson<TaskTemplate[]>("/api/task-templates"),
-      fetchJson<RosterFile>(`/api/rosters?date=${encodeURIComponent(rosterDateId)}`, { allowNotFound: true }),
-    ]);
-
-    return {
-      people: people || [],
-      settings: settings as AppSettings,
-      templates: templates || [],
-      savedRoster,
-    };
-  });
+  const state = useResource<EditorPayload>(
+    editorDataKey(rosterDateId),
+    () => loadEditorData(rosterDateId),
+    () => refreshEditorData(rosterDateId)
+  );
 
   if (state.status === "loading") return <LoadingBlock label="Loading editor..." />;
   if (state.status === "error") return <ErrorBlock message={state.error} />;
@@ -258,16 +302,17 @@ function EditorView({ dateId }: { dateId?: string }) {
 }
 
 function PeopleView() {
-  const state = useResource("people", async () => fetchJson<Person[]>("/api/people") as Promise<Person[]>);
+  const state = useResource<Person[]>(peopleDataKey(), loadPeopleData, refreshPeopleData);
   if (state.status === "loading") return <LoadingBlock label="Loading people..." />;
   if (state.status === "error") return <ErrorBlock message={state.error} />;
   return <PeopleClient initialPeople={state.data} />;
 }
 
 function PersonView({ id }: { id: string }) {
-  const state = useResource(
-    `person-${id}`,
-    async () => fetchJson<Person>(`/api/people?id=${encodeURIComponent(id)}`, { allowNotFound: true }) as Promise<Person | null>
+  const state = useResource<Person | null>(
+    personDataKey(id),
+    () => loadPersonData(id),
+    () => refreshPersonData(id)
   );
   if (state.status === "loading") return <LoadingBlock label="Loading employee..." />;
   if (state.status === "error") return <ErrorBlock message={state.error} />;
@@ -275,17 +320,17 @@ function PersonView({ id }: { id: string }) {
 }
 
 function TasksView() {
-  const state = useResource("tasks", async () => fetchJson<TaskTemplate[]>("/api/task-templates") as Promise<TaskTemplate[]>);
+  const state = useResource<TaskTemplate[]>(tasksDataKey(), loadTasksData, refreshTasksData);
   if (state.status === "loading") return <LoadingBlock label="Loading tasks..." />;
   if (state.status === "error") return <ErrorBlock message={state.error} />;
   return <TasksClient initialTasks={state.data} />;
 }
 
 function TaskView({ id }: { id: string }) {
-  const state = useResource(
-    `task-${id}`,
-    async () =>
-      fetchJson<TaskTemplate>(`/api/task-templates?id=${encodeURIComponent(id)}`, { allowNotFound: true }) as Promise<TaskTemplate | null>
+  const state = useResource<TaskTemplate | null>(
+    taskDataKey(id),
+    () => loadTaskData(id),
+    () => refreshTaskData(id)
   );
   if (state.status === "loading") return <LoadingBlock label="Loading task..." />;
   if (state.status === "error") return <ErrorBlock message={state.error} />;
@@ -293,13 +338,11 @@ function TaskView({ id }: { id: string }) {
 }
 
 function SettingsView({ user }: { user: AuthUser }) {
-  const state = useResource("settings", async () => {
-    const [settings, mfaStatus] = await Promise.all([
-      fetchJson<AppSettings>("/api/settings"),
-      fetchJson<MfaStatus>("/api/auth/mfa"),
-    ]);
-    return { settings: settings as AppSettings, mfaStatus: mfaStatus as MfaStatus };
-  });
+  const state = useResource<SettingsPayload>(
+    settingsDataKey(user),
+    () => loadSettingsData(user),
+    () => refreshSettingsData(user)
+  );
 
   if (state.status === "loading") return <LoadingBlock label="Loading settings..." />;
   if (state.status === "error") return <ErrorBlock message={state.error} />;
@@ -319,9 +362,15 @@ function normalizeDateFromSearch(searchParams: URLSearchParams) {
 }
 
 export default function WorkspaceRouter({ user }: { user: AuthUser }) {
-  const pathname = usePathname() || "/rosters";
-  const searchParams = useSearchParams();
+  const { pathname, search } = useSpaLocation();
+  const searchParams = useMemo(() => new URLSearchParams(search), [search]);
   const dateId = normalizeDateFromSearch(searchParams);
+
+  useEffect(() => {
+    ["/rosters", "/people", "/tasks", "/settings", buildEditorHref(formatLocalId(new Date()))].forEach((href) => {
+      preloadWorkspaceRoute(href);
+    });
+  }, [user.id]);
 
   if (pathname === "/rosters" || pathname === "/") return <RostersView />;
   if (pathname === "/editor") return <EditorView dateId={dateId} />;
@@ -356,9 +405,9 @@ export default function WorkspaceRouter({ user }: { user: AuthUser }) {
       <div className="card max-w-xl p-5">
         <h1 className="text-xl font-semibold text-slate-900">Page not found</h1>
         <p className="mt-2 text-sm text-slate-600">This workspace view does not exist.</p>
-        <Link href="/rosters" className="btn mt-4 h-9 px-4">
+        <SpaLink href="/rosters" className="btn mt-4 h-9 px-4">
           Back to rosters
-        </Link>
+        </SpaLink>
       </div>
     </div>
   );

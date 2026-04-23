@@ -1,7 +1,7 @@
 "use client";
 import React from "react";
 import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
+import { useRouter } from "next/navigation";
 import {
   CalendarDays,
   type LucideIcon,
@@ -11,6 +11,8 @@ import {
   Settings,
 } from "lucide-react";
 import { buildEditorHref, LAST_EDITOR_DATE_EVENT, LAST_EDITOR_DATE_STORAGE_KEY, isLocalDateId } from "@/lib/editorPersistence";
+import { navigateWithinSpa, shouldHandleSpaClick, useSpaLocation } from "@/lib/spaNavigation";
+import { preloadWorkspaceRoute } from "@/lib/workspaceData";
 
 const Item = ({
   icon: Icon,
@@ -47,28 +49,24 @@ const Item = ({
     ? "block w-full text-center text-[13px] font-medium leading-[1.15] text-current"
     : "text-[15px] font-medium leading-none text-current";
 
-  if (collapsed) {
-    return (
-      <Link
-        href={href}
-        prefetch={true}
-        onClick={onClick}
-        className={linkClassName}
-        title={label}
-      >
-        <span className={iconWrapClassName}>
-          <Icon className="h-[19px] w-[19px]" aria-hidden="true" />
-        </span>
-        <span className={labelClassName}>{label}</span>
-      </Link>
-    );
-  }
+  const handleClick = (event: React.MouseEvent<HTMLAnchorElement>) => {
+    if (shouldHandleSpaClick(event) && navigateWithinSpa(href)) {
+      event.preventDefault();
+      onClick?.();
+      return;
+    }
+    onClick?.();
+  };
+
+  const handlePrefetch = () => preloadWorkspaceRoute(href);
 
   return (
     <Link
       href={href}
       prefetch={true}
-      onClick={onClick}
+      onClick={handleClick}
+      onMouseEnter={handlePrefetch}
+      onFocus={handlePrefetch}
       className={linkClassName}
       title={label}
     >
@@ -89,7 +87,7 @@ export default function SideNav({
   mobile?: boolean;
   onNavigate?: () => void;
 }){
-  const pathname = usePathname() || "/";
+  const { pathname } = useSpaLocation();
   const router = useRouter();
   const [editorHref, setEditorHref] = React.useState("/editor");
   const isOpen = open;
@@ -127,6 +125,7 @@ export default function SideNav({
 
   React.useEffect(() => {
     ["/rosters", editorHref, "/people", "/tasks", "/settings"].forEach((href) => {
+      preloadWorkspaceRoute(href);
       router.prefetch(href);
     });
   }, [editorHref, router]);

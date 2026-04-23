@@ -4,6 +4,8 @@ import React, { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { ArrowLeft, Copy, PencilLine, Save, Trash2 } from "lucide-react";
 import { buildDraftStorageKey, formatAutosaveStatusText, getAutosaveStatusClassName, removeDraftRecord } from "@/lib/clientDrafts";
+import { navigateWithinSpa } from "@/lib/spaNavigation";
+import { invalidateWorkspaceResource, personDataKey, writeCachedResource } from "@/lib/workspaceData";
 import {
   ALL_DAYS,
   type DayKey,
@@ -129,6 +131,8 @@ export default function PersonDetailClient({ id, initialPerson }: { id: string; 
       });
       if (!res.ok) throw new Error("Save failed");
       const saved = (await res.json()) as Person;
+      writeCachedResource(personDataKey(id), saved);
+      invalidateWorkspaceResource("people");
       return {
         value: toEditorPerson(saved),
         savedAt: new Date().toISOString(),
@@ -181,7 +185,9 @@ export default function PersonDetailClient({ id, initialPerson }: { id: string; 
       const res = await fetch(`/api/people?id=${id}`, { method: "DELETE" });
       if (!res.ok) throw new Error("Delete failed");
       removeDraftRecord(buildDraftStorageKey("person", id));
-      router.push("/people");
+      invalidateWorkspaceResource("people");
+      invalidateWorkspaceResource(personDataKey(id));
+      if (!navigateWithinSpa("/people")) router.push("/people");
     } catch (err) {
       console.error(err);
       setNotice("Failed to delete.");
@@ -202,7 +208,9 @@ export default function PersonDetailClient({ id, initialPerson }: { id: string; 
       <div className="w-full px-1 py-2 sm:px-2 sm:py-3 md:px-3 md:py-4">
         <div className="card p-4">
           <p className="text-slate-700">Employee not found.</p>
-          <button className="btn mt-3" onClick={() => router.push("/people")}>
+          <button className="btn mt-3" onClick={() => {
+            if (!navigateWithinSpa("/people")) router.push("/people");
+          }}>
             Back to people
           </button>
         </div>
@@ -223,7 +231,9 @@ export default function PersonDetailClient({ id, initialPerson }: { id: string; 
             <p className={`mt-1 text-[12px] font-medium ${saveStatusClassName}`}>{saveStatusText}</p>
           </div>
           <div className="flex flex-wrap items-center gap-2">
-            <button className="btn" onClick={() => router.push("/people")}>
+            <button className="btn" onClick={() => {
+              if (!navigateWithinSpa("/people")) router.push("/people");
+            }}>
               <ArrowLeft className="h-4 w-4" />
               Back
             </button>

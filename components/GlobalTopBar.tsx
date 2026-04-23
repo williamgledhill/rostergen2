@@ -1,8 +1,9 @@
 "use client";
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
 import { useNav } from "@/components/NavContext";
+import { navigateWithinSpa, shouldHandleSpaClick, useSpaLocation } from "@/lib/spaNavigation";
+import { preloadWorkspaceRoute } from "@/lib/workspaceData";
 
 function getInitials(name?: string | null) {
   if (typeof name !== "string" || !name.trim()) return "RG";
@@ -17,7 +18,7 @@ function getInitials(name?: string | null) {
 }
 
 export default function GlobalTopBar({ userName }: { userName?: string | null }) {
-  const pathname = usePathname() || "/";
+  const { pathname } = useSpaLocation();
   const { toggleNav } = useNav();
   const [profileOpen, setProfileOpen] = useState(false);
   const profileRef = useRef<HTMLDivElement>(null);
@@ -80,6 +81,14 @@ export default function GlobalTopBar({ userName }: { userName?: string | null })
               <Link
                 className="block w-full px-3 py-2 text-left text-sm text-slate-700 hover:bg-[#f5f7fa]"
                 href="/settings#security"
+                onMouseEnter={() => preloadWorkspaceRoute("/settings")}
+                onFocus={() => preloadWorkspaceRoute("/settings")}
+                onClick={(event) => {
+                  if (shouldHandleSpaClick(event) && navigateWithinSpa("/settings#security")) {
+                    event.preventDefault();
+                    setProfileOpen(false);
+                  }
+                }}
               >
                 Security
               </Link>

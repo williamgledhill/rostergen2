@@ -3,6 +3,8 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { Plus, X, ChevronLeft, ChevronRight } from "lucide-react";
 import { useRouter } from "next/navigation";
+import { navigateWithinSpa } from "@/lib/spaNavigation";
+import { preloadWorkspaceRoute } from "@/lib/workspaceData";
 
 const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 
@@ -42,8 +44,10 @@ export default function NewMonthButton({ existingMonthIds }: Props) {
     if (selectedMonth === null) return;
     const id = monthId(selectedMonth);
     if (existingSet.has(id)) return;
+    const href = `/rosters/months/${id}`;
     setOpen(false);
-    router.push(`/rosters/months/${id}`);
+    preloadWorkspaceRoute(href);
+    if (!navigateWithinSpa(href)) router.push(href);
   }
 
   return (

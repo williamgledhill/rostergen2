@@ -5,6 +5,8 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { ChevronRight, Save, Trash2 } from "lucide-react";
 import { buildDraftStorageKey, formatAutosaveStatusText, getAutosaveStatusClassName, removeDraftRecord } from "@/lib/clientDrafts";
+import { navigateWithinSpa, shouldHandleSpaClick } from "@/lib/spaNavigation";
+import { invalidateWorkspaceResource, taskDataKey, writeCachedResource } from "@/lib/workspaceData";
 import {
   TASK_TEMPLATE_DELETED_STORAGE_KEY,
   TASK_TEMPLATE_REFRESH_EVENT,
@@ -158,6 +160,8 @@ export default function TaskDetailClient({ id, initialTask }: { id: string; init
       if (mode === "manual") {
         router.refresh();
       }
+      writeCachedResource(taskDataKey(id), saved);
+      invalidateWorkspaceResource("tasks");
       return {
         value: saved,
         savedAt: new Date().toISOString(),
@@ -256,7 +260,9 @@ export default function TaskDetailClient({ id, initialTask }: { id: string; init
           console.error(error);
         }
       }
-      router.push("/tasks");
+      invalidateWorkspaceResource("tasks");
+      invalidateWorkspaceResource(taskDataKey(id));
+      if (!navigateWithinSpa("/tasks")) router.push("/tasks");
       router.refresh();
     } catch (err) {
       console.error(err);
@@ -271,7 +277,15 @@ export default function TaskDetailClient({ id, initialTask }: { id: string; init
           <h1 className="text-xl font-semibold text-slate-900">Task not found</h1>
           <p className="mt-2 text-sm text-slate-600">That task template does not exist.</p>
           <div className="mt-4">
-            <Link href="/tasks" className="btn h-9 px-4">
+            <Link
+              href="/tasks"
+              className="btn h-9 px-4"
+              onClick={(event) => {
+                if (shouldHandleSpaClick(event) && navigateWithinSpa("/tasks")) {
+                  event.preventDefault();
+                }
+              }}
+            >
               Back to tasks
             </Link>
           </div>
@@ -288,7 +302,15 @@ export default function TaskDetailClient({ id, initialTask }: { id: string; init
     <div className="w-full px-3 py-4">
       <div className="flex w-full max-w-[1080px] flex-col gap-3">
         <div className="flex items-center gap-1 text-[14px]">
-          <Link href="/tasks" className="font-semibold text-[#675dff] hover:underline">
+          <Link
+            href="/tasks"
+            className="font-semibold text-[#675dff] hover:underline"
+            onClick={(event) => {
+              if (shouldHandleSpaClick(event) && navigateWithinSpa("/tasks")) {
+                event.preventDefault();
+              }
+            }}
+          >
             Tasks
           </Link>
           <ChevronRight className="h-4 w-4 text-slate-700" />

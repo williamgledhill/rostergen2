@@ -5,6 +5,8 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import type { RosterFile } from "@/lib/rosters";
 import { buildEditorHref } from "@/lib/editorPersistence";
+import { navigateWithinSpa, shouldHandleSpaClick } from "@/lib/spaNavigation";
+import { preloadWorkspaceRoute } from "@/lib/workspaceData";
 
 type Props = {
   rosters: RosterFile[];
@@ -16,7 +18,8 @@ export default function RosterTable({ rosters, footer }: Props) {
   const router = useRouter();
 
   function handleRowClick(id: string) {
-    router.push(buildEditorHref(id));
+    const href = buildEditorHref(id);
+    if (!navigateWithinSpa(href)) router.push(href);
   }
 
   return (
@@ -40,14 +43,24 @@ export default function RosterTable({ rosters, footer }: Props) {
                 <tr
                   key={r.id}
                   className={`group border-b border-[#E6EAF0] hover:bg-[#f8fafc] cursor-pointer ${rowStyles}`}
-                  onMouseEnter={() => router.prefetch(buildEditorHref(r.id))}
+                  onMouseEnter={() => {
+                    const href = buildEditorHref(r.id);
+                    preloadWorkspaceRoute(href);
+                    router.prefetch(href);
+                  }}
                   onClick={() => handleRowClick(r.id)}
                 >
                   <td className="align-middle px-4 py-4">
                     <Link
                       href={buildEditorHref(r.id)}
                       className="block truncate text-[15px] font-medium text-slate-700 hover:underline group-hover:underline"
-                      onClick={(e) => e.stopPropagation()}
+                      onClick={(event) => {
+                        event.stopPropagation();
+                        const href = buildEditorHref(r.id);
+                        if (shouldHandleSpaClick(event) && navigateWithinSpa(href)) {
+                          event.preventDefault();
+                        }
+                      }}
                     >
                       {r.title}
                     </Link>
