@@ -270,7 +270,7 @@ export default function Grid({
   hoursStart,
   hoursEnd,
   initialSavedAt,
-  onExportXLS,
+  onExportWorkbook,
   onSaveStateChange,
   onAutofillNoticeChange,
   onRestoreDraftHours,
@@ -285,7 +285,7 @@ export default function Grid({
   hoursStart?: string;
   hoursEnd?: string;
   initialSavedAt?: string;
-  onExportXLS: (html: string, fileName: string) => void;
+  onExportWorkbook: (html: string, fileName: string) => void;
   onSaveStateChange?: (state: RosterSaveState) => void;
   onAutofillNoticeChange?: (notice: AutofillNotice | null) => void;
   onRestoreDraftHours?: (hours: { start: string; end: string }) => void;
@@ -2638,8 +2638,8 @@ export default function Grid({
     })
       .format(rosterDate)
       .replace(",", "");
-    onExportXLS(html, fileName);
-  }, [employeeCols, tasks, onExportXLS, colorForTask, timeRangeForSpan, maxRowEx, dayStartMin, dayEndMin, rosterDate, getEmployeeHoursLabel, templateById]);
+    onExportWorkbook(html, fileName);
+  }, [employeeCols, tasks, onExportWorkbook, colorForTask, timeRangeForSpan, maxRowEx, dayStartMin, dayEndMin, rosterDate, getEmployeeHoursLabel, templateById]);
 
   useEffect(() => {
     const onExport = () => exportExcel();

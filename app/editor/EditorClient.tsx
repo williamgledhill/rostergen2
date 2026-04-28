@@ -7,21 +7,21 @@ import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { AutosaveState, formatAutosaveStatusText, getAutosaveStatusClassName, readDraftRecord } from "@/lib/clientDrafts";
 import { formatFullDay, formatLocalId } from "@/lib/dateUtils";
 import { type Person } from "@/lib/people";
+import { buildWorkbookFromHtmlTable, sanitizeExportFileName } from "@/lib/rosterExport";
 import { DEFAULT_SETTINGS, type AppSettings } from "@/lib/settingsDefaults";
 import { type TaskTemplate } from "@/lib/taskTemplates";
 import { buildEditorDraftStorageKey, persistLastEditorDate } from "@/lib/editorPersistence";
 import { type AutofillNotice } from "@/components/Grid";
 
-function sanitizeFileName(value: string) {
-  return value.replace(/[<>:"/\\|?*]/g, "").trim() || "roster";
-}
-
-function downloadXLS(html: string, fileName: string) {
-  const blob = new Blob([html], { type: "application/vnd.ms-excel;charset=utf-8;" });
+function downloadWorkbook(html: string, fileName: string) {
+  const workbook = buildWorkbookFromHtmlTable(html, fileName);
+  const blob = new Blob([workbook], {
+    type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+  });
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
   a.href = url;
-  a.download = `${sanitizeFileName(fileName)}.xls`;
+  a.download = `${sanitizeExportFileName(fileName)}.xlsx`;
   document.body.appendChild(a);
   a.click();
   setTimeout(() => {
@@ -143,7 +143,7 @@ export default function EditorClient({
           hoursStart={hours.start}
           hoursEnd={hours.end}
           initialSavedAt={initialRoster.savedAt}
-          onExportXLS={downloadXLS}
+          onExportWorkbook={downloadWorkbook}
           onSaveStateChange={setSaveState}
           onAutofillNoticeChange={setAutofillNotice}
           onRestoreDraftHours={handleRestoreDraftHours}
