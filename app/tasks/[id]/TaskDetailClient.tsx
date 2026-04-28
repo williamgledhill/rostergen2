@@ -52,6 +52,12 @@ function getDayTimes(task: TaskTemplate, dayKey: RegularDayKey) {
   return Array.isArray(times) ? normaliseTimes(times) : [];
 }
 
+function getDayWindow(task: TaskTemplate, dayKey: RegularDayKey) {
+  const windows = task.regularDayWindows;
+  if (!windows || typeof windows !== "object" || Array.isArray(windows)) return {};
+  return windows[dayKey] || {};
+}
+
 function SectionCard({
   title,
   description,
@@ -238,18 +244,51 @@ export default function TaskDetailClient({ id, initialTask }: { id: string; init
         current.regularTimesByDay && typeof current.regularTimesByDay === "object" && !Array.isArray(current.regularTimesByDay)
           ? { ...current.regularTimesByDay }
           : {};
+      const regularDayWindows =
+        current.regularDayWindows && typeof current.regularDayWindows === "object" && !Array.isArray(current.regularDayWindows)
+          ? { ...current.regularDayWindows }
+          : {};
 
       if (checked) {
         days.add(dayKey);
       } else {
         days.delete(dayKey);
         delete regularTimesByDay[dayKey];
+        delete regularDayWindows[dayKey];
       }
 
       return {
         ...current,
         regularDays: REGULAR_DAYS.map((day) => day.key).filter((day) => days.has(day)),
         regularTimesByDay,
+        regularDayWindows,
+      };
+    });
+  }
+
+  function updateDayWindow(dayKey: RegularDayKey, field: "start" | "end", value: string) {
+    setTask((current) => {
+      if (!current) return current;
+      const days = new Set(current.regularDays || []);
+      days.add(dayKey);
+      const currentWindows =
+        current.regularDayWindows && typeof current.regularDayWindows === "object" && !Array.isArray(current.regularDayWindows)
+          ? current.regularDayWindows
+          : {};
+      const existingWindow = currentWindows[dayKey] || {};
+      const nextWindow = { ...existingWindow, [field]: value };
+      const regularDayWindows = { ...currentWindows };
+
+      if (!nextWindow.start && !nextWindow.end) {
+        delete regularDayWindows[dayKey];
+      } else {
+        regularDayWindows[dayKey] = nextWindow;
+      }
+
+      return {
+        ...current,
+        regularDays: REGULAR_DAYS.map((day) => day.key).filter((day) => days.has(day)),
+        regularDayWindows,
       };
     });
   }
@@ -501,15 +540,19 @@ export default function TaskDetailClient({ id, initialTask }: { id: string; init
           </div>
         </SectionCard>
 
-        <SectionCard title="Occurs at fixed times">
+        <SectionCard
+          title="When it occurs"
+          description="Use exact times for fixed appointments, or a range when the task can happen any time inside a window."
+        >
           <div className="overflow-hidden rounded-[10px] border border-[var(--border)] bg-white">
             <div className="grid grid-cols-[72px_minmax(0,1fr)] gap-3 border-b border-[var(--border)] bg-[var(--surface-subtle)] px-4 py-2 text-[12px] font-semibold uppercase tracking-[0.08em] text-slate-500 sm:grid-cols-[96px_minmax(0,1fr)]">
               <span>Day</span>
-              <span>Times</span>
+              <span>Time rule</span>
             </div>
             {REGULAR_DAYS.map((day, index) => {
               const checked = (task.regularDays || []).includes(day.key);
               const dayTimes = getDayTimes(task, day.key);
+              const dayWindow = getDayWindow(task, day.key);
               return (
                 <div
                   key={day.key}
@@ -529,25 +572,56 @@ export default function TaskDetailClient({ id, initialTask }: { id: string; init
                     </span>
                   </label>
                   <div className="min-w-0 space-y-2">
-                    <div className="flex flex-wrap items-center gap-2">
-                      <input
-                        type="time"
-                        className="input time-input-no-icon h-10 w-[150px] px-3 text-[13px]"
-                        value={newDayTimeSlots[day.key] || ""}
-                        onChange={(event) =>
-                          setNewDayTimeSlots((current) => ({ ...current, [day.key]: event.target.value }))
-                        }
-                        disabled={!checked}
-                        aria-label={`${day.label} fixed time`}
-                      />
-                      <button
-                        type="button"
-                        className="btn h-10 px-3"
-                        onClick={() => addDayTimeSlot(day.key)}
-                        disabled={!checked || !newDayTimeSlots[day.key]}
-                      >
-                        Add
-                      </button>
+                    <div className="grid gap-3 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
+                      <div className="space-y-1.5">
+                        <p className="text-[12px] font-semibold uppercase tracking-[0.08em] text-slate-500">
+                          Exact times
+                        </p>
+                        <div className="flex flex-wrap items-center gap-2">
+                          <input
+                            type="time"
+                            className="input time-input-no-icon h-10 w-[150px] px-3 text-[13px]"
+                            value={newDayTimeSlots[day.key] || ""}
+                            onChange={(event) =>
+                              setNewDayTimeSlots((current) => ({ ...current, [day.key]: event.target.value }))
+                            }
+                            disabled={!checked}
+                            aria-label={`${day.label} fixed time`}
+                          />
+                          <button
+                            type="button"
+                            className="btn h-10 px-3"
+                            onClick={() => addDayTimeSlot(day.key)}
+                            disabled={!checked || !newDayTimeSlots[day.key]}
+                          >
+                            Add
+                          </button>
+                        </div>
+                      </div>
+                      <div className="space-y-1.5">
+                        <p className="text-[12px] font-semibold uppercase tracking-[0.08em] text-slate-500">
+                          Fixed range
+                        </p>
+                        <div className="flex flex-wrap items-center gap-2">
+                          <input
+                            type="time"
+                            className="input time-input-no-icon h-10 w-[132px] px-3 text-[13px]"
+                            value={dayWindow.start || ""}
+                            onChange={(event) => updateDayWindow(day.key, "start", event.target.value)}
+                            disabled={!checked}
+                            aria-label={`${day.label} range start`}
+                          />
+                          <span className="text-[13px] font-semibold text-slate-600">to</span>
+                          <input
+                            type="time"
+                            className="input time-input-no-icon h-10 w-[132px] px-3 text-[13px]"
+                            value={dayWindow.end || ""}
+                            onChange={(event) => updateDayWindow(day.key, "end", event.target.value)}
+                            disabled={!checked}
+                            aria-label={`${day.label} range end`}
+                          />
+                        </div>
+                      </div>
                     </div>
                     {dayTimes.length ? (
                       <div className="flex flex-wrap gap-2">
