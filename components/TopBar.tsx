@@ -1,6 +1,6 @@
 "use client";
 import React from "react";
-import { Download, Plus, Sparkles, Save, RotateCcw, Undo2, Redo2, Upload } from "lucide-react";
+import { Download, Plus, Save, RotateCcw, Undo2, Redo2, Upload } from "lucide-react";
 
 export default function TopBar({
   showActions = true,
@@ -35,11 +35,6 @@ export default function TopBar({
   function handleSave(){
     if(typeof window !== "undefined"){
       window.dispatchEvent(new Event("roster-save"));
-    }
-  }
-  function handleAutofill(){
-    if(typeof window !== "undefined"){
-      window.dispatchEvent(new Event("roster-autofill"));
     }
   }
   function handleUndo(){
@@ -92,7 +87,6 @@ export default function TopBar({
     typeof onHoursEndChange === "function";
   const actionButtons = showActions
     ? [
-        { key: "autofill", label: "Autofill", icon: Sparkles, onClick: handleAutofill },
         { key: "undo", label: "Undo", icon: Undo2, onClick: handleUndo, iconOnly: true },
         { key: "redo", label: "Redo", icon: Redo2, onClick: handleRedo, iconOnly: true },
         { key: "add", label: "Add person", icon: Plus, onClick: handleAddEmployee },

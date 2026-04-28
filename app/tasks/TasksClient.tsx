@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useCallback, useEffect, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Plus } from "lucide-react";
 import { navigateWithinSpa } from "@/lib/spaNavigation";
@@ -11,9 +11,6 @@ import {
   TASK_TEMPLATE_REFRESH_STORAGE_KEY,
   type TaskTemplate,
 } from "@/lib/taskTemplates";
-
-const WEEKDAYS = ["Mon", "Tue", "Wed", "Thu", "Fri"];
-const WEEKENDS = ["Sat", "Sun"];
 
 export default function TasksClient({ initialTasks }: { initialTasks: TaskTemplate[] }) {
   const [tasks, setTasks] = useState<TaskTemplate[]>(initialTasks);
@@ -71,40 +68,18 @@ export default function TasksClient({ initialTasks }: { initialTasks: TaskTempla
     };
   }, [refreshTasks, removePendingDeletedTask]);
 
-  function formatOccurrence(days: string[] | undefined) {
-    if (!days || days.length === 0) return "Not set";
-    const uniq = Array.from(new Set(days));
-    if (uniq.length === 7) return "Daily";
-    const isWeekdays = WEEKDAYS.every((d) => uniq.includes(d)) && uniq.every((d) => WEEKDAYS.includes(d));
-    if (isWeekdays) return "Weekdays";
-    const isWeekends = WEEKENDS.every((d) => uniq.includes(d)) && uniq.every((d) => WEEKENDS.includes(d));
-    if (isWeekends) return "Weekends";
-    return uniq.join(", ");
-  }
-
-  const summaries = useMemo(
-    () =>
-      tasks.map((t) => ({
-        ...t,
-        occurrence: formatOccurrence(t.regularDays),
-      })),
-    [tasks]
-  );
-
   async function addTask() {
     const name = prompt("New task name?");
     if (!name) return;
     const trimmed = name.trim();
     if (!trimmed) return;
-    const description = prompt("Short description for this task?") || "";
-    const category = prompt("Category for this task? (optional)") || "";
     const color = prompt("Colour (hex or css value)? Leave blank for default.", "") || "";
 
     try {
       const res = await fetch("/api/task-templates", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name: trimmed, description, category, color }),
+        body: JSON.stringify({ name: trimmed, color }),
       });
       if (!res.ok) throw new Error("Failed to add template");
       const created = await res.json();
@@ -137,19 +112,15 @@ export default function TasksClient({ initialTasks }: { initialTasks: TaskTempla
           <div className="overflow-x-auto">
             <table className="w-full table-fixed border-collapse text-[15px]">
               <colgroup>
-                <col className="w-[40%]" />
-                <col className="w-[24%]" />
                 <col />
               </colgroup>
               <thead className="text-[15px] text-slate-900">
                 <tr className="border-b border-[#E6EAF0]">
                   <th className="px-4 py-4 text-left font-bold tracking-[0.01em]">Task</th>
-                  <th className="px-4 py-4 text-left font-bold tracking-[0.01em]">Status</th>
-                  <th className="px-4 py-4 text-left font-bold tracking-[0.01em]">Occurance</th>
                 </tr>
               </thead>
               <tbody className="[&_tr:last-child]:border-b-0">
-                {summaries.map((t) => (
+                {tasks.map((t) => (
                   <tr
                     key={t.id}
                     className="border-b border-[#E6EAF0] hover:bg-[#f8fafc] cursor-pointer"
@@ -174,23 +145,17 @@ export default function TasksClient({ initialTasks }: { initialTasks: TaskTempla
                         <span className="truncate">{t.name}</span>
                       </span>
                     </td>
-                    <td className="align-middle px-4 py-4 text-[15px] font-medium text-slate-700">
-                      <span className="block truncate">{t.enabled === false ? "Disabled" : "Enabled"}</span>
-                    </td>
-                    <td className="align-middle px-4 py-4 text-[15px] font-medium text-slate-700">
-                      <span className="block truncate">{t.occurrence}</span>
-                    </td>
                   </tr>
                 ))}
-                {summaries.length === 0 && (
+                {tasks.length === 0 && (
                   <tr>
-                    <td colSpan={3} className="py-8 text-center text-[15px] text-slate-600">No tasks yet. Add one to get started.</td>
+                    <td colSpan={1} className="py-8 text-center text-[15px] text-slate-600">No tasks yet. Add one to get started.</td>
                   </tr>
                 )}
               </tbody>
             </table>
           </div>
-          <div className="border-t border-[#E6EAF0] px-4 py-3 text-sm text-slate-600">{summaries.length} task{summaries.length === 1 ? "" : "s"}</div>
+          <div className="border-t border-[#E6EAF0] px-4 py-3 text-sm text-slate-600">{tasks.length} task{tasks.length === 1 ? "" : "s"}</div>
         </div>
       </div>
     </div>

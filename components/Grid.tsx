@@ -11,18 +11,6 @@ import {
   TaskTemplate,
 } from "@/lib/taskTemplates";
 import { getDayScheduleForDate, type Person } from "@/lib/people";
-import {
-  clipTaskAroundBlockedRange,
-  compareFutureMinimumAvailability,
-  getFeasiblePlacementRows,
-  getAutofillTemplatePriority,
-  getPreferredConcurrentLimit,
-  isAutofillFillerTemplate,
-  isAutofillMinimumTemplate,
-  regularDayAppliesToAutofill,
-  resolveAutofillPlacementSpan,
-  resolveAutofillTimeSlots,
-} from "@/lib/rosterAutofill";
 import { parseSchoolTourWorkbook, type ImportedSchoolTour } from "@/lib/schoolTourImports";
 
 type Employee = { id: string | number; name: string; startTime?: string; endTime?: string };
@@ -62,10 +50,6 @@ type RosterDraftValue = {
 };
 
 export type RosterSaveState = AutosaveState;
-export type AutofillNotice = {
-  title: string;
-  messages: string[];
-};
 
 const MIN_ROW = 2;
 const DEFAULT_START_MIN = 9 * 60 + 30;
@@ -274,7 +258,6 @@ export default function Grid({
   initialSavedAt,
   onExportWorkbook,
   onSaveStateChange,
-  onAutofillNoticeChange,
   onRestoreDraftHours,
   people: initialPeople,
   templates: initialTemplates,
@@ -289,7 +272,6 @@ export default function Grid({
   initialSavedAt?: string;
   onExportWorkbook: (html: string, fileName: string) => void;
   onSaveStateChange?: (state: RosterSaveState) => void;
-  onAutofillNoticeChange?: (notice: AutofillNotice | null) => void;
   onRestoreDraftHours?: (hours: { start: string; end: string }) => void;
   people?: Person[];
   templates?: TaskTemplate[];
@@ -328,7 +310,6 @@ export default function Grid({
   const saveInFlightRef = useRef(false);
   const queuedSaveModeRef = useRef<"autosave" | "manual" | null>(null);
   const saveCycleRef = useRef(0);
-  const autofillRunRef = useRef(0);
   const suspendDraftEffectsRef = useRef(true);
   const lastSavedAtRef = useRef(initialSavedAt);
   const lastSavedSignatureRef = useRef(
@@ -489,7 +470,6 @@ export default function Grid({
       clearTimeout(autosaveTimerRef.current);
       autosaveTimerRef.current = null;
     }
-    autofillRunRef.current = 0;
     lastSavedAtRef.current = nextSavedAt;
     lastSavedSignatureRef.current = shouldUseDraft ? nextLastSavedSignature : serverSignature;
     writeDraftRecord<RosterDraftValue>(draftStorageKey, {
@@ -918,7 +898,7 @@ export default function Grid({
     [rosterDateId]
   );
 
-  const autofill = useCallback(() => {
+  /* Autofill removed for rebuild.
     const autofillVariant = autofillRunRef.current;
     autofillRunRef.current += 1;
     if (!employees.length) {
@@ -2587,7 +2567,7 @@ export default function Grid({
           }
         : null
     );
-  }, [employees, templates, schoolTours, rosterDate, colorForType, maxRowEx, rowFromTime, people, applyRosterState, onAutofillNoticeChange, templateById]);
+  */
 
   const saveRoster = useCallback(async (options?: { mode?: "autosave" | "manual"; keepalive?: boolean }) => {
     const mode = options?.mode ?? "manual";
@@ -2799,12 +2779,6 @@ export default function Grid({
   }, [addOpen]);
 
   useEffect(() => {
-    const handler = () => autofill();
-    window.addEventListener("roster-autofill", handler);
-    return () => window.removeEventListener("roster-autofill", handler);
-  }, [autofill]);
-
-  useEffect(() => {
     const handler = () => saveRoster();
     window.addEventListener("roster-save", handler);
     return () => window.removeEventListener("roster-save", handler);
@@ -2944,32 +2918,7 @@ export default function Grid({
           if (task) {
             rowSpans[colIdx] = task.span - 1;
           const bg = colorForTask(task) || "#d3e6d5";
-          const template = templateById.get(task.type);
-          const waitingRowsRaw = Math.max(0, Math.round(((task.waitingMinutes ?? template?.waitingMinutes) || 0) / 15));
-          const packingRowsRaw = Math.max(0, Math.round(((task.packingMinutes ?? template?.packingMinutes) || 0) / 15));
-          const waitingRows = Math.min(waitingRowsRaw, Math.max(0, task.span - 1));
-          const packingRows = Math.min(packingRowsRaw, Math.max(0, task.span - 1 - waitingRows));
-          const mainRows = Math.max(1, task.span - waitingRows - packingRows);
-          const segStyle =
-            `padding:4px 2px;font-weight:600;font-size:12px;font-family:Arial, sans-serif;text-align:center;vertical-align:middle;background:${bg};`;
-          const segments: string[] = [];
-          if (waitingRows > 0) {
-            segments.push(
-              `<tr><td style="${segStyle}height:${(waitingRows / task.span) * 100}%;border-bottom:1px solid ${border};">Waiting for</td></tr>`
-            );
-          }
-          segments.push(
-            `<tr><td style="${segStyle}height:${(mainRows / task.span) * 100}%;${packingRows > 0 ? `border-bottom:1px solid ${border};` : ""}">${task.label}</td></tr>`
-          );
-          if (packingRows > 0) {
-            segments.push(
-              `<tr><td style="${segStyle}height:${(packingRows / task.span) * 100}%;">Packing up</td></tr>`
-            );
-          }
-          const inner = segments.length
-            ? `<table style="width:100%;height:100%;border-collapse:collapse;table-layout:fixed;"><tbody>${segments.join("")}</tbody></table>`
-            : task.label;
-          rowHtml += `<td class="task-cell" rowspan="${task.span}" style="background:${bg}; font-weight:600; text-align:center; border:1px solid ${border};">${inner}</td>`;
+          rowHtml += `<td class="task-cell" rowspan="${task.span}" style="background:${bg}; font-weight:600; text-align:center; border:1px solid ${border};">${task.label}</td>`;
         } else {
           const topBorder = rowNumber === 0 ? `border-top:1px solid ${border};` : "border-top:0;";
           const bottomBorder = rowNumber === exportRowCount - 1 ? `border-bottom:1px solid ${border};` : "border-bottom:0;";
@@ -3022,8 +2971,6 @@ export default function Grid({
         startRow: modal.row,
         span: 1,
         color: template.color,
-        waitingMinutes: template.waitingMinutes || 0,
-        packingMinutes: template.packingMinutes || 0,
       },
     ];
     applyRosterState(employeesRef.current, nextTasks);
@@ -3284,8 +3231,6 @@ export default function Grid({
               startRow={t.startRow}
               span={t.span}
               color={colorForTask(t)}
-              waitingMinutes={t.waitingMinutes ?? template?.waitingMinutes}
-              packingMinutes={t.packingMinutes ?? template?.packingMinutes}
               selected={t.id === selected}
               highlighted={emphasizedCol === t.col}
               isFirstCol={t.col === firstEmployeeCol}
