@@ -1,6 +1,6 @@
 "use client";
 import React from "react";
-import { Download, Plus, Save, RotateCcw, Undo2, Redo2, Upload } from "lucide-react";
+import { Download, Plus, Sparkles, Save, RotateCcw, Undo2, Redo2, Upload } from "lucide-react";
 
 export default function TopBar({
   showActions = true,
@@ -36,6 +36,9 @@ export default function TopBar({
     if(typeof window !== "undefined"){
       window.dispatchEvent(new Event("roster-save"));
     }
+  }
+  function handleAutofill() {
+    return undefined;
   }
   function handleUndo(){
     if(typeof window !== "undefined"){
@@ -87,6 +90,7 @@ export default function TopBar({
     typeof onHoursEndChange === "function";
   const actionButtons = showActions
     ? [
+        { key: "autofill", label: "Autofill", icon: Sparkles, onClick: handleAutofill },
         { key: "undo", label: "Undo", icon: Undo2, onClick: handleUndo, iconOnly: true },
         { key: "redo", label: "Redo", icon: Redo2, onClick: handleRedo, iconOnly: true },
         { key: "add", label: "Add person", icon: Plus, onClick: handleAddEmployee },
@@ -106,10 +110,10 @@ export default function TopBar({
     "inline-flex h-11 w-10 shrink-0 items-center justify-center border-r border-[#d7deea] text-slate-800 transition hover:bg-[#f8fafc] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgba(52,77,232,0.16)] focus-visible:ring-inset";
   const hoursGroupClassName =
     "flex h-11 shrink-0 items-center gap-1 border-r border-[#d7deea] bg-white px-2";
-  const uploadSegmentClassName = `inline-flex h-11 min-w-[220px] shrink-0 items-center justify-center gap-2 border-r border-dashed px-4 text-[14px] font-semibold transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgba(52,77,232,0.16)] focus-visible:ring-inset ${
+  const uploadSegmentClassName = `inline-flex h-11 min-w-[220px] shrink-0 items-center justify-center gap-2 border-r px-4 text-[14px] font-semibold transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgba(52,77,232,0.16)] focus-visible:ring-inset ${
     isDraggingSchoolTours
       ? "border-[#4f58ef] bg-[#eef1ff] text-[#3340c7]"
-      : "border-[#cbd5e1] bg-[#f8fafc] text-slate-700 hover:bg-[#f1f5f9]"
+      : "border-[#d7deea] bg-white text-slate-800 hover:bg-[#f8fafc]"
   }`;
   const hoursSpacerClassName =
     "shrink-0 px-0.5 text-[12px] font-semibold text-slate-700";
