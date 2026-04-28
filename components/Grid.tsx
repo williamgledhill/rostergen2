@@ -18,7 +18,9 @@ import {
   getAutofillTemplatePriority,
   getPreferredConcurrentLimit,
   isAutofillFillerTemplate,
+  isAutofillMinimumTemplate,
   regularDayAppliesToAutofill,
+  resolveAutofillPlacementSpan,
   resolveAutofillTimeSlots,
 } from "@/lib/rosterAutofill";
 import { parseSchoolTourWorkbook, type ImportedSchoolTour } from "@/lib/schoolTourImports";
@@ -928,6 +930,7 @@ export default function Grid({
       id: string;
       template: TaskTemplate;
       span: number;
+      minSpan: number;
       waitingMinutes: number;
       packingMinutes: number;
       window: { startRow: number; endRow: number } | null;
@@ -944,6 +947,29 @@ export default function Grid({
       maxConcurrentPerTimeslot: number;
       fixedTimeBlock: boolean;
       protectsTourWindow: boolean;
+    };
+
+    type CoverageAvailability = {
+      blockedRows: number;
+      tightestCoverage: number;
+      totalOptions: number;
+    };
+
+    type PlacementCandidate = {
+      meta: TemplateMeta;
+      emp: Employee;
+      row: number;
+      span: number;
+      col: number;
+      futureAvailability: number[];
+      coverageAvailability: CoverageAvailability;
+      activeCount: number;
+      empCount: number;
+      totalCount: number;
+      centerDistance: number;
+      transitionPenalty: number;
+      gapPenalty: number;
+      rowRank: number;
     };
 
     const dayKey = DAY_KEYS[rosterDate.getDay()];
@@ -1227,6 +1253,17 @@ export default function Grid({
       };
     };
 
+    const isProtectedMinimumTask = (task: GridTask) => {
+      const template = templateById.get(task.type);
+      if (!template) return false;
+      return isAutofillMinimumTemplate({
+        mustManned: !!template.mustManned,
+        minPerEmp: Number(template.minPerEmployeePerDay) || 0,
+        attendedByAll: !!template.attendedByAll,
+        overwriteExistingTasks: !!template.overwriteExistingTasks,
+      });
+    };
+
     const rangesOverlap = (
       a: { startRow: number; span: number },
       b: { startRow: number; span: number }
@@ -1239,6 +1276,12 @@ export default function Grid({
       });
       return task ? `${task.label} ${timeRangeForSpan(task.startRow, task.span)}` : null;
     };
+
+    const hasProtectedMinimumConflictInColumn = (col: number, blockedRange: { startRow: number; span: number }) =>
+      (tasksByCol.get(col) ?? []).some((task) => {
+        if (!isProtectedMinimumTask(task)) return false;
+        return rangesOverlap(blockedRange, { startRow: task.startRow, span: task.span });
+      });
 
     const getProtectedAdjacencyScore = (col: number, startRow: number, span: number) => {
       const endRow = startRow + span;
@@ -1276,10 +1319,37 @@ export default function Grid({
       const windowEnd = options.ignoreWindow ? endRow : (meta.window?.endRow ?? endRow);
       const maxEnd = Math.min(endRow, windowEnd, maxRowEx);
       const available = maxEnd - row;
-      if (available <= 0) return 0;
-      const span = meta.allowShrink ? Math.max(1, Math.min(meta.span, available)) : meta.span;
-      return span <= available ? span : 0;
+      return resolveAutofillPlacementSpan({
+        baseSpan: meta.span,
+        availableSpan: available,
+        allowShrink: meta.allowShrink,
+        minSpan: meta.minSpan,
+        maxConsecutiveSpan: meta.maxConsecutiveSpan,
+      });
     };
+
+    const getConsecutiveSpan = (col: number, type: string, startRow: number, span: number) => {
+      const list = tasksByCol.get(col) ?? [];
+      let total = span;
+      let cursorStart = startRow;
+      while (true) {
+        const prev = list.find((t) => t.type === type && t.startRow + t.span === cursorStart);
+        if (!prev) break;
+        total += prev.span;
+        cursorStart = prev.startRow;
+      }
+      let cursorEnd = startRow + span;
+      while (true) {
+        const next = list.find((t) => t.type === type && t.startRow === cursorEnd);
+        if (!next) break;
+        total += next.span;
+        cursorEnd = next.startRow + next.span;
+      }
+      return total;
+    };
+
+    const exceedsConsecutiveLimit = (meta: TemplateMeta, col: number, startRow: number, span: number) =>
+      meta.maxConsecutiveSpan > 0 && getConsecutiveSpan(col, meta.id, startRow, span) > meta.maxConsecutiveSpan;
 
     const isTypeCoveredAt = (templateId: string, row: number) =>
       generated.some((task) => task.type === templateId && row >= task.startRow && row < task.startRow + task.span);
@@ -1397,6 +1467,7 @@ export default function Grid({
         id: template.id || template.name || "task",
         template,
         span,
+        minSpan: minSpanForSegments,
         waitingMinutes,
         packingMinutes,
         window,
@@ -1416,14 +1487,24 @@ export default function Grid({
       };
     };
 
+    const isMinimumMeta = (meta: TemplateMeta) =>
+      isAutofillMinimumTemplate({
+        mustManned: meta.mustManned,
+        minPerEmp: meta.minPerEmp,
+        attendedByAll: meta.attendedByAll,
+        overwriteExistingTasks: meta.overwriteExistingTasks,
+      });
+
     const getCandidateRowsForMeta = (meta: TemplateMeta) => {
       if (!meta.window) return [];
       if (meta.regularTimeRows.length > 0) return meta.regularTimeRows;
       if (meta.hasFixedTimes) return [];
 
       const rows: number[] = [];
-      for (let row = meta.window.startRow; row + meta.span <= meta.window.endRow; row += 1) {
-        rows.push(row);
+      for (let row = meta.window.startRow; row < meta.window.endRow; row += 1) {
+        if (getSpanForMeta(meta, row, meta.window.endRow, { ignoreWindow: false })) {
+          rows.push(row);
+        }
       }
       return rows;
     };
@@ -1470,7 +1551,8 @@ export default function Grid({
               !protectedConflict &&
               getEmpCount(schoolTourMeta.id, emp.id) < schoolTourMeta.maxPerEmp &&
               isFree(col, startRow, span, emp.id) &&
-              !exceedsConcurrentLimit(schoolTourMeta.id, startRow, span, schoolTourMeta.maxConcurrentPerTimeslot)
+              !exceedsConcurrentLimit(schoolTourMeta.id, startRow, span, schoolTourMeta.maxConcurrentPerTimeslot) &&
+              !exceedsConsecutiveLimit(schoolTourMeta, col, startRow, span)
             );
           })
           .sort((a, b) => {
@@ -1539,57 +1621,35 @@ export default function Grid({
       });
     };
 
-    const pickEmployeeForPlacement = (
+    const pickPlacementForRow = (
       meta: TemplateMeta,
       row: number,
       span: number,
-      futureMinimumMetas: TemplateMeta[] = []
+      options?: {
+        futureMinimumMetas?: TemplateMeta[];
+        coverageMetas?: TemplateMeta[];
+        candidateRows?: number[];
+        concurrentLimit?: number;
+      }
     ) => {
-      const blockedRange = { startRow: row, span };
-      const protectedRange = getProtectedRangeForMeta(meta, row, span);
-      const futureAvailabilityByEmployee = new Map<string | number, number[]>();
-      const getFutureAvailability = (emp: Employee) => {
-        if (!futureAvailabilityByEmployee.has(emp.id)) {
-          futureAvailabilityByEmployee.set(
-            emp.id,
-            getFutureMinimumAvailabilityCounts(emp, blockedRange, futureMinimumMetas)
-          );
-        }
-        return futureAvailabilityByEmployee.get(emp.id) ?? [];
-      };
+      const candidateRows = options?.candidateRows ?? [row];
+      const candidates = employees
+        .map((emp) =>
+          buildPlacementCandidate({
+            meta,
+            emp,
+            row,
+            span,
+            candidateRows,
+            futureMinimumMetas: options?.futureMinimumMetas,
+            coverageMetas: options?.coverageMetas,
+            concurrentLimit: options?.concurrentLimit,
+          })
+        )
+        .filter((candidate): candidate is PlacementCandidate => !!candidate)
+        .sort(comparePlacementCandidates);
 
-      const feasibleEmployees = employees.filter((emp) => {
-        if (getEmpCount(meta.id, emp.id) >= meta.maxPerEmp) return false;
-        const col = employeeColById.get(emp.id) ?? employees.findIndex((e) => e.id === emp.id) + 2;
-        if (meta.protectsTourWindow && getProtectedTaskConflictInColumn(col, protectedRange)) return false;
-        return (
-          isFree(col, row, span, emp.id) &&
-          !exceedsConcurrentLimit(meta.id, row, span, meta.maxConcurrentPerTimeslot)
-        );
-      });
-
-      feasibleEmployees.sort((a, b) => {
-        const futureDiff = compareFutureMinimumAvailability(
-          getFutureAvailability(a),
-          getFutureAvailability(b)
-        );
-        if (futureDiff !== 0) return futureDiff;
-
-        const countDiff = getEmpCount(meta.id, a.id) - getEmpCount(meta.id, b.id);
-        if (countDiff !== 0) return countDiff;
-        const colA = employeeColById.get(a.id) ?? employees.findIndex((entry) => entry.id === a.id) + 2;
-        const colB = employeeColById.get(b.id) ?? employees.findIndex((entry) => entry.id === b.id) + 2;
-        const adjacencyDiff =
-          getProtectedAdjacencyScore(colA, row, span) -
-          getProtectedAdjacencyScore(colB, row, span);
-        if (adjacencyDiff !== 0) return adjacencyDiff;
-        return (
-          getRotatedRank(employeeOrder.get(a.id) ?? 0, employees.length, autofillVariant) -
-          getRotatedRank(employeeOrder.get(b.id) ?? 0, employees.length, autofillVariant)
-        );
-      });
-
-      return feasibleEmployees[0];
+      return candidates[0] ?? null;
     };
 
     const templatesToSchedule = templates
@@ -1631,7 +1691,8 @@ export default function Grid({
           if (!span) return false;
           return (
             isFree(col, row, span, emp.id) &&
-            !exceedsConcurrentLimit(meta.id, row, span, concurrentLimit)
+            !exceedsConcurrentLimit(meta.id, row, span, concurrentLimit) &&
+            !exceedsConsecutiveLimit(meta, col, row, span)
           );
         })
         .sort((a, b) => {
@@ -1650,7 +1711,235 @@ export default function Grid({
         });
     };
 
-    const assignMinimumsForMeta = (meta: TemplateMeta, candidateRows: number[]) => {
+    const getCoverageAvailabilityStats = (
+      emp: Employee,
+      blockedRange: { startRow: number; span: number },
+      coverageMetas: TemplateMeta[]
+    ) => {
+      const stats = {
+        blockedRows: 0,
+        tightestCoverage: Number.POSITIVE_INFINITY,
+        totalOptions: 0,
+      };
+
+      for (const coverageMeta of coverageMetas) {
+        if (!coverageMeta.window) continue;
+        const overlapStart = Math.max(blockedRange.startRow, coverageMeta.window.startRow);
+        const overlapEnd = Math.min(
+          blockedRange.startRow + blockedRange.span,
+          coverageMeta.window.endRow
+        );
+        if (overlapEnd <= overlapStart) continue;
+
+        for (let row = overlapStart; row < overlapEnd; row += 1) {
+          const requiredSpan = getSpanForMeta(
+            coverageMeta,
+            row,
+            coverageMeta.window.endRow,
+            { ignoreWindow: false }
+          );
+          if (!requiredSpan) continue;
+
+          const availableEmployees = employees.filter((otherEmp) => {
+            if (otherEmp.id === emp.id) return false;
+            if (getEmpCount(coverageMeta.id, otherEmp.id) >= coverageMeta.maxPerEmp) return false;
+            const col =
+              employeeColById.get(otherEmp.id) ??
+              employees.findIndex((entry) => entry.id === otherEmp.id) + 2;
+            return (
+              isFree(col, row, requiredSpan, otherEmp.id) &&
+              !exceedsConcurrentLimit(
+                coverageMeta.id,
+                row,
+                requiredSpan,
+                coverageMeta.maxConcurrentPerTimeslot
+              ) &&
+              !exceedsConsecutiveLimit(coverageMeta, col, row, requiredSpan)
+            );
+          }).length;
+
+          stats.blockedRows += availableEmployees === 0 ? 1 : 0;
+          stats.tightestCoverage = Math.min(stats.tightestCoverage, availableEmployees);
+          stats.totalOptions += availableEmployees;
+        }
+      }
+
+      return stats;
+    };
+
+    const compareCoverageAvailability = (
+      a: { blockedRows: number; tightestCoverage: number; totalOptions: number },
+      b: { blockedRows: number; tightestCoverage: number; totalOptions: number }
+    ) => {
+      if (a.blockedRows !== b.blockedRows) return a.blockedRows - b.blockedRows;
+      if (a.tightestCoverage !== b.tightestCoverage) return b.tightestCoverage - a.tightestCoverage;
+      if (a.totalOptions !== b.totalOptions) return b.totalOptions - a.totalOptions;
+      return 0;
+    };
+
+    const getAdjacentTasksAroundRange = (col: number, startRow: number, span: number) => {
+      const list = tasksByCol.get(col) ?? [];
+      const endRow = startRow + span;
+      let prev: GridTask | null = null;
+      let next: GridTask | null = null;
+
+      for (const task of list) {
+        const taskEnd = task.startRow + task.span;
+        if (taskEnd <= startRow) {
+          if (!prev || taskEnd > prev.startRow + prev.span) {
+            prev = task;
+          }
+        } else if (task.startRow >= endRow) {
+          if (!next || task.startRow < next.startRow) {
+            next = task;
+          }
+        }
+      }
+
+      return { prev, next };
+    };
+
+    const getPlacementCenterDistance = (
+      meta: TemplateMeta,
+      emp: Employee,
+      row: number,
+      span: number
+    ) => {
+      const employeeWindow = getEmployeeWindow(emp);
+      const windowStart = Math.max(employeeWindow?.startRow ?? MIN_ROW, meta.window?.startRow ?? MIN_ROW);
+      const windowEnd = Math.min(employeeWindow?.endRow ?? maxRowEx, meta.window?.endRow ?? maxRowEx);
+      const latestStart = Math.max(windowStart, windowEnd - span);
+      const center = windowStart <= latestStart ? (windowStart + latestStart) / 2 : windowStart;
+      return Math.abs(row - center);
+    };
+
+    const getPlacementGapPenalty = (
+      emp: Employee,
+      col: number,
+      row: number,
+      span: number
+    ) => {
+      const employeeWindow = getEmployeeWindow(emp);
+      if (!employeeWindow) return Number.POSITIVE_INFINITY;
+
+      const { prev, next } = getAdjacentTasksAroundRange(col, row, span);
+      const prevEnd = prev ? prev.startRow + prev.span : employeeWindow.startRow;
+      const nextStart = next ? next.startRow : employeeWindow.endRow;
+      const beforeGap = row - prevEnd;
+      const afterGap = nextStart - (row + span);
+
+      let penalty = 0;
+      if (beforeGap === 1) penalty += 6;
+      if (afterGap === 1) penalty += 6;
+      return penalty;
+    };
+
+    const getPlacementTransitionPenalty = (
+      meta: TemplateMeta,
+      col: number,
+      row: number,
+      span: number
+    ) => {
+      const { prev, next } = getAdjacentTasksAroundRange(col, row, span);
+      let penalty = 0;
+
+      if (prev?.type === meta.id) penalty -= 1;
+      else if (prev) penalty += 0.5;
+
+      if (next?.type === meta.id) penalty -= 1;
+      else if (next) penalty += 0.5;
+
+      if (prev && next && prev.type === next.type && prev.type !== meta.id) {
+        penalty += 1;
+      }
+
+      return penalty;
+    };
+
+    const buildPlacementCandidate = (input: {
+      meta: TemplateMeta;
+      emp: Employee;
+      row: number;
+      span: number;
+      candidateRows: number[];
+      futureMinimumMetas?: TemplateMeta[];
+      coverageMetas?: TemplateMeta[];
+      concurrentLimit?: number;
+      ignoreEmpLimit?: boolean;
+    }): PlacementCandidate | null => {
+      const meta = input.meta;
+      const col = employeeColById.get(input.emp.id) ?? employees.findIndex((e) => e.id === input.emp.id) + 2;
+      const protectedRange = getProtectedRangeForMeta(meta, input.row, input.span);
+
+      if (!input.ignoreEmpLimit && getEmpCount(meta.id, input.emp.id) >= meta.maxPerEmp) return null;
+      if (meta.protectsTourWindow && getProtectedTaskConflictInColumn(col, protectedRange)) return null;
+      if (!isFree(col, input.row, input.span, input.emp.id)) return null;
+      if (
+        exceedsConcurrentLimit(
+          meta.id,
+          input.row,
+          input.span,
+          input.concurrentLimit ?? meta.maxConcurrentPerTimeslot
+        )
+      ) {
+        return null;
+      }
+      if (exceedsConsecutiveLimit(meta, col, input.row, input.span)) return null;
+
+      const blockedRange = { startRow: input.row, span: input.span };
+      return {
+        meta,
+        emp: input.emp,
+        row: input.row,
+        span: input.span,
+        col,
+        futureAvailability: getFutureMinimumAvailabilityCounts(
+          input.emp,
+          blockedRange,
+          input.futureMinimumMetas ?? []
+        ),
+        coverageAvailability: getCoverageAvailabilityStats(
+          input.emp,
+          blockedRange,
+          input.coverageMetas ?? []
+        ),
+        activeCount: countConcurrentAssignments(meta.id, input.row, input.span),
+        empCount: getEmpCount(meta.id, input.emp.id),
+        totalCount: getTotal(meta.id),
+        centerDistance: getPlacementCenterDistance(meta, input.emp, input.row, input.span),
+        transitionPenalty: getPlacementTransitionPenalty(meta, col, input.row, input.span),
+        gapPenalty: getPlacementGapPenalty(input.emp, col, input.row, input.span),
+        rowRank: getRowVariantRank(input.candidateRows, input.row, autofillVariant),
+      };
+    };
+
+    const comparePlacementCandidates = (a: PlacementCandidate, b: PlacementCandidate) => {
+      const coverageDiff = compareCoverageAvailability(a.coverageAvailability, b.coverageAvailability);
+      if (coverageDiff !== 0) return coverageDiff;
+
+      const futureDiff = compareFutureMinimumAvailability(a.futureAvailability, b.futureAvailability);
+      if (futureDiff !== 0) return futureDiff;
+
+      if (a.gapPenalty !== b.gapPenalty) return a.gapPenalty - b.gapPenalty;
+      if (a.transitionPenalty !== b.transitionPenalty) return a.transitionPenalty - b.transitionPenalty;
+      if (a.activeCount !== b.activeCount) return a.activeCount - b.activeCount;
+      if (a.empCount !== b.empCount) return a.empCount - b.empCount;
+      if (a.totalCount !== b.totalCount) return a.totalCount - b.totalCount;
+      if (a.centerDistance !== b.centerDistance) return a.centerDistance - b.centerDistance;
+      if (a.rowRank !== b.rowRank) return a.rowRank - b.rowRank;
+
+      return (
+        getRotatedRank(employeeOrder.get(a.emp.id) ?? 0, employees.length, autofillVariant) -
+        getRotatedRank(employeeOrder.get(b.emp.id) ?? 0, employees.length, autofillVariant)
+      );
+    };
+
+    const assignMinimumsForMeta = (
+      meta: TemplateMeta,
+      candidateRows: number[],
+      futureMinimumMetas: TemplateMeta[] = [],
+      coverageMetas: TemplateMeta[] = []
+    ) => {
       const pendingEmployees = employees.flatMap((emp) =>
         Array.from(
           { length: Math.max(0, meta.minPerEmp - getEmpCount(meta.id, emp.id)) },
@@ -1678,9 +1967,48 @@ export default function Grid({
         const col = employeeColById.get(emp.id) ?? employees.findIndex((e) => e.id === emp.id) + 2;
         const nextRemaining = remaining.slice(0, bestIndex).concat(remaining.slice(bestIndex + 1));
 
-        for (const row of bestRows) {
-          const span = getSpanForMeta(meta, row, meta.window?.endRow ?? maxRowEx, { ignoreWindow: false });
-          if (!span) continue;
+        const rankedRows = bestRows
+          .map((row) => {
+            const span = getSpanForMeta(meta, row, meta.window?.endRow ?? maxRowEx, { ignoreWindow: false });
+            if (!span) return null;
+            const blockedRange = { startRow: row, span };
+            return {
+              row,
+              span,
+              futureAvailability: getFutureMinimumAvailabilityCounts(emp, blockedRange, futureMinimumMetas),
+              coverageAvailability: getCoverageAvailabilityStats(emp, blockedRange, coverageMetas),
+            };
+          })
+          .filter(
+            (
+              entry
+            ): entry is {
+              row: number;
+              span: number;
+              futureAvailability: number[];
+              coverageAvailability: { blockedRows: number; tightestCoverage: number; totalOptions: number };
+            } => !!entry
+          )
+          .sort((a, b) => {
+            const coverageDiff = compareCoverageAvailability(
+              a.coverageAvailability,
+              b.coverageAvailability
+            );
+            if (coverageDiff !== 0) return coverageDiff;
+            const futureDiff = compareFutureMinimumAvailability(
+              a.futureAvailability,
+              b.futureAvailability
+            );
+            if (futureDiff !== 0) return futureDiff;
+            const variantDiff =
+              getRowVariantRank(candidateRows, a.row, autofillVariant) -
+              getRowVariantRank(candidateRows, b.row, autofillVariant);
+            if (variantDiff !== 0) return variantDiff;
+            return a.row - b.row;
+          });
+
+        for (const option of rankedRows) {
+          const { row, span } = option;
           const task = addTask(meta, col, row, span, emp.id);
           if (backtrack(nextRemaining, concurrentLimit)) return true;
           removeTask(task, meta, emp.id);
@@ -1740,7 +2068,11 @@ export default function Grid({
               const window = getEmployeeWindow(emp);
               return !!window && row >= window.startRow && row + span <= window.endRow;
             })
-            .filter((emp) => getEmpCount(meta.id, emp.id) < meta.maxPerEmp)
+            .filter((emp) => {
+              if (getEmpCount(meta.id, emp.id) >= meta.maxPerEmp) return false;
+              const col = employeeColById.get(emp.id) ?? employees.findIndex((entry) => entry.id === emp.id) + 2;
+              return !exceedsConsecutiveLimit(meta, col, row, span);
+            })
             .sort((a, b) => {
               const colA = employeeColById.get(a.id) ?? employees.findIndex((entry) => entry.id === a.id) + 2;
               const colB = employeeColById.get(b.id) ?? employees.findIndex((entry) => entry.id === b.id) + 2;
@@ -1759,7 +2091,7 @@ export default function Grid({
           if (meta.attendedByAll) {
             const placedEmployees = sortedEmployees.filter((emp) => {
               const col = employeeColById.get(emp.id) ?? employees.findIndex((entry) => entry.id === emp.id) + 2;
-              return isFree(col, row, span, emp.id);
+              return isFree(col, row, span, emp.id) && !exceedsConsecutiveLimit(meta, col, row, span);
             });
             if (!placedEmployees.length) {
               protectedTaskFailures.push(`${meta.template.name} ${timeRangeForSpan(row, span)}`);
@@ -1791,18 +2123,60 @@ export default function Grid({
 
     reserveFixedTimeBlocksBeforeInfill();
 
-    for (const [metaIndex, meta] of templatesForPrimaryPass.entries()) {
+    const collectPlacementCandidatesForMeta = (
+      meta: TemplateMeta,
+      candidateRows: number[],
+      options?: {
+        futureMinimumMetas?: TemplateMeta[];
+        coverageMetas?: TemplateMeta[];
+        employeesSubset?: Employee[];
+        concurrentLimit?: number;
+        singlePerRow?: boolean;
+      }
+    ) => {
+      const candidates: PlacementCandidate[] = [];
+      const employeePool = options?.employeesSubset ?? employees;
+
+      for (const row of candidateRows) {
+        const span = getSpanForMeta(meta, row, meta.window?.endRow ?? maxRowEx, { ignoreWindow: false });
+        if (!span) continue;
+        if (options?.singlePerRow && generated.some((task) => task.type === meta.id && task.startRow === row)) {
+          continue;
+        }
+
+        for (const emp of employeePool) {
+          const candidate = buildPlacementCandidate({
+            meta,
+            emp,
+            row,
+            span,
+            candidateRows,
+            futureMinimumMetas: options?.futureMinimumMetas,
+            coverageMetas: options?.coverageMetas,
+            concurrentLimit: options?.concurrentLimit,
+          });
+          if (candidate) {
+            candidates.push(candidate);
+          }
+        }
+      }
+
+      return candidates.sort(comparePlacementCandidates);
+    };
+
+    const schedulePrimaryMeta = (
+      meta: TemplateMeta,
+      futureMinimumMetas: TemplateMeta[] = [],
+      coverageMetas: TemplateMeta[] = []
+    ) => {
       const window = meta.window;
-      if (!window) continue;
-      const span = meta.span;
+      if (!window || isAutofillFillerTemplate(meta)) return;
+
       const limitPerDay = meta.limitPerDay;
       const maxPerEmp = meta.maxPerEmp;
       const minPerEmp = meta.minPerEmp;
 
       if (meta.mustManned) {
-        const futureMinimumMetas = templatesForPrimaryPass
-          .slice(metaIndex + 1)
-          .filter((candidate) => !candidate.mustManned && candidate.minPerEmp > 0);
         const requiredRows =
           meta.hasFixedTimes
             ? meta.regularTimeRows
@@ -1821,7 +2195,8 @@ export default function Grid({
                       const col = employeeColById.get(emp.id) ?? employees.findIndex((entry) => entry.id === emp.id) + 2;
                       return (
                         isFree(col, a, spanA, emp.id) &&
-                        !exceedsConcurrentLimit(meta.id, a, spanA, meta.maxConcurrentPerTimeslot)
+                        !exceedsConcurrentLimit(meta.id, a, spanA, meta.maxConcurrentPerTimeslot) &&
+                        !exceedsConsecutiveLimit(meta, col, a, spanA)
                       );
                     }).length
                   : Number.POSITIVE_INFINITY;
@@ -1831,7 +2206,8 @@ export default function Grid({
                       const col = employeeColById.get(emp.id) ?? employees.findIndex((entry) => entry.id === emp.id) + 2;
                       return (
                         isFree(col, b, spanB, emp.id) &&
-                        !exceedsConcurrentLimit(meta.id, b, spanB, meta.maxConcurrentPerTimeslot)
+                        !exceedsConcurrentLimit(meta.id, b, spanB, meta.maxConcurrentPerTimeslot) &&
+                        !exceedsConsecutiveLimit(meta, col, b, spanB)
                       );
                     }).length
                   : Number.POSITIVE_INFINITY;
@@ -1849,27 +2225,28 @@ export default function Grid({
               ? generated.some((task) => task.type === meta.id && task.startRow === row)
               : isTypeCoveredAt(meta.id, row);
           if (alreadyCovered) continue;
-          const picked = pickEmployeeForPlacement(meta, row, requiredSpan, futureMinimumMetas);
+          const picked = pickPlacementForRow(meta, row, requiredSpan, {
+            futureMinimumMetas,
+            candidateRows: orderedRequiredRows,
+          });
           if (!picked) continue;
-          const col = employeeColById.get(picked.id) ?? employees.findIndex((e) => e.id === picked.id) + 2;
-          addTask(meta, col, row, requiredSpan, picked.id);
+          addTask(meta, picked.col, row, requiredSpan, picked.emp.id);
         }
-        continue;
+        return;
       }
 
-      let candidateRows: number[] = [];
-      if (meta.regularTimeRows.length > 0) {
-        candidateRows = meta.regularTimeRows;
-      } else {
-        for (let r = window.startRow; r + span <= window.endRow; r += 1) {
-          candidateRows.push(r);
-        }
-      }
+      const candidateRows =
+        meta.regularTimeRows.length > 0
+          ? meta.regularTimeRows
+          : Array.from(
+              { length: Math.max(0, window.endRow - window.startRow) },
+              (_, index) => window.startRow + index
+            ).filter((row) => !!getSpanForMeta(meta, row, window.endRow, { ignoreWindow: false }));
 
-      if (candidateRows.length === 0) continue;
+      if (candidateRows.length === 0) return;
 
       if (minPerEmp > 0) {
-        const minimumsSatisfied = assignMinimumsForMeta(meta, candidateRows);
+        const minimumsSatisfied = assignMinimumsForMeta(meta, candidateRows, futureMinimumMetas, coverageMetas);
         if (!minimumsSatisfied) {
           const unmetEmployees = employees
             .filter((emp) => getEmpCount(meta.id, emp.id) < minPerEmp)
@@ -1877,7 +2254,7 @@ export default function Grid({
           if (unmetEmployees.length) {
             unmetMinimums.push(`${meta.template.name}: ${unmetEmployees.join(", ")}`);
           }
-          continue;
+          return;
         }
       }
 
@@ -1891,142 +2268,116 @@ export default function Grid({
       }
       desiredCount = Math.min(desiredCount, limitPerDay);
 
-      for (const row of candidateRows) {
-        if (getTotal(meta.id) >= desiredCount) break;
-        if (getTotal(meta.id) >= limitPerDay) break;
-
-        const sortedEmployees = [...employees].sort(
-          (a, b) => {
-            const countDiff = getEmpCount(meta.id, a.id) - getEmpCount(meta.id, b.id);
-            if (countDiff !== 0) return countDiff;
-            return (
-              getRotatedRank(employeeOrder.get(a.id) ?? 0, employees.length, autofillVariant) -
-              getRotatedRank(employeeOrder.get(b.id) ?? 0, employees.length, autofillVariant)
-            );
-          }
-        );
-        const picked = sortedEmployees.find((emp) => {
-          if (getEmpCount(meta.id, emp.id) >= maxPerEmp) return false;
-          const col = employeeColById.get(emp.id) ?? employees.findIndex((e) => e.id === emp.id) + 2;
-          return (
-            isFree(col, row, span, emp.id) &&
-            !exceedsConcurrentLimit(meta.id, row, span, meta.maxConcurrentPerTimeslot)
-          );
+      while (getTotal(meta.id) < desiredCount && getTotal(meta.id) < limitPerDay) {
+        const candidates = collectPlacementCandidatesForMeta(meta, candidateRows, {
+          futureMinimumMetas,
+          coverageMetas,
+          singlePerRow: meta.hasFixedTimes,
         });
-        if (!picked) continue;
-        const col = employeeColById.get(picked.id) ?? employees.findIndex((e) => e.id === picked.id) + 2;
-        addTask(meta, col, row, span, picked.id);
+        const picked = candidates[0];
+        if (!picked) break;
+        addTask(meta, picked.col, picked.row, picked.span, picked.emp.id);
       }
-    }
-
-    const fillTemplates = templatesForPrimaryPass.filter(isAutofillFillerTemplate);
-    const ignoreFixedTimes = false;
-
-    const getConsecutiveSpan = (col: number, type: string, startRow: number, span: number) => {
-      const list = tasksByCol.get(col) ?? [];
-      let total = span;
-      let cursorStart = startRow;
-      while (true) {
-        const prev = list.find((t) => t.type === type && t.startRow + t.span === cursorStart);
-        if (!prev) break;
-        total += prev.span;
-        cursorStart = prev.startRow;
-      }
-      let cursorEnd = startRow + span;
-      while (true) {
-        const next = list.find((t) => t.type === type && t.startRow === cursorEnd);
-        if (!next) break;
-        total += next.span;
-        cursorEnd = next.startRow + next.span;
-      }
-      return total;
     };
 
-    const pickTemplate = (
-      row: number,
-      empId: string | number,
-      col: number,
-      endRow: number,
-      options: { ignoreLimits: boolean; ignoreWindow: boolean }
-    ) => {
-      const getFillerSpanForMeta = (meta: TemplateMeta) => {
-        const span = getSpanForMeta(meta, row, endRow, { ignoreWindow: options.ignoreWindow });
-        if (!span) return 0;
-        return meta.allowShrink ? Math.max(1, Math.min(2, span)) : span;
-      };
-      const activeInRow = (templateId: string) =>
-        generated.filter((task) => task.type === templateId && row >= task.startRow && row < task.startRow + task.span).length;
-      const rowTemplateRank = (templateId: string) => {
-        let hash = 0;
-        for (let index = 0; index < templateId.length; index += 1) {
-          hash = (hash * 31 + templateId.charCodeAt(index)) % 997;
+    const minimumTemplates = templatesForPrimaryPass.filter(isMinimumMeta);
+    const coverageTemplates = templatesForPrimaryPass.filter((meta) => meta.mustManned);
+    const otherPrimaryTemplates = templatesForPrimaryPass.filter(
+      (meta) => !meta.mustManned && !isMinimumMeta(meta) && !isAutofillFillerTemplate(meta)
+    );
+
+    minimumTemplates.forEach((meta, index) => {
+      schedulePrimaryMeta(meta, minimumTemplates.slice(index + 1), coverageTemplates);
+    });
+    coverageTemplates.forEach((meta) => schedulePrimaryMeta(meta));
+    otherPrimaryTemplates.forEach((meta) => schedulePrimaryMeta(meta));
+
+    const fillTemplates = templatesForPrimaryPass.filter(isAutofillFillerTemplate);
+
+    const getFreeSegmentsForColumnRange = (col: number, startRow: number, endRow: number) => {
+      const list = (tasksByCol.get(col) ?? []).slice().sort((a, b) => a.startRow - b.startRow);
+      const segments: Array<{ startRow: number; endRow: number }> = [];
+      let cursor = startRow;
+
+      for (const task of list) {
+        if (task.startRow + task.span <= startRow) continue;
+        if (task.startRow >= endRow) break;
+        if (cursor < task.startRow) {
+          segments.push({ startRow: cursor, endRow: Math.min(task.startRow, endRow) });
         }
-        return (hash + row + autofillVariant) % 997;
-      };
-      const candidates = fillTemplates
-        .map((meta) => {
-          if (!options.ignoreWindow && meta.window) {
-            if (row < meta.window.startRow || row >= meta.window.endRow) return null;
+        cursor = Math.max(cursor, task.startRow + task.span);
+        if (cursor >= endRow) break;
+      }
+
+      if (cursor < endRow) {
+        segments.push({ startRow: cursor, endRow });
+      }
+
+      return segments.filter((segment) => segment.endRow > segment.startRow);
+    };
+
+    const collectGapFillCandidates = (
+      emp: Employee,
+      col: number,
+      startRow: number,
+      endRow: number,
+      options?: { ignoreEmpLimit?: boolean }
+    ) => {
+      const gapRows = Array.from({ length: Math.max(0, endRow - startRow) }, (_, index) => startRow + index);
+      const freeSegments = getFreeSegmentsForColumnRange(col, startRow, endRow);
+      const candidates: PlacementCandidate[] = [];
+
+      for (const segment of freeSegments) {
+        for (let row = segment.startRow; row < segment.endRow; row += 1) {
+          for (const meta of fillTemplates) {
+            if (getTotal(meta.id) >= meta.limitPerDay) continue;
+            if (meta.window) {
+              if (row < meta.window.startRow || row >= meta.window.endRow) continue;
+            }
+
+            const segmentEnd = Math.min(segment.endRow, meta.window?.endRow ?? segment.endRow);
+            const span = resolveAutofillPlacementSpan({
+              baseSpan: meta.span,
+              availableSpan: segmentEnd - row,
+              allowShrink: meta.allowShrink,
+              minSpan: meta.minSpan,
+              maxConsecutiveSpan: meta.maxConsecutiveSpan,
+              fillerChunkSpan: 2,
+            });
+            if (!span) continue;
+
+            const candidate = buildPlacementCandidate({
+              meta,
+              emp,
+              row,
+              span,
+              candidateRows: gapRows,
+              ignoreEmpLimit: options?.ignoreEmpLimit,
+            });
+            if (candidate) {
+              candidates.push(candidate);
+            }
           }
-          if (!ignoreFixedTimes && meta.hasFixedTimes) {
-            if (!meta.regularTimeRows.includes(row)) return null;
-          }
-          if (getTotal(meta.id) >= meta.limitPerDay) return null;
-          if (!options.ignoreLimits) {
-            if (getEmpCount(meta.id, empId) >= meta.maxPerEmp) return null;
-          }
-          const span = getFillerSpanForMeta(meta);
-          if (!span) return null;
-          if (exceedsConcurrentLimit(meta.id, row, span, meta.maxConcurrentPerTimeslot)) return null;
-          const exceedsConsecutive =
-            meta.maxConsecutiveSpan > 0 &&
-            getConsecutiveSpan(col, meta.id, row, span) > meta.maxConsecutiveSpan;
-          return { meta, exceedsConsecutive };
-        })
-        .filter((c): c is { meta: TemplateMeta; exceedsConsecutive: boolean } => !!c);
-      if (!candidates.length) return null;
-      const preferred = candidates.some((c) => !c.exceedsConsecutive)
-        ? candidates.filter((c) => !c.exceedsConsecutive)
-        : candidates;
-      preferred.sort((a, b) => {
-        const activeDiff = activeInRow(a.meta.id) - activeInRow(b.meta.id);
-        if (activeDiff !== 0) return activeDiff;
-        const aEmp = getEmpCount(a.meta.id, empId);
-        const bEmp = getEmpCount(b.meta.id, empId);
-        if (aEmp !== bEmp) return aEmp - bEmp;
-        const totalDiff = getTotal(a.meta.id) - getTotal(b.meta.id);
-        if (totalDiff !== 0) return totalDiff;
-        const rowRankDiff = rowTemplateRank(a.meta.id) - rowTemplateRank(b.meta.id);
-        if (rowRankDiff !== 0) return rowRankDiff;
-        return a.meta.id.localeCompare(b.meta.id);
-      });
-      return { meta: preferred[0].meta, options };
+        }
+      }
+
+      return candidates.sort(comparePlacementCandidates);
     };
 
     const fillGap = (col: number, empId: string | number, startRow: number, endRow: number) => {
-      let row = startRow;
-      while (row < endRow) {
-        if (!isFree(col, row, 1, empId)) {
-          row += 1;
-          continue;
-        }
-        const pickedStrict = pickTemplate(row, empId, col, endRow, { ignoreLimits: false, ignoreWindow: false });
-        const pickedRelaxed = pickTemplate(row, empId, col, endRow, { ignoreLimits: true, ignoreWindow: false });
-        const picked = pickedStrict || pickedRelaxed;
+      const emp = employees.find((entry) => entry.id === empId);
+      if (!emp) return;
+
+      while (true) {
+        const pickedStrict = collectGapFillCandidates(emp, col, startRow, endRow);
+        const pickedRelaxed = pickedStrict.length
+          ? pickedStrict
+          : collectGapFillCandidates(emp, col, startRow, endRow, { ignoreEmpLimit: true });
+        const picked = pickedStrict[0] || pickedRelaxed[0];
         if (!picked) {
-          row = endRow;
           break;
         }
-        const availableSpan = getSpanForMeta(picked.meta, row, endRow, { ignoreWindow: picked.options.ignoreWindow });
-        const span = availableSpan && picked.meta.allowShrink
-          ? Math.max(1, Math.min(2, availableSpan))
-          : availableSpan;
-        if (!span) {
-          row += 1;
-          continue;
-        }
-        addTask(picked.meta, col, row, span, empId);
-        row += span;
+        addTask(picked.meta, col, picked.row, picked.span, empId);
       }
     };
 
@@ -2061,7 +2412,13 @@ export default function Grid({
       empId: string | number
     ) => {
       const blockedRange = getProtectedRangeForMeta(meta, row, span);
+      if (exceedsConsecutiveLimit(meta, col, row, span)) {
+        return false;
+      }
       if (meta.overwriteExistingTasks) {
+        if (hasProtectedMinimumConflictInColumn(col, blockedRange)) {
+          return false;
+        }
         if (meta.protectsTourWindow && getProtectedTaskConflictInColumn(col, blockedRange)) {
           return false;
         }

@@ -3,10 +3,13 @@ import {
   clipTaskAroundBlockedRange,
   compareFutureMinimumAvailability,
   getFeasiblePlacementRows,
+  getAutofillTaskRole,
   getAutofillTemplatePriority,
   getPreferredConcurrentLimit,
   isAutofillFillerTemplate,
+  isAutofillMinimumTemplate,
   regularDayAppliesToAutofill,
+  resolveAutofillPlacementSpan,
   resolveAutofillTimeSlots,
 } from "../lib/rosterAutofill";
 
@@ -151,6 +154,49 @@ describe("roster autofill preferences", () => {
         minPerEmp: 0,
       })
     ).toBe(true);
+    expect(
+      isAutofillMinimumTemplate({
+        mustManned: false,
+        minPerEmp: 1,
+      })
+    ).toBe(true);
+  });
+
+  it("caps placement spans to the max consecutive rule", () => {
+    expect(
+      resolveAutofillPlacementSpan({
+        baseSpan: 4,
+        availableSpan: 12,
+        allowShrink: true,
+        maxConsecutiveSpan: 2,
+      })
+    ).toBe(2);
+    expect(
+      resolveAutofillPlacementSpan({
+        baseSpan: 4,
+        availableSpan: 12,
+        allowShrink: true,
+        maxConsecutiveSpan: 2,
+        minSpan: 3,
+      })
+    ).toBe(0);
+  });
+
+  it("classifies minimum and filler tasks distinctly for autofill", () => {
+    expect(
+      getAutofillTaskRole({
+        hasFixedTimes: false,
+        mustManned: false,
+        minPerEmp: 1,
+      })
+    ).toBe("minimum");
+    expect(
+      getAutofillTaskRole({
+        hasFixedTimes: false,
+        mustManned: false,
+        minPerEmp: 0,
+      })
+    ).toBe("filler");
   });
 
   it("identifies when a required coverage block would remove the last lunch slot", () => {

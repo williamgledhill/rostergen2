@@ -84,6 +84,58 @@ export function isAutofillFillerTemplate(input: {
   return !input.hasFixedTimes && !input.mustManned && input.minPerEmp <= 0 && !input.fixedTimeBlock;
 }
 
+export function isAutofillMinimumTemplate(input: {
+  mustManned: boolean;
+  minPerEmp: number;
+  attendedByAll?: boolean;
+  overwriteExistingTasks?: boolean;
+}) {
+  return !input.mustManned && input.minPerEmp > 0 && !input.attendedByAll && !input.overwriteExistingTasks;
+}
+
+export function getAutofillTaskRole(input: {
+  hasFixedTimes: boolean;
+  mustManned: boolean;
+  minPerEmp: number;
+  fixedTimeBlock?: boolean;
+  attendedByAll?: boolean;
+  overwriteExistingTasks?: boolean;
+}): "attended" | "override" | "minimum" | "coverage" | "fixed" | "filler" {
+  if (input.attendedByAll) return "attended";
+  if (input.overwriteExistingTasks) return "override";
+  if (isAutofillMinimumTemplate(input)) return "minimum";
+  if (input.mustManned) return "coverage";
+  if (input.hasFixedTimes || input.fixedTimeBlock) return "fixed";
+  return "filler";
+}
+
+export function resolveAutofillPlacementSpan(input: {
+  baseSpan: number;
+  availableSpan: number;
+  allowShrink: boolean;
+  minSpan?: number;
+  maxConsecutiveSpan?: number;
+  fillerChunkSpan?: number;
+}) {
+  if (!Number.isFinite(input.baseSpan) || input.baseSpan <= 0) return 0;
+  if (!Number.isFinite(input.availableSpan) || input.availableSpan <= 0) return 0;
+
+  let span = input.allowShrink
+    ? Math.max(1, Math.min(input.baseSpan, input.availableSpan))
+    : input.baseSpan;
+
+  if (Number.isFinite(input.maxConsecutiveSpan) && (input.maxConsecutiveSpan ?? 0) > 0) {
+    span = Math.min(span, input.maxConsecutiveSpan as number);
+  }
+  if (Number.isFinite(input.fillerChunkSpan) && (input.fillerChunkSpan ?? 0) > 0) {
+    span = Math.min(span, input.fillerChunkSpan as number);
+  }
+
+  const minSpan = Math.max(1, input.minSpan ?? 1);
+  if (span < minSpan || span > input.availableSpan) return 0;
+  return span;
+}
+
 export type AutofillPlacementWindow = {
   startRow: number;
   endRow: number;

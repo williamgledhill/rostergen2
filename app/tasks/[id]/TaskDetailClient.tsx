@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { ChevronRight, Save, Trash2 } from "lucide-react";
 import { buildDraftStorageKey, formatAutosaveStatusText, getAutosaveStatusClassName, removeDraftRecord } from "@/lib/clientDrafts";
 import { navigateWithinSpa, shouldHandleSpaClick } from "@/lib/spaNavigation";
+import { getAutofillTaskRole } from "@/lib/rosterAutofill";
 import { invalidateWorkspaceResource, taskDataKey, writeCachedResource } from "@/lib/workspaceData";
 import {
   TASK_TEMPLATE_DELETED_STORAGE_KEY,
@@ -26,6 +27,39 @@ const REGULAR_DAYS = [
 ];
 
 const DURATION_OPTIONS = Array.from({ length: 16 }, (_, idx) => (idx + 1) * 15);
+
+const AUTOFILL_ROLE_META = {
+  coverage: {
+    label: "Required coverage",
+    description: "Autofill treats this as a hard coverage rule and rotates people around stricter caps where possible.",
+    accent: "border-amber-200 bg-amber-50 text-amber-900",
+  },
+  minimum: {
+    label: "Per-person minimum",
+    description: "Autofill reserves this for each employee before it fills generic work, so breaks and lunches keep their space.",
+    accent: "border-rose-200 bg-rose-50 text-rose-900",
+  },
+  fixed: {
+    label: "Timed task",
+    description: "Autofill places this into its configured windows or slots before generic filler work.",
+    accent: "border-sky-200 bg-sky-50 text-sky-900",
+  },
+  filler: {
+    label: "Gap filler",
+    description: "Autofill uses this only after hard rules are satisfied, and it stops instead of breaking caps.",
+    accent: "border-emerald-200 bg-emerald-50 text-emerald-900",
+  },
+  override: {
+    label: "Override task",
+    description: "Autofill runs this late and only replaces tasks that are allowed to move out of the way.",
+    accent: "border-fuchsia-200 bg-fuchsia-50 text-fuchsia-900",
+  },
+  attended: {
+    label: "All-staff block",
+    description: "Everyone working in that slot gets this task together, so it behaves like a shared event block.",
+    accent: "border-violet-200 bg-violet-50 text-violet-900",
+  },
+} as const;
 
 function SectionCard({
   title,
@@ -297,6 +331,37 @@ export default function TaskDetailClient({ id, initialTask }: { id: string; init
   const saveStatusText = formatAutosaveStatusText(saveState);
   const saveStatusClassName = getAutosaveStatusClassName(saveState);
   const allDaysChecked = REGULAR_DAYS.every((day) => (task.regularDays || []).includes(day.key));
+  const totalFixedSlots =
+    (task.regularTimes || []).length +
+    Object.values(task.regularTimesByDay || {}).reduce(
+      (sum, times) => sum + (Array.isArray(times) ? times.length : 0),
+      0
+    );
+  const hasWindowRules =
+    !!task.autogenStart ||
+    !!task.autogenEnd ||
+    Object.values(task.regularDayWindows || {}).some((window) => !!window?.start || !!window?.end);
+  const taskRole = getAutofillTaskRole({
+    hasFixedTimes: totalFixedSlots > 0,
+    mustManned: !!task.mustManned,
+    minPerEmp: Number(task.minPerEmployeePerDay) || 0,
+    fixedTimeBlock: hasWindowRules,
+    attendedByAll: !!task.attendedByAll,
+    overwriteExistingTasks: !!task.overwriteExistingTasks,
+  });
+  const roleMeta = AUTOFILL_ROLE_META[taskRole];
+  const summaryChips = [
+    Number(task.durationMinutes) > 0 ? `${task.durationMinutes} min length` : "Flexible length",
+    Number(task.maxConsecutiveMinutes) > 0 ? `Max ${task.maxConsecutiveMinutes} min in a row` : "No consecutive cap",
+    Number(task.minPerEmployeePerDay) > 0 ? `${task.minPerEmployeePerDay} per employee` : null,
+    Number(task.maxPerEmployeePerDay) > 0 ? `Up to ${task.maxPerEmployeePerDay} per employee` : null,
+    Number(task.maxConcurrentPerTimeslot) > 0 ? `${task.maxConcurrentPerTimeslot} at once` : "No overlap cap",
+    totalFixedSlots > 0 ? `${totalFixedSlots} fixed slot${totalFixedSlots === 1 ? "" : "s"}` : hasWindowRules ? "Windowed by day" : "Whole-day window",
+    (task.regularDays || []).length > 0 ? `${(task.regularDays || []).length} active day${(task.regularDays || []).length === 1 ? "" : "s"}` : "No active days",
+    Number(task.waitingMinutes) > 0 ? `+${task.waitingMinutes} min waiting` : null,
+    Number(task.packingMinutes) > 0 ? `+${task.packingMinutes} min packing` : null,
+    task.schoolTourImportTarget ? "School-tour target" : null,
+  ].filter((chip): chip is string => !!chip);
 
   return (
     <div className="w-full px-3 py-4">
@@ -408,86 +473,114 @@ export default function TaskDetailClient({ id, initialTask }: { id: string; init
             </div>
           </SectionCard>
 
-          <SectionCard
-            title="Autofill behavior"
-            description="These options control how the task participates when the roster is filled automatically."
-          >
-            <div className="overflow-hidden rounded-[10px] border border-[var(--border)] bg-white">
-              <ToggleRow
-                id="task-enabled"
-                label="Enabled"
-                description="Include this task in autofill."
-                checked={task.enabled !== false}
-                onChange={(checked) => setTask((t) => (t ? { ...t, enabled: checked } : t))}
-              />
-              <div className="border-t border-[var(--border)]" />
-              <ToggleRow
-                id="task-waiting"
-                label="Waiting for"
-                description="Adds 15 minutes before the task starts."
-                checked={(task.waitingMinutes || 0) > 0}
-                onChange={(checked) => setTask((t) => (t ? { ...t, waitingMinutes: checked ? 15 : 0 } : t))}
-              />
-              <div className="border-t border-[var(--border)]" />
-              <ToggleRow
-                id="task-packing"
-                label="Packing up"
-                description="Adds 15 minutes after the task ends."
-                checked={(task.packingMinutes || 0) > 0}
-                onChange={(checked) => setTask((t) => (t ? { ...t, packingMinutes: checked ? 15 : 0 } : t))}
-              />
-              <div className="border-t border-[var(--border)]" />
-              <ToggleRow
-                id="tour-task"
-                label="Protect core time"
-                description="When this task overwrites conflicts, only the main task time is protected. Waiting and packing stay outside that protected window."
-                checked={!!task.mustManned && !!task.overwriteExistingTasks}
-                onChange={(checked) =>
-                  setTask((t) =>
-                    t
-                      ? {
-                          ...t,
-                          mustManned: checked ? true : t.mustManned,
-                          overwriteExistingTasks: checked,
-                        }
-                      : t
-                  )
-                }
-              />
-              <div className="border-t border-[var(--border)]" />
-              <ToggleRow
-                id="must-manned"
-                label="Must always be manned"
-                description="Treat this as a required coverage task during autofill."
-                checked={!!task.mustManned}
-                onChange={(checked) => setTask((t) => (t ? { ...t, mustManned: checked } : t))}
-              />
-              <div className="border-t border-[var(--border)]" />
-              <ToggleRow
-                id="overwrite-existing-tasks"
-                label="Overwrite other tasks"
-                description="Runs late in autofill and replaces conflicting tasks in the same slot."
-                checked={!!task.overwriteExistingTasks}
-                onChange={(checked) => setTask((t) => (t ? { ...t, overwriteExistingTasks: checked } : t))}
-              />
-              <div className="border-t border-[var(--border)]" />
-              <ToggleRow
-                id="school-tour-import-target"
-                label="Use for imported school tours"
-                description="Imported school runsheets use this task's colour, duration, waiting time, and overwrite rules."
-                checked={!!task.schoolTourImportTarget}
-                onChange={(checked) => setTask((t) => (t ? { ...t, schoolTourImportTarget: checked } : t))}
-              />
-              <div className="border-t border-[var(--border)]" />
-              <ToggleRow
-                id="attended-by-all"
-                label="Attended by all"
-                description="Everyone working in that slot gets this task."
-                checked={!!task.attendedByAll}
-                onChange={(checked) => setTask((t) => (t ? { ...t, attendedByAll: checked } : t))}
-              />
-            </div>
-          </SectionCard>
+          <div className="flex flex-col gap-3">
+            <SectionCard
+              title="Rule summary"
+              description="This is how the autofill engine now interprets the task before it starts placing work."
+            >
+              <div className="space-y-3">
+                <div className={`rounded-[12px] border px-3 py-3 ${roleMeta.accent}`}>
+                  <p className="text-[12px] font-semibold uppercase tracking-[0.08em]">Autofill role</p>
+                  <p className="mt-1 text-[18px] font-bold">{roleMeta.label}</p>
+                  <p className="mt-1 text-[13px] font-medium leading-5">{roleMeta.description}</p>
+                </div>
+                <div className="rounded-[12px] border border-[var(--border)] bg-white p-3">
+                  <p className="text-[12px] font-semibold uppercase tracking-[0.08em] text-slate-500">Hard rules</p>
+                  <div className="mt-2 flex flex-wrap gap-2">
+                    {summaryChips.map((chip) => (
+                      <span
+                        key={chip}
+                        className="inline-flex min-h-8 items-center rounded-full border border-[var(--border)] bg-[var(--surface-subtle)] px-3 py-1 text-[12px] font-semibold text-slate-700"
+                      >
+                        {chip}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </SectionCard>
+
+            <SectionCard
+              title="Autofill behavior"
+              description="These controls change the role this task plays when the roster is generated."
+            >
+              <div className="overflow-hidden rounded-[10px] border border-[var(--border)] bg-white">
+                <ToggleRow
+                  id="task-enabled"
+                  label="Enabled"
+                  description="Include this task in autofill."
+                  checked={task.enabled !== false}
+                  onChange={(checked) => setTask((t) => (t ? { ...t, enabled: checked } : t))}
+                />
+                <div className="border-t border-[var(--border)]" />
+                <ToggleRow
+                  id="task-waiting"
+                  label="Waiting for"
+                  description="Adds 15 minutes before the task starts."
+                  checked={(task.waitingMinutes || 0) > 0}
+                  onChange={(checked) => setTask((t) => (t ? { ...t, waitingMinutes: checked ? 15 : 0 } : t))}
+                />
+                <div className="border-t border-[var(--border)]" />
+                <ToggleRow
+                  id="task-packing"
+                  label="Packing up"
+                  description="Adds 15 minutes after the task ends."
+                  checked={(task.packingMinutes || 0) > 0}
+                  onChange={(checked) => setTask((t) => (t ? { ...t, packingMinutes: checked ? 15 : 0 } : t))}
+                />
+                <div className="border-t border-[var(--border)]" />
+                <ToggleRow
+                  id="tour-task"
+                  label="Protect core time"
+                  description="When this task overwrites conflicts, only the main task time is protected. Waiting and packing stay outside that protected window."
+                  checked={!!task.mustManned && !!task.overwriteExistingTasks}
+                  onChange={(checked) =>
+                    setTask((t) =>
+                      t
+                        ? {
+                            ...t,
+                            mustManned: checked ? true : t.mustManned,
+                            overwriteExistingTasks: checked,
+                          }
+                        : t
+                    )
+                  }
+                />
+                <div className="border-t border-[var(--border)]" />
+                <ToggleRow
+                  id="must-manned"
+                  label="Must always be manned"
+                  description="Treat this as a required coverage task during autofill."
+                  checked={!!task.mustManned}
+                  onChange={(checked) => setTask((t) => (t ? { ...t, mustManned: checked } : t))}
+                />
+                <div className="border-t border-[var(--border)]" />
+                <ToggleRow
+                  id="overwrite-existing-tasks"
+                  label="Overwrite other tasks"
+                  description="Runs late in autofill and replaces conflicting tasks in the same slot."
+                  checked={!!task.overwriteExistingTasks}
+                  onChange={(checked) => setTask((t) => (t ? { ...t, overwriteExistingTasks: checked } : t))}
+                />
+                <div className="border-t border-[var(--border)]" />
+                <ToggleRow
+                  id="school-tour-import-target"
+                  label="Use for imported school tours"
+                  description="Imported school runsheets use this task's colour, duration, waiting time, and overwrite rules."
+                  checked={!!task.schoolTourImportTarget}
+                  onChange={(checked) => setTask((t) => (t ? { ...t, schoolTourImportTarget: checked } : t))}
+                />
+                <div className="border-t border-[var(--border)]" />
+                <ToggleRow
+                  id="attended-by-all"
+                  label="Attended by all"
+                  description="Everyone working in that slot gets this task."
+                  checked={!!task.attendedByAll}
+                  onChange={(checked) => setTask((t) => (t ? { ...t, attendedByAll: checked } : t))}
+                />
+              </div>
+            </SectionCard>
+          </div>
         </div>
 
         <SectionCard
