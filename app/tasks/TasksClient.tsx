@@ -2,7 +2,7 @@
 
 import React, { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Plus } from "lucide-react";
+import { Plus, X } from "lucide-react";
 import { navigateWithinSpa } from "@/lib/spaNavigation";
 import {
   invalidateWorkspaceResource,
@@ -19,8 +19,19 @@ import {
   type TaskTemplate,
 } from "@/lib/taskTemplates";
 
+const DEFAULT_TASK_COLOR = "#BFDBFE";
+
+function isHexColor(value: string) {
+  return /^#[0-9a-fA-F]{6}$/.test(value);
+}
+
 export default function TasksClient({ initialTasks }: { initialTasks: TaskTemplate[] }) {
   const [tasks, setTasks] = useState<TaskTemplate[]>(initialTasks);
+  const [modalOpen, setModalOpen] = useState(false);
+  const [newTaskName, setNewTaskName] = useState("");
+  const [newTaskColor, setNewTaskColor] = useState(DEFAULT_TASK_COLOR);
+  const [createError, setCreateError] = useState("");
+  const [isCreating, setIsCreating] = useState(false);
   const router = useRouter();
 
   useEffect(() => {
@@ -75,16 +86,28 @@ export default function TasksClient({ initialTasks }: { initialTasks: TaskTempla
     };
   }, [refreshTasks, removePendingDeletedTask]);
 
-  async function addTask() {
-    const name = prompt("New task name?");
-    if (!name) return;
-    const trimmed = name.trim();
+  function openTaskCreator() {
+    setNewTaskName("");
+    setNewTaskColor(DEFAULT_TASK_COLOR);
+    setCreateError("");
+    setModalOpen(true);
+  }
+
+  function closeTaskCreator() {
+    if (isCreating) return;
+    setModalOpen(false);
+    setCreateError("");
+  }
+
+  async function createTask(event?: React.FormEvent<HTMLFormElement>) {
+    event?.preventDefault();
+    const trimmed = newTaskName.trim();
     if (!trimmed) return;
-    const color = prompt("Colour (hex or CSS value)? Leave blank for default.", "");
-    if (color === null) return;
-    const trimmedColor = color.trim();
+    const trimmedColor = newTaskColor.trim();
 
     try {
+      setIsCreating(true);
+      setCreateError("");
       const res = await fetch("/api/task-templates", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -108,9 +131,12 @@ export default function TasksClient({ initialTasks }: { initialTasks: TaskTempla
       }
       const href = `/tasks/${created.id}`;
       if (!navigateWithinSpa(href)) router.push(href);
+      setModalOpen(false);
     } catch (err) {
       console.error(err);
-      alert("Failed to add task template");
+      setCreateError("Failed to add task template.");
+    } finally {
+      setIsCreating(false);
     }
   }
 
@@ -122,7 +148,7 @@ export default function TasksClient({ initialTasks }: { initialTasks: TaskTempla
             <h1 className="text-2xl font-semibold">Tasks</h1>
             <p className="text-slate-600 text-[14px]">Manage reusable task templates for roster planning.</p>
           </div>
-          <button className="btn btn-primary px-4 py-2" style={{ borderRadius: "6px" }} onClick={addTask}>
+          <button className="btn btn-primary px-4 py-2" style={{ borderRadius: "6px" }} onClick={openTaskCreator}>
             <Plus className="w-4 h-4 text-white" strokeWidth={2.3} />
             <span className="text-[14px] font-medium">Add task</span>
           </button>
@@ -177,6 +203,93 @@ export default function TasksClient({ initialTasks }: { initialTasks: TaskTempla
           </div>
           <div className="border-t border-[#E6EAF0] px-4 py-3 text-sm text-slate-600">{tasks.length} task{tasks.length === 1 ? "" : "s"}</div>
         </div>
+
+        {modalOpen && (
+          <div className="fixed inset-0 z-[2147483647] flex items-center justify-center bg-black/40 px-4" onClick={closeTaskCreator}>
+            <form
+              className="w-full max-w-xl overflow-hidden rounded-[8px] border border-[var(--border)] bg-white shadow-xl"
+              onClick={(event) => event.stopPropagation()}
+              onSubmit={createTask}
+            >
+              <div className="flex items-center justify-between px-6 py-4">
+                <div>
+                  <h2 className="text-xl font-semibold">Add task</h2>
+                  <p className="text-sm text-slate-600">Create a reusable task template.</p>
+                </div>
+                <button
+                  type="button"
+                  className="rounded-lg p-2 text-slate-500 transition hover:bg-[#f5f7fa] hover:text-slate-700"
+                  onClick={closeTaskCreator}
+                  aria-label="Close"
+                  disabled={isCreating}
+                >
+                  <X className="h-4 w-4" />
+                </button>
+              </div>
+
+              <div className="space-y-5 px-6 pb-5 text-[14px]" style={{ color: "#1A1B25" }}>
+                <div>
+                  <label className="mb-1 block text-sm font-semibold" htmlFor="new-task-name" style={{ color: "#1A1B25" }}>
+                    Name
+                  </label>
+                  <input
+                    id="new-task-name"
+                    className="input w-full text-[14px]"
+                    style={{ color: "#1A1B25" }}
+                    value={newTaskName}
+                    onChange={(event) => setNewTaskName(event.target.value)}
+                    autoFocus
+                  />
+                </div>
+
+                <div>
+                  <label className="mb-1 block text-sm font-semibold" htmlFor="new-task-color" style={{ color: "#1A1B25" }}>
+                    Colour
+                  </label>
+                  <div className="flex items-center gap-3">
+                    <input
+                      type="color"
+                      value={isHexColor(newTaskColor) ? newTaskColor : DEFAULT_TASK_COLOR}
+                      onChange={(event) => setNewTaskColor(event.target.value)}
+                      aria-label="Pick task colour"
+                      className="h-10 w-12 cursor-pointer rounded-md border border-[var(--border)] bg-white p-1"
+                    />
+                    <input
+                      id="new-task-color"
+                      className="input min-w-0 flex-1 text-[14px]"
+                      style={{ color: "#1A1B25" }}
+                      value={newTaskColor}
+                      onChange={(event) => setNewTaskColor(event.target.value)}
+                      placeholder="#BFDBFE"
+                    />
+                    <span
+                      className="h-8 w-8 shrink-0 rounded-full border border-slate-300"
+                      style={{ backgroundColor: newTaskColor || "#fff" }}
+                      aria-hidden="true"
+                    />
+                  </div>
+                </div>
+
+                {createError && <p className="text-sm text-red-600">{createError}</p>}
+              </div>
+
+              <div className="flex items-center justify-end gap-3 bg-white px-6 py-4">
+                <button
+                  type="button"
+                  className="btn h-[30px] justify-center text-black/80 hover:text-black"
+                  style={{ width: "65px", boxShadow: "inset 0 0 0 1px #CFCFCF", borderRadius: "6px", border: "none", background: "white" }}
+                  onClick={closeTaskCreator}
+                  disabled={isCreating}
+                >
+                  Cancel
+                </button>
+                <button className="btn btn-primary h-[30px] px-4" style={{ borderRadius: "6px" }} type="submit" disabled={isCreating || !newTaskName.trim()}>
+                  {isCreating ? "Creating..." : "Create"}
+                </button>
+              </div>
+            </form>
+          </div>
+        )}
       </div>
     </div>
   );
