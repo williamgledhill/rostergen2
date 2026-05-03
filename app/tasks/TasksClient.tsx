@@ -4,7 +4,14 @@ import React, { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Plus } from "lucide-react";
 import { navigateWithinSpa } from "@/lib/spaNavigation";
-import { preloadWorkspaceRoute, tasksDataKey, writeCachedResource } from "@/lib/workspaceData";
+import {
+  invalidateWorkspaceResource,
+  notifyWorkspaceResourcesChanged,
+  preloadWorkspaceRoute,
+  taskDataKey,
+  tasksDataKey,
+  writeCachedResource,
+} from "@/lib/workspaceData";
 import {
   TASK_TEMPLATE_DELETED_STORAGE_KEY,
   TASK_TEMPLATE_REFRESH_EVENT,
@@ -73,21 +80,34 @@ export default function TasksClient({ initialTasks }: { initialTasks: TaskTempla
     if (!name) return;
     const trimmed = name.trim();
     if (!trimmed) return;
-    const color = prompt("Colour (hex or css value)? Leave blank for default.", "") || "";
+    const color = prompt("Colour (hex or CSS value)? Leave blank for default.", "");
+    if (color === null) return;
+    const trimmedColor = color.trim();
 
     try {
       const res = await fetch("/api/task-templates", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name: trimmed, color }),
+        body: JSON.stringify({ name: trimmed, color: trimmedColor }),
       });
       if (!res.ok) throw new Error("Failed to add template");
-      const created = await res.json();
+      const created = (await res.json()) as TaskTemplate;
       setTasks((prev) => {
         const next = [...prev, created];
         writeCachedResource(tasksDataKey(), next);
         return next;
       });
+      writeCachedResource(taskDataKey(created.id), created);
+      notifyWorkspaceResourcesChanged([tasksDataKey(), taskDataKey(created.id)]);
+      invalidateWorkspaceResource("editor");
+      window.dispatchEvent(new Event(TASK_TEMPLATE_REFRESH_EVENT));
+      try {
+        window.localStorage.setItem(TASK_TEMPLATE_REFRESH_STORAGE_KEY, new Date().toISOString());
+      } catch (error) {
+        console.error(error);
+      }
+      const href = `/tasks/${created.id}`;
+      if (!navigateWithinSpa(href)) router.push(href);
     } catch (err) {
       console.error(err);
       alert("Failed to add task template");
