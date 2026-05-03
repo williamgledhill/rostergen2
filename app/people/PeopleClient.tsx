@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { Plus, X } from "lucide-react";
 import { ALL_DAYS, type DayKey, type Person, defaultSchedule } from "@/lib/people";
 import { navigateWithinSpa } from "@/lib/spaNavigation";
-import { peopleDataKey, preloadWorkspaceRoute, writeCachedResource } from "@/lib/workspaceData";
+import { preloadWorkspaceRoute, upsertCachedPerson } from "@/lib/workspaceData";
 
 export default function PeopleClient({ initialPeople }: { initialPeople: Person[] }) {
   const [people, setPeople] = useState<Person[]>(initialPeople);
@@ -78,9 +78,9 @@ export default function PeopleClient({ initialPeople }: { initialPeople: Person[
         } else {
           next = [...prev, saved];
         }
-        writeCachedResource(peopleDataKey(), next);
         return next;
       });
+      upsertCachedPerson(saved);
       setModalOpen(false);
       setForm({ id: "", name: "", email: "", schedule: defaultSchedule([]) });
     } catch (err) {

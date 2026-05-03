@@ -74,6 +74,26 @@ function cloneEmployees(input: Employee[]) {
   return input.map((emp) => ({ ...emp }));
 }
 
+function hasEmployeeIdentity(employeeList: Employee[], candidate: Employee) {
+  const candidateId = String(candidate.id);
+  const candidateName = candidate.name.trim().toLowerCase();
+  return employeeList.some(
+    (employee) =>
+      String(employee.id) === candidateId ||
+      (candidateName.length > 0 && employee.name.trim().toLowerCase() === candidateName)
+  );
+}
+
+function mergeMissingEmployees(employeeList: Employee[], sourceEmployees: Employee[]) {
+  const nextEmployees = cloneEmployees(employeeList);
+  sourceEmployees.forEach((employee) => {
+    if (!hasEmployeeIdentity(nextEmployees, employee)) {
+      nextEmployees.push({ ...employee });
+    }
+  });
+  return nextEmployees;
+}
+
 function cloneTasks(input: GridTask[]) {
   return input.map((task) => ({ ...task }));
 }
@@ -449,11 +469,26 @@ export default function Grid({
       rosterDateId
     );
     const nextLastSavedSignature = persistedDraft?.lastSavedSignature ?? serverSignature;
-    const shouldUseDraft =
-      persistedDraft !== null &&
-      (persistedSignature !== serverSignature || nextLastSavedSignature !== serverSignature);
-    const nextDraftValue = shouldUseDraft ? persistedValue : serverDraftValue;
-    const nextSavedAt = persistedDraft?.savedAt ?? initialSavedAt;
+    const hasLocalDraftChanges = persistedDraft !== null && persistedSignature !== nextLastSavedSignature;
+    const serverChangedSinceDraft = persistedDraft !== null && nextLastSavedSignature !== serverSignature;
+    const nextDraftValue =
+      hasLocalDraftChanges && serverChangedSinceDraft
+        ? {
+            ...persistedValue,
+            employees: mergeMissingEmployees(persistedValue.employees, serverDraftValue.employees),
+          }
+        : hasLocalDraftChanges
+          ? persistedValue
+          : serverDraftValue;
+    const nextDraftSignature = buildRosterSaveSignature(
+      nextDraftValue.employees,
+      nextDraftValue.tasks,
+      nextDraftValue.schoolTours ?? [],
+      nextDraftValue.hoursStart,
+      nextDraftValue.hoursEnd,
+      rosterDateId
+    );
+    const nextSavedAt = hasLocalDraftChanges ? persistedDraft?.savedAt ?? initialSavedAt : initialSavedAt;
 
     setRosterState(
       cloneEmployees(nextDraftValue.employees),
@@ -471,13 +506,13 @@ export default function Grid({
       autosaveTimerRef.current = null;
     }
     lastSavedAtRef.current = nextSavedAt;
-    lastSavedSignatureRef.current = shouldUseDraft ? nextLastSavedSignature : serverSignature;
+    lastSavedSignatureRef.current = hasLocalDraftChanges ? nextLastSavedSignature : serverSignature;
     writeDraftRecord<RosterDraftValue>(draftStorageKey, {
       value: nextDraftValue,
       lastSavedSignature: lastSavedSignatureRef.current,
       savedAt: lastSavedAtRef.current,
     });
-    if (shouldUseDraft && typeof onRestoreDraftHours === "function") {
+    if (hasLocalDraftChanges && typeof onRestoreDraftHours === "function") {
       onRestoreDraftHours({
         start: nextDraftValue.hoursStart || hoursStart || "",
         end: nextDraftValue.hoursEnd || hoursEnd || "",
@@ -486,7 +521,7 @@ export default function Grid({
     saveCycleRef.current += 1;
     queuedSaveModeRef.current = null;
     onSaveStateChange?.(
-      persistedSignature !== lastSavedSignatureRef.current
+      nextDraftSignature !== lastSavedSignatureRef.current
         ? { state: "dirty", mode: "autosave", savedAt: lastSavedAtRef.current }
         : lastSavedAtRef.current
           ? { state: "saved", savedAt: lastSavedAtRef.current }

@@ -34,6 +34,41 @@ type CacheResult<T> = { hit: true; data: T } | { hit: false; data: null };
 
 const resourceCache = new Map<string, unknown>();
 const inflight = new Map<string, Promise<unknown>>();
+export const WORKSPACE_RESOURCE_CHANGE_EVENT = "rosterplanner:workspace-resource-change";
+
+export type WorkspaceResourceChangeDetail = {
+  prefixes: string[];
+};
+
+function resourceKeyMatchesPrefix(key: string, prefix: string) {
+  return key === prefix || key.startsWith(`${prefix}:`);
+}
+
+function dispatchWorkspaceResourceChange(prefixes: string[]) {
+  if (typeof window === "undefined" || prefixes.length === 0) return;
+  window.dispatchEvent(
+    new CustomEvent<WorkspaceResourceChangeDetail>(WORKSPACE_RESOURCE_CHANGE_EVENT, {
+      detail: { prefixes },
+    })
+  );
+}
+
+export function isWorkspaceResourceAffected(key: string, prefixes: string[]) {
+  return prefixes.some((prefix) => resourceKeyMatchesPrefix(key, prefix));
+}
+
+export function subscribeWorkspaceResourceChanges(listener: (prefixes: string[]) => void) {
+  if (typeof window === "undefined") return () => {};
+
+  const handler = (event: Event) => {
+    const detail = (event as CustomEvent<WorkspaceResourceChangeDetail>).detail;
+    if (!Array.isArray(detail?.prefixes)) return;
+    listener(detail.prefixes);
+  };
+
+  window.addEventListener(WORKSPACE_RESOURCE_CHANGE_EVENT, handler);
+  return () => window.removeEventListener(WORKSPACE_RESOURCE_CHANGE_EVENT, handler);
+}
 
 export function readCachedResource<T>(key: string): CacheResult<T> {
   if (!resourceCache.has(key)) return { hit: false, data: null };
@@ -45,11 +80,56 @@ export function writeCachedResource<T>(key: string, data: T) {
 }
 
 export function invalidateWorkspaceResource(keyPrefix: string) {
+  invalidateWorkspaceResources([keyPrefix]);
+}
+
+export function notifyWorkspaceResourcesChanged(keyPrefixes: string[]) {
+  const prefixes = Array.from(new Set(keyPrefixes.filter(Boolean)));
+  dispatchWorkspaceResourceChange(prefixes);
+}
+
+export function invalidateWorkspaceResources(keyPrefixes: string[]) {
+  const prefixes = Array.from(new Set(keyPrefixes.filter(Boolean)));
+  if (prefixes.length === 0) return;
+
   for (const key of resourceCache.keys()) {
-    if (key === keyPrefix || key.startsWith(`${keyPrefix}:`)) {
+    if (prefixes.some((prefix) => resourceKeyMatchesPrefix(key, prefix))) {
       resourceCache.delete(key);
     }
   }
+  dispatchWorkspaceResourceChange(prefixes);
+}
+
+export function upsertCachedPerson(person: Person) {
+  writeCachedResource(personDataKey(person.id), person);
+
+  const cachedPeople = readCachedResource<Person[]>(peopleDataKey());
+  if (cachedPeople.hit) {
+    const index = cachedPeople.data.findIndex((current) => current.id === person.id);
+    const next =
+      index >= 0
+        ? cachedPeople.data.map((current) => (current.id === person.id ? person : current))
+        : [...cachedPeople.data, person];
+    writeCachedResource(peopleDataKey(), next);
+  }
+
+  notifyWorkspaceResourcesChanged([personDataKey(person.id), peopleDataKey()]);
+  invalidateWorkspaceResources(["editor", rosterDataKey(), "rosters-month"]);
+}
+
+export function deleteCachedPerson(id: string) {
+  invalidateWorkspaceResource(personDataKey(id));
+
+  const cachedPeople = readCachedResource<Person[]>(peopleDataKey());
+  if (cachedPeople.hit) {
+    writeCachedResource(
+      peopleDataKey(),
+      cachedPeople.data.filter((person) => person.id !== id)
+    );
+  }
+
+  notifyWorkspaceResourcesChanged([peopleDataKey()]);
+  invalidateWorkspaceResources(["editor", rosterDataKey(), "rosters-month"]);
 }
 
 export async function loadCachedResource<T>(key: string, load: () => Promise<T>): Promise<T> {

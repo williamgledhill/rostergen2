@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { ArrowLeft, Copy, PencilLine, Save, Trash2 } from "lucide-react";
 import { buildDraftStorageKey, formatAutosaveStatusText, getAutosaveStatusClassName, removeDraftRecord } from "@/lib/clientDrafts";
 import { navigateWithinSpa } from "@/lib/spaNavigation";
-import { invalidateWorkspaceResource, personDataKey, writeCachedResource } from "@/lib/workspaceData";
+import { deleteCachedPerson, upsertCachedPerson } from "@/lib/workspaceData";
 import {
   ALL_DAYS,
   type DayKey,
@@ -131,8 +131,7 @@ export default function PersonDetailClient({ id, initialPerson }: { id: string; 
       });
       if (!res.ok) throw new Error("Save failed");
       const saved = (await res.json()) as Person;
-      writeCachedResource(personDataKey(id), saved);
-      invalidateWorkspaceResource("people");
+      upsertCachedPerson(saved);
       return {
         value: toEditorPerson(saved),
         savedAt: new Date().toISOString(),
@@ -185,8 +184,7 @@ export default function PersonDetailClient({ id, initialPerson }: { id: string; 
       const res = await fetch(`/api/people?id=${id}`, { method: "DELETE" });
       if (!res.ok) throw new Error("Delete failed");
       removeDraftRecord(buildDraftStorageKey("person", id));
-      invalidateWorkspaceResource("people");
-      invalidateWorkspaceResource(personDataKey(id));
+      deleteCachedPerson(id);
       if (!navigateWithinSpa("/people")) router.push("/people");
     } catch (err) {
       console.error(err);

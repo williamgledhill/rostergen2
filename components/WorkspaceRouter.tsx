@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { Plus } from "lucide-react";
 import EditorClient from "@/app/editor/EditorClient";
 import PeopleClient from "@/app/people/PeopleClient";
@@ -41,6 +41,8 @@ import {
   refreshUpcomingRostersData,
   rosterDataKey,
   settingsDataKey,
+  isWorkspaceResourceAffected,
+  subscribeWorkspaceResourceChanges,
   taskDataKey,
   tasksDataKey,
   type EditorPayload,
@@ -59,6 +61,11 @@ function useResource<T>(key: string, load: () => Promise<T>, refresh: () => Prom
   const [state, setState] = useState<ResourceState<T>>(
     cached.hit ? { status: "ready", data: cached.data, error: null } : { status: "loading", data: null, error: null }
   );
+  const refreshRef = useRef(refresh);
+
+  useEffect(() => {
+    refreshRef.current = refresh;
+  }, [refresh]);
 
   useEffect(() => {
     let cancelled = false;
@@ -88,6 +95,27 @@ function useResource<T>(key: string, load: () => Promise<T>, refresh: () => Prom
       });
     return () => {
       cancelled = true;
+    };
+  }, [key]);
+
+  useEffect(() => {
+    let cancelled = false;
+    const unsubscribe = subscribeWorkspaceResourceChanges((prefixes) => {
+      if (!isWorkspaceResourceAffected(key, prefixes)) return;
+      refreshRef.current()
+        .then((data) => {
+          if (!cancelled) setState({ status: "ready", data, error: null });
+        })
+        .catch((error: any) => {
+          if (!cancelled) {
+            setState({ status: "error", data: null, error: error?.message || "Failed to load" });
+          }
+        });
+    });
+
+    return () => {
+      cancelled = true;
+      unsubscribe();
     };
   }, [key]);
 
