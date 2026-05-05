@@ -71,7 +71,7 @@ describe("roster autofill preferences", () => {
     });
   });
 
-  it("falls back to default slots when a day has no specific override", () => {
+  it("does not fall back to legacy default slots when day-specific exact times exist", () => {
     expect(
       resolveAutofillTimeSlots({
         dayKey: "Thu",
@@ -79,6 +79,19 @@ describe("roster autofill preferences", () => {
         regularTimesByDay: {
           Fri: ["11:00"],
         },
+      })
+    ).toEqual({
+      regularTimes: [],
+      hasAnyFixedTimes: true,
+    });
+  });
+
+  it("keeps legacy default slots when no day-specific exact times exist", () => {
+    expect(
+      resolveAutofillTimeSlots({
+        dayKey: "Thu",
+        regularTimes: ["10:30"],
+        regularTimesByDay: {},
       })
     ).toEqual({
       regularTimes: ["10:30"],
@@ -137,6 +150,37 @@ describe("roster autofill preferences", () => {
         regularTimesByDay: { Fri: ["11:00"], Mon: ["11:00"] },
       })
     ).toBe(false);
+  });
+
+  it("does not apply a fixed-time task to selected days that have no day-specific exact times", () => {
+    const publicTour = {
+      regularDays: ["Mon", "Tue", "Wed"],
+      regularTimes: ["10:30", "11:30", "13:00", "14:00"],
+      regularTimesByDay: {
+        Mon: ["10:30", "11:30"],
+        Tue: ["10:30", "11:30"],
+      },
+    };
+
+    expect(regularDayAppliesToAutofill({ dayKey: "Mon", ...publicTour })).toBe(true);
+    expect(regularDayAppliesToAutofill({ dayKey: "Wed", ...publicTour })).toBe(false);
+    expect(resolveAutofillTimeSlots({ dayKey: "Wed", ...publicTour }).regularTimes).toEqual([]);
+  });
+
+  it("still applies a day with a fixed range when exact times exist on other days", () => {
+    expect(
+      regularDayAppliesToAutofill({
+        dayKey: "Wed",
+        regularDays: ["Mon", "Tue", "Wed"],
+        regularTimesByDay: {
+          Mon: ["10:30"],
+          Tue: ["10:30"],
+        },
+        regularDayWindows: {
+          Wed: { start: "13:00", end: "14:00" },
+        },
+      })
+    ).toBe(true);
   });
 
   it("does not use required breaks as filler after their minimum placement", () => {

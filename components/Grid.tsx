@@ -1429,6 +1429,7 @@ export default function Grid({
         regularDays: template.regularDays,
         regularTimes: template.regularTimes,
         regularTimesByDay: template.regularTimesByDay,
+        regularDayWindows: template.regularDayWindows,
       });
     };
 

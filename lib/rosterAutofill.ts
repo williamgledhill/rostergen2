@@ -40,12 +40,13 @@ export function resolveAutofillTimeSlots(input: {
   const dayTimes = Array.isArray(regularTimesByDay[input.dayKey])
     ? regularTimesByDay[input.dayKey].filter((time): time is string => typeof time === "string")
     : [];
-  const hasAnyFixedTimes =
-    defaultTimes.length > 0 ||
-    Object.values(regularTimesByDay).some((times) => Array.isArray(times) && times.length > 0);
+  const hasDaySpecificTimes = Object.values(regularTimesByDay).some(
+    (times) => Array.isArray(times) && times.length > 0
+  );
+  const hasAnyFixedTimes = defaultTimes.length > 0 || hasDaySpecificTimes;
 
   return {
-    regularTimes: dayTimes.length > 0 ? dayTimes : defaultTimes,
+    regularTimes: hasDaySpecificTimes ? dayTimes : defaultTimes,
     hasAnyFixedTimes,
   };
 }
@@ -55,6 +56,7 @@ export function regularDayAppliesToAutofill(input: {
   regularDays?: string[] | null;
   regularTimes?: string[] | null;
   regularTimesByDay?: Record<string, string[]> | null;
+  regularDayWindows?: Record<string, { start?: string; end?: string }> | null;
 }) {
   const regularDays = Array.isArray(input.regularDays)
     ? input.regularDays.filter((day): day is string => typeof day === "string")
@@ -71,8 +73,26 @@ export function regularDayAppliesToAutofill(input: {
   const dayTimes = Array.isArray(regularTimesByDay[input.dayKey])
     ? regularTimesByDay[input.dayKey].filter((time): time is string => typeof time === "string" && time.length > 0)
     : [];
+  const hasDaySpecificTimes = Object.values(regularTimesByDay).some(
+    (times) => Array.isArray(times) && times.some((time) => typeof time === "string" && time.length > 0)
+  );
+  const regularDayWindows =
+    input.regularDayWindows &&
+    typeof input.regularDayWindows === "object" &&
+    !Array.isArray(input.regularDayWindows)
+      ? input.regularDayWindows
+      : {};
+  const dayWindow = regularDayWindows[input.dayKey];
+  const hasDayWindow =
+    !!dayWindow &&
+    ((typeof dayWindow.start === "string" && dayWindow.start.length > 0) ||
+      (typeof dayWindow.end === "string" && dayWindow.end.length > 0));
 
-  return regularDays.includes(input.dayKey) || regularTimes.length > 0 || dayTimes.length > 0;
+  if (hasDaySpecificTimes) {
+    return dayTimes.length > 0 || hasDayWindow;
+  }
+
+  return regularDays.includes(input.dayKey) || regularTimes.length > 0 || hasDayWindow;
 }
 
 export function isAutofillFillerTemplate(input: {
