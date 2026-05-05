@@ -1,7 +1,8 @@
 "use client";
 
-import Grid from "@/components/Grid";
+import Grid, { type AutofillNotice } from "@/components/Grid";
 import TopBar from "@/components/TopBar";
+import { X } from "lucide-react";
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { AutosaveState, formatAutosaveStatusText, getAutosaveStatusClassName, readDraftRecord } from "@/lib/clientDrafts";
 import { formatFullDay, formatLocalId } from "@/lib/dateUtils";
@@ -79,6 +80,7 @@ export default function EditorClient({
   );
   const [hoursTouched, setHoursTouched] = useState(false);
   const [saveState, setSaveState] = useState<AutosaveState>(initialSaveState);
+  const [autofillNotice, setAutofillNotice] = useState<AutofillNotice | null>(null);
 
   useEffect(() => {
     setHoursTouched(false);
@@ -97,6 +99,10 @@ export default function EditorClient({
   useEffect(() => {
     setSaveState(initialSaveState);
   }, [initialSaveState]);
+
+  useEffect(() => {
+    setAutofillNotice(null);
+  }, [rosterDateId]);
 
   const saveStatusText = useMemo(() => formatAutosaveStatusText(saveState), [saveState]);
   const saveStatusClassName = useMemo(() => getAutosaveStatusClassName(saveState), [saveState]);
@@ -138,11 +144,38 @@ export default function EditorClient({
           initialSavedAt={initialRoster.savedAt}
           onExportWorkbook={downloadWorkbook}
           onSaveStateChange={setSaveState}
+          onAutofillNoticeChange={setAutofillNotice}
           onRestoreDraftHours={handleRestoreDraftHours}
           people={people}
           templates={templates}
         />
       </div>
+      {autofillNotice && (
+        <div className="pointer-events-none fixed inset-x-0 bottom-4 z-50 flex justify-center px-3">
+          <div className="pointer-events-auto w-full max-w-[720px] rounded-[12px] border border-amber-200 bg-white/95 px-4 py-3 shadow-[0_14px_32px_rgba(15,23,42,0.14)] backdrop-blur">
+            <div className="flex items-start justify-between gap-3">
+              <div className="min-w-0">
+                <p className="text-[13px] font-semibold text-slate-900">{autofillNotice.title}</p>
+                <div className="mt-1 space-y-1">
+                  {autofillNotice.messages.map((message) => (
+                    <p key={message} className="text-[13px] leading-5 text-slate-700">
+                      {message}
+                    </p>
+                  ))}
+                </div>
+              </div>
+              <button
+                type="button"
+                className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-[8px] text-slate-500 transition hover:bg-slate-100 hover:text-slate-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-300"
+                onClick={() => setAutofillNotice(null)}
+                aria-label="Dismiss autofill notice"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

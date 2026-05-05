@@ -38,7 +38,9 @@ export default function TopBar({
     }
   }
   function handleAutofill() {
-    return undefined;
+    if(typeof window !== "undefined"){
+      window.dispatchEvent(new Event("roster-autofill"));
+    }
   }
   function handleUndo(){
     if(typeof window !== "undefined"){
