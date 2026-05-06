@@ -14,6 +14,7 @@ import { getDayScheduleForDate, type Person } from "@/lib/people";
 import {
   clipTaskAroundBlockedRange,
   compareFutureMinimumAvailability,
+  getAutofillConcurrentLimit,
   getAutofillTemplatePriority,
   getFeasiblePlacementRows,
   getPreferredConcurrentLimit,
@@ -1457,16 +1458,19 @@ export default function Grid({
         ? Math.max(1, Math.ceil(maxConsecutiveMinutes / 15))
         : 0;
       const limitPerDay = template.limitPerDay && template.limitPerDay > 0 ? template.limitPerDay : Number.POSITIVE_INFINITY;
-      const maxConcurrentPerTimeslot =
-        template.maxConcurrentPerTimeslot && template.maxConcurrentPerTimeslot > 0
-          ? template.maxConcurrentPerTimeslot
-          : Number.POSITIVE_INFINITY;
-      const maxPerEmp = template.maxPerEmployeePerDay && template.maxPerEmployeePerDay > 0
-        ? template.maxPerEmployeePerDay
-        : Number.POSITIVE_INFINITY;
       const minPerEmp = template.minPerEmployeePerDay && template.minPerEmployeePerDay > 0
         ? template.minPerEmployeePerDay
         : 0;
+      const maxConcurrentPerTimeslot = getAutofillConcurrentLimit({
+        configuredLimit: template.maxConcurrentPerTimeslot,
+        mustManned: !!template.mustManned,
+        minPerEmp,
+        attendedByAll: !!template.attendedByAll,
+        overwriteExistingTasks: !!template.overwriteExistingTasks,
+      });
+      const maxPerEmp = template.maxPerEmployeePerDay && template.maxPerEmployeePerDay > 0
+        ? template.maxPerEmployeePerDay
+        : Number.POSITIVE_INFINITY;
       const regularTimesByDay =
         template.regularTimesByDay && typeof template.regularTimesByDay === "object" && !Array.isArray(template.regularTimesByDay)
           ? template.regularTimesByDay
@@ -1747,6 +1751,17 @@ export default function Grid({
         });
     };
 
+    const getMinimumTargetEmployees = (meta: TemplateMeta, candidateRows: number[]) =>
+      employees.filter((emp) => {
+        const window = getEmployeeWindow(emp);
+        if (!window || !meta.window) return false;
+
+        return candidateRows.some((row) => {
+          const span = getSpanForMeta(meta, row, meta.window?.endRow ?? maxRowEx, { ignoreWindow: false });
+          return !!span && row >= window.startRow && row + span <= window.endRow;
+        });
+      });
+
     const getCoverageAvailabilityStats = (
       emp: Employee,
       blockedRange: { startRow: number; span: number },
@@ -1976,12 +1991,14 @@ export default function Grid({
       futureMinimumMetas: TemplateMeta[] = [],
       coverageMetas: TemplateMeta[] = []
     ) => {
-      const pendingEmployees = employees.flatMap((emp) =>
-        Array.from(
-          { length: Math.max(0, meta.minPerEmp - getEmpCount(meta.id, emp.id)) },
-          () => emp
-        )
-      );
+      const targetEmployees = getMinimumTargetEmployees(meta, candidateRows);
+      const getPendingEmployees = () =>
+        targetEmployees.flatMap((emp) =>
+          Array.from(
+            { length: Math.max(0, meta.minPerEmp - getEmpCount(meta.id, emp.id)) },
+            () => emp
+          )
+        );
 
       const backtrack = (remaining: Employee[], concurrentLimit: number): boolean => {
         if (!remaining.length) return true;
@@ -2053,12 +2070,35 @@ export default function Grid({
         return false;
       };
 
+      const placePartialMinimums = (concurrentLimit: number) => {
+        while (true) {
+          const candidates = getPendingEmployees().flatMap((emp) =>
+            collectPlacementCandidatesForMeta(meta, candidateRows, {
+              futureMinimumMetas,
+              coverageMetas,
+              employeesSubset: [emp],
+              concurrentLimit,
+            })
+          );
+          const picked = candidates[0];
+          if (!picked) break;
+          addTask(picked.meta, picked.col, picked.row, picked.span, picked.emp.id);
+        }
+      };
+
       const preferredConcurrentLimit = getPreferredConcurrentLimit(meta.maxConcurrentPerTimeslot, {
         preferSolo: !meta.mustManned,
       });
-      if (backtrack(pendingEmployees, preferredConcurrentLimit)) return true;
-      if (preferredConcurrentLimit === meta.maxConcurrentPerTimeslot) return false;
-      return backtrack(pendingEmployees, meta.maxConcurrentPerTimeslot);
+      if (backtrack(getPendingEmployees(), preferredConcurrentLimit)) return true;
+      if (
+        preferredConcurrentLimit !== meta.maxConcurrentPerTimeslot &&
+        backtrack(getPendingEmployees(), meta.maxConcurrentPerTimeslot)
+      ) {
+        return true;
+      }
+
+      placePartialMinimums(meta.maxConcurrentPerTimeslot);
+      return targetEmployees.every((emp) => getEmpCount(meta.id, emp.id) >= meta.minPerEmp);
     };
 
     if (!templatesToSchedule.length) {
@@ -2284,7 +2324,7 @@ export default function Grid({
       if (minPerEmp > 0) {
         const minimumsSatisfied = assignMinimumsForMeta(meta, candidateRows, futureMinimumMetas, coverageMetas);
         if (!minimumsSatisfied) {
-          const unmetEmployees = employees
+          const unmetEmployees = getMinimumTargetEmployees(meta, candidateRows)
             .filter((emp) => getEmpCount(meta.id, emp.id) < minPerEmp)
             .map((emp) => emp.name);
           if (unmetEmployees.length) {

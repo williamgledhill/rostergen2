@@ -23,6 +23,19 @@ export function getPreferredConcurrentLimit(
   return configuredLimit;
 }
 
+export function getAutofillConcurrentLimit(input: {
+  configuredLimit?: number;
+  mustManned: boolean;
+  minPerEmp: number;
+  attendedByAll?: boolean;
+  overwriteExistingTasks?: boolean;
+}) {
+  if (isAutofillMinimumTemplate(input)) return Number.POSITIVE_INFINITY;
+  return Number.isFinite(input.configuredLimit) && (input.configuredLimit ?? 0) > 0
+    ? (input.configuredLimit as number)
+    : Number.POSITIVE_INFINITY;
+}
+
 export function resolveAutofillTimeSlots(input: {
   dayKey: string;
   regularTimes?: string[];

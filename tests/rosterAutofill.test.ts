@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   clipTaskAroundBlockedRange,
   compareFutureMinimumAvailability,
+  getAutofillConcurrentLimit,
   getFeasiblePlacementRows,
   getAutofillTaskRole,
   getAutofillTemplatePriority,
@@ -53,6 +54,26 @@ describe("roster autofill preferences", () => {
   it("keeps stricter configured limits intact", () => {
     expect(getPreferredConcurrentLimit(1, { preferSolo: true })).toBe(1);
     expect(getPreferredConcurrentLimit(1)).toBe(1);
+  });
+
+  it("does not enforce hidden overlap caps for minimum break tasks", () => {
+    expect(
+      getAutofillConcurrentLimit({
+        configuredLimit: 1,
+        mustManned: false,
+        minPerEmp: 1,
+      })
+    ).toBe(Number.POSITIVE_INFINITY);
+  });
+
+  it("keeps configured overlap caps for coverage tasks", () => {
+    expect(
+      getAutofillConcurrentLimit({
+        configuredLimit: 1,
+        mustManned: true,
+        minPerEmp: 0,
+      })
+    ).toBe(1);
   });
 
   it("treats day-specific slots on other days as fixed-time scheduling", () => {

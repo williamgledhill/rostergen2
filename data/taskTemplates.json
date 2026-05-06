@@ -147,7 +147,7 @@
     "waitingMinutes": 0,
     "packingMinutes": 0,
     "limitPerDay": 0,
-    "maxConcurrentPerTimeslot": 1,
+    "maxConcurrentPerTimeslot": 0,
     "regularDayWindows": {
       "Mon": {
         "start": "12:00",
@@ -385,7 +385,7 @@
     "waitingMinutes": 0,
     "packingMinutes": 0,
     "limitPerDay": 0,
-    "maxConcurrentPerTimeslot": 1,
+    "maxConcurrentPerTimeslot": 0,
     "enabled": true
   },
   {
@@ -445,7 +445,7 @@
     "waitingMinutes": 0,
     "packingMinutes": 0,
     "limitPerDay": 0,
-    "maxConcurrentPerTimeslot": 1,
+    "maxConcurrentPerTimeslot": 0,
     "enabled": true
   },
   {

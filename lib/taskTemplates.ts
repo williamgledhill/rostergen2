@@ -77,7 +77,6 @@ export const defaultTaskTemplates: TaskTemplate[] = [
     category: "Support",
     color: "#E9D5FF",
     mustManned: false,
-    maxConcurrentPerTimeslot: 1,
   },
   {
     id: "tidy",
