@@ -31,19 +31,19 @@ const Item = ({
   onClick?: () => void;
 }) => {
   const linkClassName = collapsed
-    ? `group flex h-14 w-full flex-col items-center justify-center gap-1.5 rounded-[16px] px-2 text-center transition-all duration-200 ${
+    ? `group flex h-12 w-full flex-col items-center justify-center gap-1 rounded-[12px] px-2 text-center transition-all duration-200 ${
         active
           ? "bg-[var(--accent-soft)] text-[var(--accent)]"
           : "text-[var(--ink)] hover:bg-[rgba(255,254,253,0.74)] hover:text-[var(--accent)]"
       }`
-    : `group flex min-h-[72px] w-full items-center gap-4 rounded-[24px] px-7 text-left transition-all duration-200 ${
+    : `group flex h-12 w-full items-center gap-3 rounded-[14px] px-4 text-left transition-all duration-200 ${
         active
           ? "bg-[#ece8f2] text-[var(--accent)]"
           : "text-[var(--ink)] hover:bg-[rgba(255,254,253,0.68)] hover:text-[var(--accent)]"
       }`;
   const labelClassName = collapsed
     ? "block w-full text-center text-[11px] font-semibold leading-[1.15] text-current"
-    : "text-[17px] font-semibold leading-none text-current";
+    : "text-[14px] font-semibold leading-none text-current";
 
   const handleClick = (event: React.MouseEvent<HTMLAnchorElement>) => {
     if (shouldHandleSpaClick(event) && navigateWithinSpa(href)) {
@@ -66,8 +66,8 @@ const Item = ({
       className={linkClassName}
       title={label}
     >
-      <span className="grid h-6 w-6 shrink-0 place-items-center text-current">
-        <Icon className="h-5 w-5" aria-hidden="true" />
+      <span className="grid h-5 w-5 shrink-0 place-items-center text-current">
+        <Icon className="h-[18px] w-[18px]" aria-hidden="true" />
       </span>
       <span className={labelClassName}>{label}</span>
     </Link>
@@ -100,7 +100,7 @@ export default function SideNav({
     { icon: UsersRound, label: "Staff", href: "/people", matchPrefix: "/people" },
     { icon: Settings, label: "Settings", href: "/settings", matchPrefix: "/settings" },
   ];
-  const asideWidth = collapsed ? "w-[96px]" : "w-[316px]";
+  const asideWidth = collapsed ? "w-[78px]" : "w-[260px]";
   const asideVisibility = isOpen ? "block" : "hidden md:block";
 
   React.useEffect(() => {
@@ -126,7 +126,7 @@ export default function SideNav({
   }, [editorHref, router]);
 
   const asideClassName = mobile
-    ? "fixed bottom-0 left-0 top-[72px] z-50 w-[288px] overflow-y-auto border-r border-[var(--border)] bg-[var(--app-bg)] pb-6 shadow-xl"
+    ? "fixed bottom-0 left-0 top-14 z-50 w-[260px] overflow-y-auto border-r border-[var(--border)] bg-[var(--app-bg)] pb-5 shadow-xl"
     : `${asideVisibility} ${asideWidth} relative flex-shrink-0 overflow-visible border-r border-[var(--border)] bg-[var(--app-bg)] pb-7 transition-all duration-200 md:sticky md:top-0 md:h-screen md:overflow-y-auto`;
 
   if (mobile && !isOpen) return null;
@@ -134,19 +134,19 @@ export default function SideNav({
   return (
     <aside className={asideClassName}>
       <div className="flex h-full flex-col">
-        <div className={`flex h-[106px] items-center ${collapsed ? "justify-center px-3" : "gap-4 px-8"}`}>
-          <div className="grid h-[52px] w-[52px] shrink-0 place-items-center rounded-full bg-[var(--accent)] font-serif text-[24px] font-bold text-white">
+        <div className={`flex h-20 items-center ${collapsed ? "justify-center px-2" : "gap-3 px-6"}`}>
+          <div className="grid h-11 w-11 shrink-0 place-items-center rounded-full bg-[var(--accent)] font-serif text-[20px] font-bold text-white">
             RG
           </div>
           {!collapsed && (
-            <div className="font-serif text-[17px] font-bold uppercase leading-[1.05] tracking-[0.02em] text-[var(--ink)]">
+            <div className="font-serif text-[14px] font-bold uppercase leading-[1.08] tracking-[0.02em] text-[var(--ink)]">
               <div>Roster</div>
               <div>Generator</div>
             </div>
           )}
         </div>
 
-        <div className={`w-full ${collapsed ? "space-y-2 px-3 pt-1" : "space-y-2 px-5 pt-3"}`}>
+        <div className={`w-full ${collapsed ? "space-y-1.5 px-2 pt-1" : "space-y-1.5 px-4 pt-3"}`}>
           {rosterItems.map((item) => (
             <Item key={item.label} {...item} collapsed={collapsed} onClick={mobile ? onNavigate : undefined} />
           ))}
@@ -165,12 +165,12 @@ export default function SideNav({
           })}
         </div>
         {!mobile && (
-          <div className={`mt-auto ${collapsed ? "px-2 pt-2" : "px-9 pt-8"}`}>
+          <div className={`mt-auto ${collapsed ? "px-2 pt-2" : "px-6 pt-6"}`}>
             {collapsed ? (
               <div className="h-0" aria-hidden="true" />
             ) : (
               <>
-                <div className="mb-8 space-y-3 text-[15px] leading-6 text-[var(--ink)]">
+                <div className="mb-6 space-y-2 text-[13px] leading-5 text-[var(--ink)]">
                   <p className="font-bold">Roster magic, on autopilot</p>
                   <p className="text-[var(--muted-strong)]">
                     Save time. Stay organised.
@@ -178,7 +178,7 @@ export default function SideNav({
                     Focus on your people.
                   </p>
                 </div>
-                <div className="border-t border-[var(--border)] pt-8 text-[14px] leading-7 text-[var(--muted-strong)]">
+                <div className="border-t border-[var(--border)] pt-5 text-[12px] leading-6 text-[var(--muted-strong)]">
                   <p>Powered by rostergenerator.app</p>
                   <p>(c) 2026 William Gledhill</p>
                 </div>

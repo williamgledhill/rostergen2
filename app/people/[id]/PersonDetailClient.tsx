@@ -221,11 +221,11 @@ export default function PersonDetailClient({ id, initialPerson }: { id: string; 
 
   return (
     <div className="workspace-page">
-      <div className="space-y-6">
+      <div className="space-y-5">
         <div className="flex w-full flex-col gap-2">
           <div className="flex flex-col leading-tight">
             <h1 className="page-title break-words">{formatTitle(person.name)}</h1>
-            <p className="page-description mt-3">Adjust a fortnight schedule for {person.name}.</p>
+            <p className="page-description mt-1.5">Adjust a fortnight schedule for {person.name}.</p>
             <p className={`mt-1 text-[12px] font-medium ${saveStatusClassName}`}>{saveStatusText}</p>
           </div>
           <div className="flex flex-wrap items-center gap-2">

@@ -413,7 +413,7 @@ export default function TaskDetailClient({ id, initialTask }: { id: string; init
             <h1 className="page-title break-words">
               {task.name || "Task"}
             </h1>
-            <p className="page-description mt-3">Task settings and fixed-time rules.</p>
+            <p className="page-description mt-1.5">Task settings and fixed-time rules.</p>
             <p className={`text-[12px] font-medium ${saveStatusClassName}`}>{saveStatusText}</p>
           </div>
 

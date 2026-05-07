@@ -91,11 +91,11 @@ export default function PeopleClient({ initialPeople }: { initialPeople: Person[
 
   return (
     <div className="workspace-page">
-      <div className="flex w-full flex-col items-start space-y-6">
+      <div className="flex w-full flex-col items-start space-y-5">
         <div className="flex items-center justify-between w-full">
           <div>
             <h1 className="page-title">Staff</h1>
-            <p className="page-description mt-3">Manage employees and their default working hours.</p>
+            <p className="page-description mt-1.5">Manage employees and their default working hours.</p>
           </div>
           <button
             className="btn btn-primary px-4"

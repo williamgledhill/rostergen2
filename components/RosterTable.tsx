@@ -65,7 +65,7 @@ export default function RosterTable({ rosters, footer }: Props) {
                     <div className="flex min-w-[320px] items-center gap-4">
                       <Link
                         href={buildEditorHref(r.id)}
-                        className="block truncate text-[17px] font-bold text-[var(--ink)] hover:underline group-hover:underline"
+                        className="block truncate text-[14px] font-semibold text-[var(--ink)] hover:underline group-hover:underline"
                         onClick={(event) => {
                           event.stopPropagation();
                           const href = buildEditorHref(r.id);

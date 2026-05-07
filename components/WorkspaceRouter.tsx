@@ -226,11 +226,11 @@ function RostersView() {
 
   return (
     <div className="workspace-page">
-      <div className="flex w-full flex-col items-start space-y-7">
+      <div className="flex w-full flex-col items-start space-y-5">
         <div className="flex w-full items-start justify-between gap-3">
           <div>
             <h1 className="page-title">Upcoming Rosters</h1>
-            <p className="page-description mt-3">
+            <p className="page-description mt-1.5">
               Review the next {settings.upcomingDays} roster{settings.upcomingDays === 1 ? "" : "s"} and jump
               straight into the editor.
             </p>
@@ -240,13 +240,13 @@ function RostersView() {
         <div className="inline-flex rounded-[10px] border border-[var(--border)] bg-[rgba(255,254,253,0.66)] p-1">
           <SpaLink
             href="/rosters"
-            className="inline-flex h-12 min-w-[180px] items-center justify-center rounded-[8px] bg-[var(--accent-soft)] px-5 text-[15px] font-bold text-[var(--accent)]"
+            className="inline-flex h-9 min-w-[150px] items-center justify-center rounded-[7px] bg-[var(--accent-soft)] px-4 text-[13px] font-bold text-[var(--accent)]"
           >
             Current Rosters
           </SpaLink>
           <SpaLink
             href="/rosters/old"
-            className="inline-flex h-12 min-w-[170px] items-center justify-center rounded-[8px] px-5 text-[15px] font-semibold text-[var(--ink)] transition hover:bg-[var(--surface-subtle)]"
+            className="inline-flex h-9 min-w-[140px] items-center justify-center rounded-[7px] px-4 text-[13px] font-semibold text-[var(--ink)] transition hover:bg-[var(--surface-subtle)]"
           >
             Old Rosters
           </SpaLink>
@@ -254,10 +254,10 @@ function RostersView() {
 
         <RosterTable rosters={rosters} />
 
-        <div className="soft-callout flex w-full flex-col gap-4 px-6 py-5 sm:flex-row sm:items-center sm:justify-between">
-          <div className="flex items-center gap-4 text-[15px] text-[var(--ink)]">
-            <span className="grid h-12 w-12 shrink-0 place-items-center rounded-full bg-[var(--accent-soft)] text-[var(--accent)]">
-              <Sparkles className="h-5 w-5" aria-hidden="true" />
+        <div className="soft-callout flex w-full flex-col gap-3 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex items-center gap-3 text-[13px] text-[var(--ink)]">
+            <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-[var(--accent-soft)] text-[var(--accent)]">
+              <Sparkles className="h-4 w-4" aria-hidden="true" />
             </span>
             <p>
               Autogenerates {settings.upcomingDays} roster{settings.upcomingDays === 1 ? "" : "s"}.{" "}
@@ -289,12 +289,12 @@ function MonthRostersView({ month }: { month: string }) {
 
   return (
     <div className="workspace-page">
-      <div className="flex w-full flex-col items-start space-y-6">
+      <div className="flex w-full flex-col items-start space-y-5">
         <div className="w-full">
           <div className="flex w-full items-center justify-between">
             <div className="flex flex-col leading-tight">
               <h1 className="page-title">Rosters for {monthLabel(month)}</h1>
-              <p className="page-description mt-3">
+              <p className="page-description mt-1.5">
                 Browse individual daily rosters in this month. Today is highlighted.
               </p>
             </div>

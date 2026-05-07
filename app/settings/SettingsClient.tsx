@@ -198,10 +198,10 @@ export default function SettingsClient({
 
   return (
     <div className="workspace-page">
-      <div className="flex w-full flex-col items-start space-y-6">
+      <div className="flex w-full flex-col items-start space-y-5">
         <div>
           <h1 className="page-title">Settings</h1>
-          <p className="page-description mt-3">Security and roster defaults.</p>
+          <p className="page-description mt-1.5">Security and roster defaults.</p>
           <p className={`mt-1 text-[12px] font-medium ${saveStatusClassName}`}>{saveStatusText}</p>
         </div>
 

@@ -116,7 +116,7 @@ export default function EditorClient({
       <div className="flex w-full flex-col gap-5">
         <div className="flex flex-col leading-tight">
           <h1 className="page-title break-words">{dayLabel}</h1>
-          <p className="page-description mt-3">Edit coverage, adjust hours, and export this day&apos;s roster.</p>
+          <p className="page-description mt-1.5">Edit coverage, adjust hours, and export this day&apos;s roster.</p>
           <p className={`mt-1 text-[12px] font-medium ${saveStatusClassName}`}>{saveStatusText}</p>
         </div>
         <TopBar
