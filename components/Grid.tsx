@@ -3417,7 +3417,7 @@ export default function Grid({
                     onChange={(event) => setEmployeePickerQuery(event.target.value)}
                     placeholder="Search by name or email"
                     autoFocus
-                    className="h-10 w-full rounded-[var(--radius-md)] border border-[var(--border)] bg-white pl-10 pr-3 text-[14px] text-slate-900 shadow-[0_1px_0_rgba(15,23,42,0.02)] outline-none transition focus:border-[rgba(52,77,232,0.45)] focus:ring-2 focus:ring-[rgba(52,77,232,0.14)]"
+                    className="h-10 w-full rounded-[var(--radius-md)] border border-[var(--border)] bg-[var(--surface)] pl-10 pr-3 text-[14px] text-[var(--ink)] shadow-[0_1px_0_rgba(41,29,21,0.02)] outline-none transition focus:border-[rgba(57,36,147,0.45)] focus:ring-2 focus:ring-[rgba(57,36,147,0.14)]"
                   />
                 </div>
 
@@ -3481,7 +3481,7 @@ export default function Grid({
           </div>
         )}
       </div>
-      <aside className="w-[320px] min-w-[320px] rounded-[16px] border border-[#d7deea] bg-white p-4 shadow-[0_12px_26px_rgba(15,23,42,0.08)]">
+      <aside className="w-[320px] min-w-[320px] rounded-[12px] border border-[var(--border)] bg-[var(--surface)] p-4 shadow-[0_18px_34px_rgba(41,29,21,0.06)]">
         <div className="flex items-start justify-between gap-3">
           <div>
             <div className="flex items-center gap-2 text-slate-900">

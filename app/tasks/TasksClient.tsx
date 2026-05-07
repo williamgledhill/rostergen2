@@ -141,27 +141,27 @@ export default function TasksClient({ initialTasks }: { initialTasks: TaskTempla
   }
 
   return (
-    <div className="w-full py-3 px-3">
-      <div className="space-y-3 flex flex-col items-start w-full">
+    <div className="workspace-page">
+      <div className="flex w-full flex-col items-start space-y-6">
         <div className="flex items-center justify-between w-full">
           <div>
-            <h1 className="text-2xl font-semibold">Tasks</h1>
-            <p className="text-slate-600 text-[14px]">Manage reusable task templates for roster planning.</p>
+            <h1 className="page-title">Tasks</h1>
+            <p className="page-description mt-3">Manage reusable task templates for roster planning.</p>
           </div>
-          <button className="btn btn-primary px-4 py-2" style={{ borderRadius: "6px" }} onClick={openTaskCreator}>
+          <button className="btn btn-primary px-4" onClick={openTaskCreator}>
             <Plus className="w-4 h-4 text-white" strokeWidth={2.3} />
             <span className="text-[14px] font-medium">Add task</span>
           </button>
         </div>
 
-        <div className="w-full overflow-hidden rounded-lg border border-[var(--border)] bg-white">
+        <div className="surface-panel">
           <div className="overflow-x-auto">
-            <table className="w-full table-fixed border-collapse text-[15px]">
+            <table className="data-table min-w-[560px] table-fixed">
               <colgroup>
                 <col />
               </colgroup>
               <thead className="text-[15px] text-slate-900">
-                <tr className="border-b border-[#E6EAF0]">
+                <tr className="border-b border-[var(--border)]">
                   <th className="px-4 py-4 text-left font-bold tracking-[0.01em]">Task</th>
                 </tr>
               </thead>
@@ -169,7 +169,7 @@ export default function TasksClient({ initialTasks }: { initialTasks: TaskTempla
                 {tasks.map((t) => (
                   <tr
                     key={t.id}
-                    className="border-b border-[#E6EAF0] hover:bg-[#f8fafc] cursor-pointer"
+                    className="cursor-pointer border-b border-[var(--border)] hover:bg-[var(--surface-subtle)]"
                     onMouseEnter={() => {
                       const href = `/tasks/${t.id}`;
                       preloadWorkspaceRoute(href);
@@ -195,13 +195,13 @@ export default function TasksClient({ initialTasks }: { initialTasks: TaskTempla
                 ))}
                 {tasks.length === 0 && (
                   <tr>
-                    <td colSpan={1} className="py-8 text-center text-[15px] text-slate-600">No tasks yet. Add one to get started.</td>
+                    <td colSpan={1} className="py-10 text-center text-[15px] text-[var(--muted)]">No tasks yet. Add one to get started.</td>
                   </tr>
                 )}
               </tbody>
             </table>
           </div>
-          <div className="border-t border-[#E6EAF0] px-4 py-3 text-sm text-slate-600">{tasks.length} task{tasks.length === 1 ? "" : "s"}</div>
+          <div className="table-footer">{tasks.length} task{tasks.length === 1 ? "" : "s"}</div>
         </div>
 
         {modalOpen && (
@@ -218,7 +218,7 @@ export default function TasksClient({ initialTasks }: { initialTasks: TaskTempla
                 </div>
                 <button
                   type="button"
-                  className="rounded-lg p-2 text-slate-500 transition hover:bg-[#f5f7fa] hover:text-slate-700"
+                  className="rounded-[10px] p-2 text-slate-500 transition hover:bg-[var(--surface-subtle)] hover:text-slate-700"
                   onClick={closeTaskCreator}
                   aria-label="Close"
                   disabled={isCreating}

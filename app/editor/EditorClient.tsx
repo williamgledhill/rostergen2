@@ -112,11 +112,11 @@ export default function EditorClient({
   }, []);
 
   return (
-    <div className="w-full overflow-x-hidden px-3 py-3">
-      <div className="flex w-full flex-col gap-3">
+    <div className="workspace-page overflow-x-hidden">
+      <div className="flex w-full flex-col gap-5">
         <div className="flex flex-col leading-tight">
-          <h1 className="break-words text-[clamp(1.2rem,5vw,1.5rem)] font-semibold leading-tight">{dayLabel}</h1>
-          <p className="mt-1 text-[14px] text-slate-600">Edit coverage, adjust hours, and export this day&apos;s roster.</p>
+          <h1 className="page-title break-words">{dayLabel}</h1>
+          <p className="page-description mt-3">Edit coverage, adjust hours, and export this day&apos;s roster.</p>
           <p className={`mt-1 text-[12px] font-medium ${saveStatusClassName}`}>{saveStatusText}</p>
         </div>
         <TopBar

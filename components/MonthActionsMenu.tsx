@@ -32,12 +32,12 @@ export default function MonthActionsMenu() {
       </button>
       {open && (
         <div
-          className="absolute right-0 mt-2 w-44 rounded-lg border border-[#CBD5E1] bg-white shadow-lg z-10"
+          className="absolute right-0 z-10 mt-2 w-44 overflow-hidden rounded-[12px] border border-[var(--border)] bg-[var(--surface)] shadow-[0_18px_34px_rgba(41,29,21,0.08)]"
           role="menu"
         >
           <button
             type="button"
-            className="w-full text-left px-3 py-2 text-sm text-slate-700 hover:bg-[#f5f7fa] flex items-center gap-2"
+            className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-slate-700 hover:bg-[var(--surface-subtle)]"
             role="menuitem"
             onClick={() => setOpen(false)}
           >

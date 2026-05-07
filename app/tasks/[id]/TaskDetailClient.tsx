@@ -125,7 +125,7 @@ function ToggleRow({
           checked={checked}
           onChange={(event) => onChange(event.target.checked)}
         />
-        <span className="h-6 w-11 rounded-full bg-slate-200 transition peer-checked:bg-[#675dff]" />
+        <span className="h-6 w-11 rounded-full bg-slate-200 transition peer-checked:bg-[var(--accent)]" />
         <span className="absolute left-[2px] top-[2px] h-5 w-5 rounded-full bg-white shadow-sm transition peer-checked:translate-x-5" />
       </label>
     </div>
@@ -361,7 +361,7 @@ export default function TaskDetailClient({ id, initialTask }: { id: string; init
 
   if (!task) {
     return (
-      <div className="w-full px-3 py-4">
+      <div className="workspace-page">
         <div className="card max-w-xl p-5">
           <h1 className="text-xl font-semibold text-slate-900">Task not found</h1>
           <p className="mt-2 text-sm text-slate-600">That task template does not exist.</p>
@@ -390,12 +390,12 @@ export default function TaskDetailClient({ id, initialTask }: { id: string; init
   const packingEnabled = (Number(task.packingMinutes) || 0) > 0;
 
   return (
-    <div className="w-full px-3 py-4">
-      <div className="flex w-full max-w-[960px] flex-col gap-3">
+    <div className="workspace-page">
+      <div className="flex w-full max-w-[1040px] flex-col gap-5">
         <div className="flex items-center gap-1 text-[14px]">
           <Link
             href="/tasks"
-            className="font-semibold text-[#675dff] hover:underline"
+            className="font-semibold text-[var(--accent)] hover:underline"
             onClick={(event) => {
               if (shouldHandleSpaClick(event) && navigateWithinSpa("/tasks")) {
                 event.preventDefault();
@@ -410,10 +410,10 @@ export default function TaskDetailClient({ id, initialTask }: { id: string; init
 
         <div className="flex flex-col gap-2 lg:flex-row lg:items-start lg:justify-between">
           <div className="min-w-0 space-y-1">
-            <h1 className="break-words text-[clamp(1.5rem,4vw,2.05rem)] font-bold leading-tight text-slate-900">
+            <h1 className="page-title break-words">
               {task.name || "Task"}
             </h1>
-            <p className="text-[15px] font-medium text-slate-600">Task settings and fixed-time rules.</p>
+            <p className="page-description mt-3">Task settings and fixed-time rules.</p>
             <p className={`text-[12px] font-medium ${saveStatusClassName}`}>{saveStatusText}</p>
           </div>
 
@@ -565,7 +565,6 @@ export default function TaskDetailClient({ id, initialTask }: { id: string; init
                       type="checkbox"
                       checked={checked}
                       onChange={(event) => toggleRegularDay(day.key, event.target.checked)}
-                      style={{ accentColor: "rgb(103, 93, 255)" }}
                     />
                     <span className="inline-flex h-7 w-7 items-center justify-center rounded-[7px] bg-[var(--surface-subtle)] text-[13px]">
                       {day.short}

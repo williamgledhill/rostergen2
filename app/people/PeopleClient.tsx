@@ -90,16 +90,15 @@ export default function PeopleClient({ initialPeople }: { initialPeople: Person[
   }
 
   return (
-    <div className="w-full py-3 px-3">
-      <div className="space-y-3 flex flex-col items-start w-full">
+    <div className="workspace-page">
+      <div className="flex w-full flex-col items-start space-y-6">
         <div className="flex items-center justify-between w-full">
           <div>
-            <h1 className="text-2xl font-semibold">People</h1>
-            <p className="text-slate-600 text-[14px]">Manage employees and their default working hours.</p>
+            <h1 className="page-title">Staff</h1>
+            <p className="page-description mt-3">Manage employees and their default working hours.</p>
           </div>
           <button
-            className="btn btn-primary px-4 py-2"
-            style={{ borderRadius: "6px" }}
+            className="btn btn-primary px-4"
             onClick={() => {
               setForm({ id: "", name: "", email: "", schedule: defaultSchedule([]) });
               setModalOpen(true);
@@ -110,15 +109,15 @@ export default function PeopleClient({ initialPeople }: { initialPeople: Person[
           </button>
         </div>
 
-        <div className="w-full overflow-hidden rounded-lg border border-[var(--border)] bg-white">
+        <div className="surface-panel">
           <div className="overflow-x-auto">
-            <table className="w-full table-fixed border-collapse text-[15px]">
+            <table className="data-table min-w-[720px] table-fixed">
               <colgroup>
                 <col className="w-[42%]" />
                 <col />
               </colgroup>
               <thead className="text-[15px] text-slate-900">
-                <tr className="border-b border-[#E6EAF0]">
+                <tr className="border-b border-[var(--border)]">
                   <th className="px-4 py-4 text-left font-bold tracking-[0.01em]">Employee</th>
                   <th className="px-4 py-4 text-left font-bold tracking-[0.01em]">Default days</th>
                 </tr>
@@ -127,7 +126,7 @@ export default function PeopleClient({ initialPeople }: { initialPeople: Person[
                 {summaries.map((p) => (
                   <tr
                     key={p.id}
-                    className="border-b border-[#E6EAF0] hover:bg-[#f8fafc] cursor-pointer"
+                    className="cursor-pointer border-b border-[var(--border)] hover:bg-[var(--surface-subtle)]"
                     onMouseEnter={() => {
                       const href = `/people/${p.id}`;
                       preloadWorkspaceRoute(href);
@@ -150,13 +149,13 @@ export default function PeopleClient({ initialPeople }: { initialPeople: Person[
                 ))}
                 {summaries.length === 0 && (
                   <tr>
-                    <td colSpan={2} className="py-8 text-center text-[15px] text-slate-600">No people yet.</td>
+                    <td colSpan={2} className="py-10 text-center text-[15px] text-[var(--muted)]">No staff yet.</td>
                   </tr>
                 )}
               </tbody>
             </table>
           </div>
-          <div className="border-t border-[#E6EAF0] px-4 py-3 text-sm text-slate-600">{summaries.length} employee{summaries.length === 1 ? "" : "s"}</div>
+          <div className="table-footer">{summaries.length} employee{summaries.length === 1 ? "" : "s"}</div>
         </div>
 
         {modalOpen && (
@@ -167,7 +166,7 @@ export default function PeopleClient({ initialPeople }: { initialPeople: Person[
                   <h2 className="text-xl font-semibold">Add employee</h2>
                   <p className="text-sm text-slate-600">Enter details for a new employee.</p>
                 </div>
-                <button className="p-2 text-slate-500 hover:text-slate-700 rounded-lg hover:bg-[#f5f7fa] transition" onClick={() => setModalOpen(false)} aria-label="Close">
+                <button className="rounded-[10px] p-2 text-slate-500 transition hover:bg-[var(--surface-subtle)] hover:text-slate-700" onClick={() => setModalOpen(false)} aria-label="Close">
                   <X className="w-4 h-4" />
                 </button>
               </div>
@@ -189,7 +188,7 @@ export default function PeopleClient({ initialPeople }: { initialPeople: Person[
                       {dayRows.map((day) => (
                         <div key={day.key} className="grid grid-cols-[120px,1fr,1fr] items-center gap-3 px-3 py-3">
                           <label className="flex items-center gap-2 text-sm font-semibold" style={{ color: "#1A1B25" }}>
-                            <input type="checkbox" className="h-4 w-4" aria-label={`Enable ${day.label}`} checked={!!form.schedule[day.key]?.enabled} onChange={(e) => updateDay(day.key, { enabled: e.target.checked })} style={{ accentColor: "rgb(103, 93, 255)" }} />
+                            <input type="checkbox" className="h-4 w-4" aria-label={`Enable ${day.label}`} checked={!!form.schedule[day.key]?.enabled} onChange={(e) => updateDay(day.key, { enabled: e.target.checked })} />
                             <span>{day.label}</span>
                           </label>
                           <input type="time" className="input text-[14px]" style={{ color: "#1A1B25" }} value={form.schedule[day.key]?.start || ""} onChange={(e) => updateDay(day.key, { start: e.target.value })} disabled={!form.schedule[day.key]?.enabled} aria-label={`${day.label} start time`} />

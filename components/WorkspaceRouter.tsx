@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import React, { useEffect, useMemo, useRef, useState } from "react";
-import { Plus } from "lucide-react";
+import { Plus, RefreshCw, Sparkles } from "lucide-react";
 import EditorClient from "@/app/editor/EditorClient";
 import PeopleClient from "@/app/people/PeopleClient";
 import PersonDetailClient from "@/app/people/[id]/PersonDetailClient";
@@ -27,6 +27,7 @@ import {
   loadTasksData,
   loadUpcomingRostersData,
   monthRosterDataKey,
+  notifyWorkspaceResourcesChanged,
   peopleDataKey,
   personDataKey,
   preloadWorkspaceRoute,
@@ -124,15 +125,15 @@ function useResource<T>(key: string, load: () => Promise<T>, refresh: () => Prom
 
 function LoadingBlock({ label = "Loading..." }: { label?: string }) {
   return (
-    <div className="w-full px-3 py-4">
-      <div className="card p-4 text-sm text-slate-600">{label}</div>
+    <div className="workspace-page">
+      <div className="card p-5 text-sm text-[var(--muted)]">{label}</div>
     </div>
   );
 }
 
 function ErrorBlock({ message }: { message: string }) {
   return (
-    <div className="w-full px-3 py-4">
+    <div className="workspace-page">
       <div className="card border-red-200 bg-red-50 p-4 text-sm text-red-700">{message}</div>
     </div>
   );
@@ -169,10 +170,10 @@ function SpaLink({
 
 function EmptyPage({ title, description }: { title: string; description: string }) {
   return (
-    <div className="w-full px-3 py-3">
+    <div className="workspace-page">
       <div className="space-y-3">
-        <h1 className="text-2xl font-semibold">{title}</h1>
-        <p className="text-slate-600">{description}</p>
+        <h1 className="page-title">{title}</h1>
+        <p className="page-description">{description}</p>
       </div>
     </div>
   );
@@ -219,33 +220,57 @@ function RostersView() {
   if (state.status === "error") return <ErrorBlock message={state.error} />;
 
   const { settings, rosters } = state.data;
+  const regenerateRosters = () => {
+    void refreshUpcomingRostersData().then(() => notifyWorkspaceResourcesChanged([rosterDataKey()]));
+  };
+
   return (
-    <div className="w-full px-3 py-3">
-      <div className="flex w-full flex-col items-start space-y-3">
+    <div className="workspace-page">
+      <div className="flex w-full flex-col items-start space-y-7">
         <div className="flex w-full items-start justify-between gap-3">
           <div>
-            <h1 className="text-2xl font-semibold">Upcoming Rosters</h1>
-            <p className="mt-1 text-[14px] text-slate-600">
+            <h1 className="page-title">Upcoming Rosters</h1>
+            <p className="page-description mt-3">
               Review the next {settings.upcomingDays} roster{settings.upcomingDays === 1 ? "" : "s"} and jump
               straight into the editor.
             </p>
           </div>
-          <SpaLink href="/rosters/old" className="btn h-9 whitespace-nowrap px-4">
+        </div>
+
+        <div className="inline-flex rounded-[10px] border border-[var(--border)] bg-[rgba(255,254,253,0.66)] p-1">
+          <SpaLink
+            href="/rosters"
+            className="inline-flex h-12 min-w-[180px] items-center justify-center rounded-[8px] bg-[var(--accent-soft)] px-5 text-[15px] font-bold text-[var(--accent)]"
+          >
+            Current Rosters
+          </SpaLink>
+          <SpaLink
+            href="/rosters/old"
+            className="inline-flex h-12 min-w-[170px] items-center justify-center rounded-[8px] px-5 text-[15px] font-semibold text-[var(--ink)] transition hover:bg-[var(--surface-subtle)]"
+          >
             Old Rosters
           </SpaLink>
         </div>
 
-        <RosterTable
-          rosters={rosters}
-          footer={
-            <>
+        <RosterTable rosters={rosters} />
+
+        <div className="soft-callout flex w-full flex-col gap-4 px-6 py-5 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex items-center gap-4 text-[15px] text-[var(--ink)]">
+            <span className="grid h-12 w-12 shrink-0 place-items-center rounded-full bg-[var(--accent-soft)] text-[var(--accent)]">
+              <Sparkles className="h-5 w-5" aria-hidden="true" />
+            </span>
+            <p>
               Autogenerates {settings.upcomingDays} roster{settings.upcomingDays === 1 ? "" : "s"}.{" "}
-              <SpaLink href="/settings" className="font-medium text-[#675dff] hover:underline">
+              <SpaLink href="/settings" className="font-semibold text-[var(--accent)] underline underline-offset-2">
                 Click to change
               </SpaLink>
-            </>
-          }
-        />
+            </p>
+          </div>
+          <button className="btn whitespace-nowrap" type="button" onClick={regenerateRosters}>
+            <RefreshCw className="h-4 w-4" aria-hidden="true" />
+            Regenerate now
+          </button>
+        </div>
       </div>
     </div>
   );
@@ -263,17 +288,17 @@ function MonthRostersView({ month }: { month: string }) {
   if (state.status === "error") return <ErrorBlock message={state.error} />;
 
   return (
-    <div className="w-full px-3 py-3">
-      <div className="flex w-full flex-col items-start space-y-3">
+    <div className="workspace-page">
+      <div className="flex w-full flex-col items-start space-y-6">
         <div className="w-full">
           <div className="flex w-full items-center justify-between">
             <div className="flex flex-col leading-tight">
-              <h1 className="text-2xl font-semibold">Rosters for {monthLabel(month)}</h1>
-              <p className="text-[14px] text-slate-600">
+              <h1 className="page-title">Rosters for {monthLabel(month)}</h1>
+              <p className="page-description mt-3">
                 Browse individual daily rosters in this month. Today is highlighted.
               </p>
             </div>
-            <SpaLink href={todayHref} className="btn btn-primary h-9 px-3" style={{ borderRadius: "6px" }}>
+            <SpaLink href={todayHref} className="btn btn-primary px-4">
               <Plus className="h-4 w-4 text-white" strokeWidth={2.3} />
               <span className="text-[14px] font-medium text-white">New Roster</span>
             </SpaLink>
@@ -402,6 +427,7 @@ export default function WorkspaceRouter({ user }: { user: AuthUser }) {
 
   if (pathname === "/rosters" || pathname === "/") return <RostersView />;
   if (pathname === "/editor") return <EditorView dateId={dateId} />;
+  if (pathname === "/tours") return <EmptyPage title="Tours" description="Tour management will appear here." />;
   if (pathname === "/people") return <PeopleView />;
   if (pathname === "/tasks") return <TasksView />;
   if (pathname === "/settings") return <SettingsView user={user} />;
@@ -429,7 +455,7 @@ export default function WorkspaceRouter({ user }: { user: AuthUser }) {
   if (taskMatch?.[1]) return <TaskView id={decodeURIComponent(taskMatch[1])} />;
 
   return (
-    <div className="w-full px-3 py-4">
+    <div className="workspace-page">
       <div className="card max-w-xl p-5">
         <h1 className="text-xl font-semibold text-slate-900">Page not found</h1>
         <p className="mt-2 text-sm text-slate-600">This workspace view does not exist.</p>

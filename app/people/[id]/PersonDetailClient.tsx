@@ -203,7 +203,7 @@ export default function PersonDetailClient({ id, initialPerson }: { id: string; 
 
   if (!person) {
     return (
-      <div className="w-full px-1 py-2 sm:px-2 sm:py-3 md:px-3 md:py-4">
+      <div className="workspace-page">
         <div className="card p-4">
           <p className="text-slate-700">Employee not found.</p>
           <button className="btn mt-3" onClick={() => {
@@ -220,12 +220,12 @@ export default function PersonDetailClient({ id, initialPerson }: { id: string; 
   const saveStatusClassName = getAutosaveStatusClassName(saveState);
 
   return (
-    <div className="w-full px-1 py-2 sm:px-2 sm:py-3 md:px-3 md:py-4">
-      <div className="space-y-4">
+    <div className="workspace-page">
+      <div className="space-y-6">
         <div className="flex w-full flex-col gap-2">
           <div className="flex flex-col leading-tight">
-            <h1 className="break-words text-[clamp(1.2rem,5vw,1.95rem)] font-semibold leading-tight">{formatTitle(person.name)}</h1>
-            <p className="text-sm text-slate-600">Adjust a fortnight schedule for {person.name}.</p>
+            <h1 className="page-title break-words">{formatTitle(person.name)}</h1>
+            <p className="page-description mt-3">Adjust a fortnight schedule for {person.name}.</p>
             <p className={`mt-1 text-[12px] font-medium ${saveStatusClassName}`}>{saveStatusText}</p>
           </div>
           <div className="flex flex-wrap items-center gap-2">

@@ -102,25 +102,25 @@ export default function TopBar({
       ]
     : [];
   const containerClassName = merged
-    ? "relative self-start max-w-full overflow-hidden rounded-[14px] border border-[#d7deea] bg-white"
-    : "relative z-10 self-start max-w-full overflow-hidden rounded-[14px] border border-[#d7deea] bg-white shadow-[0_12px_26px_rgba(15,23,42,0.08)]";
+    ? "relative self-start max-w-full overflow-hidden rounded-[12px] border border-[var(--border)] bg-[var(--surface)]"
+    : "relative z-10 self-start max-w-full overflow-hidden rounded-[12px] border border-[var(--border)] bg-[var(--surface)] shadow-[0_18px_34px_rgba(41,29,21,0.06)]";
   const segmentClassName =
-    "inline-flex h-11 shrink-0 items-center justify-center gap-2 border-r border-[#d7deea] px-3 text-[14px] font-semibold text-slate-800 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgba(52,77,232,0.16)] focus-visible:ring-inset";
+    "inline-flex h-11 shrink-0 items-center justify-center gap-2 border-r border-[var(--border)] px-3 text-[14px] font-semibold text-[var(--ink)] transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgba(57,36,147,0.16)] focus-visible:ring-inset";
   const actionSegmentClassName =
-    `${segmentClassName} bg-white hover:bg-[#f8fafc]`;
+    `${segmentClassName} bg-[var(--surface)] hover:bg-[var(--surface-subtle)]`;
   const iconOnlySegmentClassName =
-    "inline-flex h-11 w-10 shrink-0 items-center justify-center border-r border-[#d7deea] text-slate-800 transition hover:bg-[#f8fafc] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgba(52,77,232,0.16)] focus-visible:ring-inset";
+    "inline-flex h-11 w-10 shrink-0 items-center justify-center border-r border-[var(--border)] text-[var(--ink)] transition hover:bg-[var(--surface-subtle)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgba(57,36,147,0.16)] focus-visible:ring-inset";
   const hoursGroupClassName =
-    "flex h-11 shrink-0 items-center gap-1 border-r border-[#d7deea] bg-white px-2";
-  const uploadSegmentClassName = `inline-flex h-11 min-w-[220px] shrink-0 items-center justify-center gap-2 border-r px-4 text-[14px] font-semibold transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgba(52,77,232,0.16)] focus-visible:ring-inset ${
+    "flex h-11 shrink-0 items-center gap-1 border-r border-[var(--border)] bg-[var(--surface)] px-2";
+  const uploadSegmentClassName = `inline-flex h-11 min-w-[220px] shrink-0 items-center justify-center gap-2 border-r px-4 text-[14px] font-semibold transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgba(57,36,147,0.16)] focus-visible:ring-inset ${
     isDraggingSchoolTours
-      ? "border-[#4f58ef] bg-[#eef1ff] text-[#3340c7]"
-      : "border-[#d7deea] bg-white text-slate-800 hover:bg-[#f8fafc]"
+      ? "border-[var(--accent)] bg-[var(--accent-soft)] text-[var(--accent)]"
+      : "border-[var(--border)] bg-[var(--surface)] text-[var(--ink)] hover:bg-[var(--surface-subtle)]"
   }`;
   const hoursSpacerClassName =
-    "shrink-0 px-0.5 text-[12px] font-semibold text-slate-700";
+    "shrink-0 px-0.5 text-[12px] font-semibold text-[var(--muted-strong)]";
   const hoursInputClassName =
-    "input time-input-no-icon h-8 w-[104px] min-w-[104px] appearance-none rounded-[8px] border border-transparent bg-transparent px-2.5 pr-2.5 text-[13px] font-semibold tabular-nums text-slate-800 shadow-none outline-none transition focus:border-[rgba(52,77,232,0.35)] focus:bg-[#f8fafc] focus:ring-2 focus:ring-[rgba(52,77,232,0.12)]";
+    "input time-input-no-icon h-8 w-[104px] min-w-[104px] appearance-none rounded-[8px] border border-transparent bg-transparent px-2.5 pr-2.5 text-[13px] font-semibold tabular-nums text-[var(--ink)] shadow-none outline-none transition focus:border-[rgba(57,36,147,0.35)] focus:bg-[var(--surface-subtle)] focus:ring-2 focus:ring-[rgba(57,36,147,0.12)]";
   if (!actionButtons.length && !showHoursControls) return null;
 
   return (

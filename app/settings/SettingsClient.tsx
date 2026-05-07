@@ -197,15 +197,15 @@ export default function SettingsClient({
   }
 
   return (
-    <div className="w-full py-3 px-3">
-      <div className="space-y-4 flex flex-col items-start w-full">
+    <div className="workspace-page">
+      <div className="flex w-full flex-col items-start space-y-6">
         <div>
-          <h1 className="text-2xl font-semibold">Settings</h1>
-          <p className="text-slate-600 text-[14px]">Security and roster defaults.</p>
+          <h1 className="page-title">Settings</h1>
+          <p className="page-description mt-3">Security and roster defaults.</p>
           <p className={`mt-1 text-[12px] font-medium ${saveStatusClassName}`}>{saveStatusText}</p>
         </div>
 
-        <div id="security" className="bg-white rounded-lg shadow-sm w-full border border-[var(--border)]">
+        <div id="security" className="surface-panel">
           <div className="px-4 py-3 border-b border-[var(--border)] space-y-1">
             <h2 className="text-lg font-semibold">Two-Factor Authentication</h2>
             <p className="text-sm text-slate-600">
@@ -332,7 +332,7 @@ export default function SettingsClient({
           </div>
         </div>
 
-        <div className="bg-white rounded-lg shadow-sm w-full border border-[var(--border)]">
+        <div className="surface-panel">
           <div className="px-4 py-3 border-b border-[var(--border)] space-y-3">
             <h2 className="text-lg font-semibold">Default Hours</h2>
             <p className="text-sm text-slate-600">Used when creating or opening a roster day.</p>

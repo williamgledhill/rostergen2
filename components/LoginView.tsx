@@ -111,21 +111,26 @@ export default function LoginView() {
   }
 
   return (
-    <div className="flex min-h-screen flex-col bg-[#fcfbf8]">
+    <div className="flex min-h-screen flex-col bg-[var(--app-bg)]">
       <header className="px-4 py-4 sm:px-8 sm:py-6">
         <div className="mx-auto flex w-full max-w-6xl items-center justify-between gap-4">
           <Link
             href="/"
-            className="text-lg font-semibold tracking-[-0.02em] text-[#111827] transition hover:text-black"
+            className="inline-flex items-center gap-3 font-serif text-lg font-bold uppercase leading-none text-[var(--ink)] transition hover:text-[var(--accent)]"
           >
-            Roster Generator
+            <span className="grid h-11 w-11 place-items-center rounded-full bg-[var(--accent)] text-[20px] text-white">RG</span>
+            <span>
+              Roster
+              <br />
+              Generator
+            </span>
           </Link>
 
-          <div className="flex flex-wrap items-center justify-end gap-x-2 gap-y-1 text-sm text-[#4b5563]">
+          <div className="flex flex-wrap items-center justify-end gap-x-2 gap-y-1 text-sm text-[var(--muted-strong)]">
             <span className="hidden sm:inline">Need access?</span>
             <a
               href="mailto:admin@rosterplanner.app?subject=Access%20request%20for%20Roster%20Generator"
-              className="font-medium text-[#111827] underline underline-offset-4 transition hover:text-black"
+              className="font-medium text-[var(--ink)] underline underline-offset-4 transition hover:text-[var(--accent)]"
             >
               Contact admin
             </a>
@@ -136,10 +141,10 @@ export default function LoginView() {
       <main className="flex flex-1 items-center justify-center px-4 pb-10 pt-8 sm:px-5 sm:pb-12 sm:pt-6">
         <section className="w-full max-w-[360px] sm:max-w-[380px]">
           <div className="text-center">
-            <h1 className="text-[1.9rem] font-semibold tracking-[-0.04em] text-[#111827] sm:text-[2.35rem]">
+            <h1 className="font-serif text-[1.9rem] font-semibold text-[var(--ink)] sm:text-[2.35rem]">
               {requiresTwoFactor ? "Verify sign in" : "Welcome back"}
             </h1>
-            <p className="mt-3 text-[0.98rem] leading-7 text-[#6b7280]">
+            <p className="mt-3 text-[0.98rem] leading-7 text-[var(--muted-strong)]">
               {requiresTwoFactor
                 ? `Enter the authenticator code for ${twoFactorName || "your account"}. Recovery codes also work.`
                 : "Sign in to continue to your roster workspace."}
@@ -160,7 +165,7 @@ export default function LoginView() {
                     value={email}
                     onChange={(event) => setEmail(event.target.value)}
                     disabled={isDisabled}
-                    className="h-[50px] w-full rounded-[14px] border border-[#d5dcf2] bg-white px-4 text-[15px] text-[#111827] outline-none transition placeholder:text-[#8b93a7] focus:border-[rgba(52,77,232,0.55)] focus:ring-2 focus:ring-[rgba(52,77,232,0.18)] sm:h-[52px]"
+                    className="h-[50px] w-full rounded-[12px] border border-[var(--border)] bg-[var(--surface)] px-4 text-[15px] text-[var(--ink)] outline-none transition placeholder:text-[#8b837a] focus:border-[rgba(57,36,147,0.55)] focus:ring-2 focus:ring-[rgba(57,36,147,0.16)] sm:h-[52px]"
                     placeholder="Email"
                   />
                 </div>
@@ -176,14 +181,14 @@ export default function LoginView() {
                     value={password}
                     onChange={(event) => setPassword(event.target.value)}
                     disabled={isDisabled}
-                    className="h-[50px] w-full rounded-[14px] border border-[#d5dcf2] bg-white px-4 pr-12 text-[15px] text-[#111827] outline-none transition placeholder:text-[#8b93a7] focus:border-[rgba(52,77,232,0.55)] focus:ring-2 focus:ring-[rgba(52,77,232,0.18)] sm:h-[52px]"
+                    className="h-[50px] w-full rounded-[12px] border border-[var(--border)] bg-[var(--surface)] px-4 pr-12 text-[15px] text-[var(--ink)] outline-none transition placeholder:text-[#8b837a] focus:border-[rgba(57,36,147,0.55)] focus:ring-2 focus:ring-[rgba(57,36,147,0.16)] sm:h-[52px]"
                     placeholder="Password"
                   />
                   <button
                     type="button"
                     aria-label={showPassword ? "Hide password" : "Show password"}
                     onClick={() => setShowPassword((current) => !current)}
-                    className="absolute right-3 top-1/2 inline-flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-md text-[#6b7280] transition hover:bg-black/5 hover:text-[#111827]"
+                    className="absolute right-3 top-1/2 inline-flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-md text-[var(--muted-strong)] transition hover:bg-black/5 hover:text-[var(--ink)]"
                   >
                     {showPassword ? (
                       <EyeOff className="h-[17px] w-[17px]" />
@@ -208,7 +213,7 @@ export default function LoginView() {
                   value={code}
                   onChange={(event) => setCode(event.target.value)}
                   disabled={isDisabled}
-                  className="h-[50px] w-full rounded-[14px] border border-[#d5dcf2] bg-white px-4 text-[15px] tracking-[0.28em] text-[#111827] outline-none transition placeholder:tracking-normal placeholder:text-[#8b93a7] focus:border-[rgba(52,77,232,0.55)] focus:ring-2 focus:ring-[rgba(52,77,232,0.18)] sm:h-[52px]"
+                  className="h-[50px] w-full rounded-[12px] border border-[var(--border)] bg-[var(--surface)] px-4 text-[15px] tracking-[0.28em] text-[var(--ink)] outline-none transition placeholder:tracking-normal placeholder:text-[#8b837a] focus:border-[rgba(57,36,147,0.55)] focus:ring-2 focus:ring-[rgba(57,36,147,0.16)] sm:h-[52px]"
                   placeholder="123456 or recovery code"
                 />
               </div>
@@ -217,7 +222,7 @@ export default function LoginView() {
             <button
               type="submit"
               disabled={isDisabled}
-              className="inline-flex h-[50px] w-full items-center justify-center gap-2 rounded-[14px] border border-[var(--accent)] bg-[var(--accent)] px-5 text-[1rem] font-semibold text-white transition hover:border-[var(--accent-strong)] hover:bg-[var(--accent-strong)] disabled:cursor-not-allowed disabled:opacity-70 sm:h-[52px]"
+              className="inline-flex h-[50px] w-full items-center justify-center gap-2 rounded-[12px] border border-[var(--accent)] bg-[var(--accent)] px-5 text-[1rem] font-semibold text-white shadow-[0_8px_18px_rgba(57,36,147,0.18)] transition hover:border-[var(--accent-strong)] hover:bg-[var(--accent-strong)] disabled:cursor-not-allowed disabled:opacity-70 sm:h-[52px]"
             >
               {submitting ? (
                 <>

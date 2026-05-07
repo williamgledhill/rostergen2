@@ -3,6 +3,7 @@
 import { useMemo } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { Download } from "lucide-react";
 import type { RosterFile } from "@/lib/rosters";
 import { buildEditorHref } from "@/lib/editorPersistence";
 import { navigateWithinSpa, shouldHandleSpaClick } from "@/lib/spaNavigation";
@@ -22,27 +23,37 @@ export default function RosterTable({ rosters, footer }: Props) {
     if (!navigateWithinSpa(href)) router.push(href);
   }
 
+  function getRosterState(roster: RosterFile, isCurrent: boolean) {
+    const employees = Array.isArray(roster.employees) ? roster.employees : [];
+    const tasks = Array.isArray(roster.tasks) ? roster.tasks : [];
+    const isEmpty = roster.tours === 0 && roster.people === 0 && employees.length === 0 && tasks.length === 0;
+    if (isEmpty) return { label: "Empty", className: "status-badge-empty" };
+    if (roster.status === "Published" || isCurrent) return { label: "Published", className: "status-badge-published" };
+    return { label: "Draft", className: "status-badge-draft" };
+  }
+
   return (
-    <div className="w-full overflow-hidden rounded-lg border border-[var(--border)] bg-white">
+    <div className="surface-panel">
       <div className="overflow-x-auto">
-        <table className="w-full border-collapse text-[15px]">
-          <thead className="text-[15px] text-slate-900">
-            <tr className="border-b border-[#E6EAF0]">
-              <th className="px-4 py-4 text-left font-bold tracking-[0.01em]">Roster</th>
-              <th className="px-4 py-4 text-left font-bold tracking-[0.01em]">Tours</th>
-              <th className="px-4 py-4 text-left font-bold tracking-[0.01em]">People</th>
-              <th className="px-4 py-4 text-left font-bold tracking-[0.01em]">Updated</th>
+        <table className="data-table min-w-[900px]">
+          <thead>
+            <tr>
+              <th>Roster</th>
+              <th>Tours</th>
+              <th>People</th>
+              <th>Updated</th>
+              <th aria-label="Actions" className="w-[92px]" />
             </tr>
           </thead>
-          <tbody className="[&_tr:last-child]:border-b-0">
+          <tbody>
             {rosters.map((r) => {
               const startDate = r.start instanceof Date ? r.start : new Date(r.start);
               const isCurrent = today.toDateString() === startDate.toDateString();
-              const rowStyles = isCurrent ? "bg-amber-50" : "";
+              const status = getRosterState(r, isCurrent);
               return (
                 <tr
                   key={r.id}
-                  className={`group border-b border-[#E6EAF0] hover:bg-[#f8fafc] cursor-pointer ${rowStyles}`}
+                  className="group cursor-pointer"
                   onMouseEnter={() => {
                     const href = buildEditorHref(r.id);
                     preloadWorkspaceRoute(href);
@@ -50,38 +61,54 @@ export default function RosterTable({ rosters, footer }: Props) {
                   }}
                   onClick={() => handleRowClick(r.id)}
                 >
-                  <td className="align-middle px-4 py-4">
-                    <Link
-                      href={buildEditorHref(r.id)}
-                      className="block truncate text-[15px] font-medium text-slate-700 hover:underline group-hover:underline"
+                  <td className="align-middle">
+                    <div className="flex min-w-[320px] items-center gap-4">
+                      <Link
+                        href={buildEditorHref(r.id)}
+                        className="block truncate text-[17px] font-bold text-[var(--ink)] hover:underline group-hover:underline"
+                        onClick={(event) => {
+                          event.stopPropagation();
+                          const href = buildEditorHref(r.id);
+                          if (shouldHandleSpaClick(event) && navigateWithinSpa(href)) {
+                            event.preventDefault();
+                          }
+                        }}
+                      >
+                        {r.title}
+                      </Link>
+                      <span className={`status-badge ${status.className}`}>{status.label}</span>
+                      {isCurrent && <span className="sr-only">Current roster</span>}
+                    </div>
+                  </td>
+                  <td className="align-middle">{r.tours} tours</td>
+                  <td className="align-middle">{r.people} people</td>
+                  <td className="align-middle text-[var(--muted-strong)]">{r.updated}</td>
+                  <td className="align-middle">
+                    <button
+                      type="button"
+                      className="icon-button"
                       onClick={(event) => {
                         event.stopPropagation();
-                        const href = buildEditorHref(r.id);
-                        if (shouldHandleSpaClick(event) && navigateWithinSpa(href)) {
-                          event.preventDefault();
-                        }
+                        handleRowClick(r.id);
                       }}
+                      aria-label={`Open ${r.title}`}
+                      title="Open roster"
                     >
-                      {r.title}
-                    </Link>
+                      <Download className="h-5 w-5" aria-hidden="true" />
+                    </button>
                   </td>
-                  <td className="align-middle px-4 py-4 text-[15px] font-medium text-slate-700">{r.tours} tours</td>
-                  <td className="align-middle px-4 py-4 text-[15px] font-medium text-slate-700">{r.people} people</td>
-                  <td className="align-middle px-4 py-4 text-[15px] font-medium text-slate-600">{r.updated}</td>
                 </tr>
               );
             })}
             {rosters.length === 0 && (
               <tr>
-                <td colSpan={4} className="py-8 text-center text-[15px] text-slate-600">No rosters yet.</td>
+                <td colSpan={5} className="py-10 text-center text-[15px] text-[var(--muted)]">No rosters yet.</td>
               </tr>
             )}
           </tbody>
         </table>
       </div>
-      <div className="border-t border-[#E6EAF0] px-4 py-3 text-sm text-slate-600">
-        {footer ?? `${rosters.length} roster${rosters.length === 1 ? "" : "s"}`}
-      </div>
+      {footer ? <div className="table-footer">{footer}</div> : null}
     </div>
   );
 }

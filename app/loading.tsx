@@ -4,7 +4,7 @@ function Line({ width = "w-full" }: { width?: string }) {
 
 function CardRow() {
   return (
-    <div className="grid grid-cols-[1.6fr_0.7fr_0.7fr_0.7fr_0.7fr] gap-3 border-b border-slate-200 px-4 py-3">
+    <div className="grid grid-cols-[1.6fr_0.7fr_0.7fr_0.7fr_0.7fr] gap-3 border-b border-[var(--border)] px-4 py-3">
       <Line width="w-3/4" />
       <Line width="w-2/3" />
       <Line width="w-2/3" />
@@ -16,15 +16,15 @@ function CardRow() {
 
 export default function Loading() {
   return (
-    <div className="w-full px-3 py-3" aria-busy="true" aria-live="polite">
+    <div className="workspace-page" aria-busy="true" aria-live="polite">
       <div className="space-y-4">
         <div className="space-y-2">
           <Line width="h-8 w-64" />
           <Line width="w-80" />
         </div>
 
-        <div className="rounded-lg border border-slate-200 bg-white shadow-sm">
-          <div className="flex items-center justify-between gap-3 border-b border-slate-200 px-4 py-3">
+        <div className="surface-panel">
+          <div className="flex items-center justify-between gap-3 border-b border-[var(--border)] px-4 py-3">
             <div className="space-y-2">
               <Line width="w-40" />
               <Line width="w-56" />

@@ -4,7 +4,7 @@ function Line({ width = "w-full" }: { width?: string }) {
 
 function TaskRow() {
   return (
-    <div className="grid grid-cols-[40px_1.2fr_0.6fr_0.8fr] items-center gap-3 border-b border-[#E6EAF0] px-4 py-3">
+    <div className="grid grid-cols-[40px_1.2fr_0.6fr_0.8fr] items-center gap-3 border-b border-[var(--border)] px-4 py-3">
       <Line width="h-4 w-4" />
       <div className="flex items-center gap-2">
         <Line width="h-[18px] w-[18px] rounded-full" />
@@ -18,7 +18,7 @@ function TaskRow() {
 
 export default function Loading() {
   return (
-    <div className="w-full px-3 py-3" aria-busy="true" aria-live="polite">
+    <div className="workspace-page" aria-busy="true" aria-live="polite">
       <div className="space-y-3">
         <div className="flex items-center justify-between gap-4">
           <div className="space-y-2">
@@ -27,8 +27,8 @@ export default function Loading() {
           </div>
           <Line width="h-10 w-28" />
         </div>
-        <div className="overflow-hidden rounded-lg bg-white shadow-sm">
-          <div className="grid grid-cols-[40px_1.2fr_0.6fr_0.8fr] gap-3 border-b border-[#E6EAF0] px-4 py-3">
+        <div className="surface-panel">
+          <div className="grid grid-cols-[40px_1.2fr_0.6fr_0.8fr] gap-3 border-b border-[var(--border)] px-4 py-3">
             <Line width="h-4 w-4" />
             <Line width="h-4 w-16" />
             <Line width="h-4 w-16" />

@@ -4,11 +4,12 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
   CalendarDays,
+  ClipboardList,
   type LucideIcon,
-  Users,
-  FolderOpen,
   Pencil,
+  Route,
   Settings,
+  UsersRound,
 } from "lucide-react";
 import { buildEditorHref, LAST_EDITOR_DATE_EVENT, LAST_EDITOR_DATE_STORAGE_KEY, isLocalDateId } from "@/lib/editorPersistence";
 import { navigateWithinSpa, shouldHandleSpaClick, useSpaLocation } from "@/lib/spaNavigation";
@@ -30,24 +31,19 @@ const Item = ({
   onClick?: () => void;
 }) => {
   const linkClassName = collapsed
-    ? `group flex min-h-[92px] w-full flex-col items-center justify-center gap-2.5 rounded-[18px] px-2 py-3 text-center transition-all duration-200 ${
+    ? `group flex h-14 w-full flex-col items-center justify-center gap-1.5 rounded-[16px] px-2 text-center transition-all duration-200 ${
         active
-          ? "bg-[rgba(52,77,232,0.08)] text-[#22305a]"
-          : "text-[#3d4865] hover:bg-[#f4f6fb] hover:text-[#22305a]"
+          ? "bg-[var(--accent-soft)] text-[var(--accent)]"
+          : "text-[var(--ink)] hover:bg-[rgba(255,254,253,0.74)] hover:text-[var(--accent)]"
       }`
-    : `group flex min-h-[60px] w-full items-center gap-3.5 rounded-[16px] px-4 py-2.5 text-left transition-all duration-200 ${
+    : `group flex min-h-[72px] w-full items-center gap-4 rounded-[24px] px-7 text-left transition-all duration-200 ${
         active
-          ? "bg-[rgba(52,77,232,0.08)] text-[#22305a]"
-          : "text-[#3d4865] hover:bg-[#f4f6fb] hover:text-[#22305a]"
+          ? "bg-[#ece8f2] text-[var(--accent)]"
+          : "text-[var(--ink)] hover:bg-[rgba(255,254,253,0.68)] hover:text-[var(--accent)]"
       }`;
-  const iconWrapClassName = `grid h-11 w-11 shrink-0 place-items-center rounded-full border transition-all duration-200 ${
-    active
-      ? "border-[var(--accent)] bg-[var(--accent)] text-white"
-      : "border-[#e7ebf3] bg-[#fafbfe] text-[#48536f] group-hover:border-[#d8dfec] group-hover:bg-[#f3f6fd] group-hover:text-[#22305a]"
-  }`;
   const labelClassName = collapsed
-    ? "block w-full text-center text-[13px] font-medium leading-[1.15] text-current"
-    : "text-[15px] font-medium leading-none text-current";
+    ? "block w-full text-center text-[11px] font-semibold leading-[1.15] text-current"
+    : "text-[17px] font-semibold leading-none text-current";
 
   const handleClick = (event: React.MouseEvent<HTMLAnchorElement>) => {
     if (shouldHandleSpaClick(event) && navigateWithinSpa(href)) {
@@ -70,8 +66,8 @@ const Item = ({
       className={linkClassName}
       title={label}
     >
-      <span className={iconWrapClassName}>
-        <Icon className="h-[19px] w-[19px]" aria-hidden="true" />
+      <span className="grid h-6 w-6 shrink-0 place-items-center text-current">
+        <Icon className="h-5 w-5" aria-hidden="true" />
       </span>
       <span className={labelClassName}>{label}</span>
     </Link>
@@ -99,14 +95,13 @@ export default function SideNav({
   ];
   const navItems = [
     { icon: Pencil, label: "Editor", href: editorHref, matchPrefix: "/editor" },
-    { icon: Users, label: "People", href: "/people", matchPrefix: "/people" },
-    { icon: FolderOpen, label: "Tasks", href: "/tasks", matchPrefix: "/tasks" },
+    { icon: Route, label: "Tours", href: "/tours", matchPrefix: "/tours" },
+    { icon: ClipboardList, label: "Tasks", href: "/tasks", matchPrefix: "/tasks" },
+    { icon: UsersRound, label: "Staff", href: "/people", matchPrefix: "/people" },
     { icon: Settings, label: "Settings", href: "/settings", matchPrefix: "/settings" },
   ];
-  const asideWidth = collapsed ? "w-[90px]" : "w-[244px]";
+  const asideWidth = collapsed ? "w-[96px]" : "w-[316px]";
   const asideVisibility = isOpen ? "block" : "hidden md:block";
-
-  if (mobile && !isOpen) return null;
 
   React.useEffect(() => {
     const syncEditorHref = () => {
@@ -124,20 +119,34 @@ export default function SideNav({
   }, []);
 
   React.useEffect(() => {
-    ["/rosters", editorHref, "/people", "/tasks", "/settings"].forEach((href) => {
+    ["/rosters", editorHref, "/tours", "/people", "/tasks", "/settings"].forEach((href) => {
       preloadWorkspaceRoute(href);
       router.prefetch(href);
     });
   }, [editorHref, router]);
 
   const asideClassName = mobile
-    ? "fixed inset-x-0 bottom-0 left-0 top-14 z-50 w-[244px] overflow-y-auto border-r border-[#dfe4ee] bg-white pt-2 pb-3 shadow-xl"
-    : `${asideVisibility} ${asideWidth} relative flex-shrink-0 overflow-visible border-r border-[#dfe4ee] bg-white pt-2 pb-3 transition-all duration-200 md:sticky md:top-14 md:h-[calc(100vh-56px)] md:overflow-y-auto`;
+    ? "fixed bottom-0 left-0 top-[72px] z-50 w-[288px] overflow-y-auto border-r border-[var(--border)] bg-[var(--app-bg)] pb-6 shadow-xl"
+    : `${asideVisibility} ${asideWidth} relative flex-shrink-0 overflow-visible border-r border-[var(--border)] bg-[var(--app-bg)] pb-7 transition-all duration-200 md:sticky md:top-0 md:h-screen md:overflow-y-auto`;
+
+  if (mobile && !isOpen) return null;
 
   return (
     <aside className={asideClassName}>
       <div className="flex h-full flex-col">
-        <div className={`w-full ${collapsed ? "space-y-2.5 px-3 pt-3" : "space-y-1.5 px-2.5 pt-3"}`}>
+        <div className={`flex h-[106px] items-center ${collapsed ? "justify-center px-3" : "gap-4 px-8"}`}>
+          <div className="grid h-[52px] w-[52px] shrink-0 place-items-center rounded-full bg-[var(--accent)] font-serif text-[24px] font-bold text-white">
+            RG
+          </div>
+          {!collapsed && (
+            <div className="font-serif text-[17px] font-bold uppercase leading-[1.05] tracking-[0.02em] text-[var(--ink)]">
+              <div>Roster</div>
+              <div>Generator</div>
+            </div>
+          )}
+        </div>
+
+        <div className={`w-full ${collapsed ? "space-y-2 px-3 pt-1" : "space-y-2 px-5 pt-3"}`}>
           {rosterItems.map((item) => (
             <Item key={item.label} {...item} collapsed={collapsed} onClick={mobile ? onNavigate : undefined} />
           ))}
@@ -156,13 +165,23 @@ export default function SideNav({
           })}
         </div>
         {!mobile && (
-          <div className={`mt-auto ${collapsed ? "px-2 pt-2" : "px-3 pt-4"}`}>
+          <div className={`mt-auto ${collapsed ? "px-2 pt-2" : "px-9 pt-8"}`}>
             {collapsed ? (
               <div className="h-0" aria-hidden="true" />
             ) : (
               <>
-                <p className="text-center text-[12px] text-[#707991]">Powered by rostergenerator.app</p>
-                <p className="mt-1 text-center text-[11px] text-[#707991]">Copyright William Gledhill 2026 (excluding Mint Logo).</p>
+                <div className="mb-8 space-y-3 text-[15px] leading-6 text-[var(--ink)]">
+                  <p className="font-bold">Roster magic, on autopilot</p>
+                  <p className="text-[var(--muted-strong)]">
+                    Save time. Stay organised.
+                    <br />
+                    Focus on your people.
+                  </p>
+                </div>
+                <div className="border-t border-[var(--border)] pt-8 text-[14px] leading-7 text-[var(--muted-strong)]">
+                  <p>Powered by rostergenerator.app</p>
+                  <p>(c) 2026 William Gledhill</p>
+                </div>
               </>
             )}
           </div>

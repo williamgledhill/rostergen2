@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useNav } from "@/components/NavContext";
 import { navigateWithinSpa, shouldHandleSpaClick, useSpaLocation } from "@/lib/spaNavigation";
 import { preloadWorkspaceRoute } from "@/lib/workspaceData";
+import { Bell, ChevronDown, CircleHelp, Clock3, Menu } from "lucide-react";
 
 function getInitials(name?: string | null) {
   if (typeof name !== "string" || !name.trim()) return "RG";
@@ -25,7 +26,8 @@ export default function GlobalTopBar({ userName }: { userName?: string | null })
   const pageTitle = useMemo(() => {
     if (pathname.startsWith("/rosters")) return "Rosters";
     if (pathname.startsWith("/editor")) return "Roster Editor";
-    if (pathname.startsWith("/people")) return "People";
+    if (pathname.startsWith("/tours")) return "Tours";
+    if (pathname.startsWith("/people")) return "Staff";
     if (pathname.startsWith("/tasks")) return "Tasks";
     if (pathname.startsWith("/settings")) return "Settings";
     return "Roster Planner";
@@ -51,35 +53,55 @@ export default function GlobalTopBar({ userName }: { userName?: string | null })
   }
 
   return (
-    <header className="sticky inset-x-0 top-0 z-50 h-14 w-full bg-[var(--accent)] px-4">
-      <div className="relative mx-auto flex h-full w-full items-center justify-center">
+    <header className="sticky inset-x-0 top-0 z-30 h-[72px] w-full border-b border-[var(--border)] bg-[rgba(255,254,253,0.84)] px-5 backdrop-blur md:h-[106px] md:px-11">
+      <div className="relative flex h-full w-full items-center justify-between">
         <button
           type="button"
-          className="absolute left-0 flex h-10 w-10 items-center justify-center text-white transition hover:text-white/85 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/35"
+          className="absolute left-0 flex h-10 w-10 items-center justify-center rounded-[14px] border border-[var(--border)] bg-[var(--surface)] text-[var(--ink)] shadow-[0_10px_24px_rgba(41,29,21,0.08)] transition hover:border-[#d4cbc2] hover:bg-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgba(57,36,147,0.18)] md:-left-[58px]"
           onClick={toggleNav}
           aria-label="Toggle navigation"
         >
-          <span className="flex flex-col gap-1" aria-hidden="true">
-            <span className="block h-[2px] w-5 rounded-full bg-current" />
-            <span className="block h-[2px] w-5 rounded-full bg-current" />
-            <span className="block h-[2px] w-5 rounded-full bg-current" />
-          </span>
+          <Menu className="h-5 w-5" aria-hidden="true" />
         </button>
-        <span className="text-[16px] font-semibold tracking-[0.01em] text-white">{pageTitle}</span>
-        <div className="absolute right-0" ref={profileRef}>
+        <span className="ml-14 font-serif text-[2rem] font-semibold leading-none text-[var(--ink)] md:ml-0 md:text-[2.65rem]">
+          {pageTitle}
+        </span>
+
+        <div className="ml-auto flex items-center gap-3 md:gap-6">
           <button
-            className="grid h-9 w-9 place-items-center overflow-hidden rounded-full border border-white/60 bg-white text-[12px] font-semibold text-[var(--accent)]"
+            type="button"
+            className="hidden h-9 items-center gap-2 text-[14px] font-semibold text-[var(--ink)] transition hover:text-[var(--accent)] md:inline-flex"
+          >
+            <Clock3 className="h-5 w-5" aria-hidden="true" />
+            <span>What&apos;s new</span>
+            <span className="h-1.5 w-1.5 rounded-full bg-[var(--accent)]" aria-hidden="true" />
+          </button>
+          <button type="button" className="hidden text-[var(--ink)] transition hover:text-[var(--accent)] md:inline-flex" aria-label="Help">
+            <CircleHelp className="h-7 w-7" aria-hidden="true" />
+          </button>
+          <button type="button" className="relative text-[var(--ink)] transition hover:text-[var(--accent)]" aria-label="Notifications">
+            <Bell className="h-6 w-6" aria-hidden="true" />
+            <span className="absolute -right-2 -top-2 grid h-5 min-w-5 place-items-center rounded-full bg-[var(--accent)] px-1 text-[11px] font-bold leading-none text-white">
+              3
+            </span>
+          </button>
+        <div className="relative" ref={profileRef}>
+          <button
+            className="inline-flex h-12 items-center gap-3 rounded-full text-[var(--ink)] transition hover:text-[var(--accent)]"
             onClick={() => setProfileOpen((open) => !open)}
             aria-label="Profile menu"
             aria-expanded={profileOpen}
           >
-            <span aria-hidden="true">{initials}</span>
+            <span className="grid h-12 w-12 place-items-center rounded-full bg-[#ece8e1] text-[17px] font-bold" aria-hidden="true">
+              {initials}
+            </span>
+            <ChevronDown className="hidden h-5 w-5 md:block" aria-hidden="true" />
             <span className="sr-only">Profile</span>
           </button>
           {profileOpen && (
-            <div className="absolute right-0 mt-2 w-40 rounded-md border border-[var(--border)] bg-white shadow-lg z-50">
+            <div className="absolute right-0 z-50 mt-3 w-44 overflow-hidden rounded-[12px] border border-[var(--border)] bg-[var(--surface)] shadow-[0_18px_40px_rgba(41,29,21,0.12)]">
               <Link
-                className="block w-full px-3 py-2 text-left text-sm text-slate-700 hover:bg-[#f5f7fa]"
+                className="block w-full px-4 py-3 text-left text-sm font-medium text-[var(--ink)] hover:bg-[var(--surface-subtle)]"
                 href="/settings#security"
                 onMouseEnter={() => preloadWorkspaceRoute("/settings")}
                 onFocus={() => preloadWorkspaceRoute("/settings")}
@@ -93,13 +115,14 @@ export default function GlobalTopBar({ userName }: { userName?: string | null })
                 Security
               </Link>
               <button
-                className="w-full text-left px-3 py-2 text-sm text-slate-700 hover:bg-[#f5f7fa]"
+                className="w-full px-4 py-3 text-left text-sm font-medium text-[var(--ink)] hover:bg-[var(--surface-subtle)]"
                 onClick={handleLogout}
               >
                 Log out
               </button>
             </div>
           )}
+          </div>
         </div>
       </div>
     </header>

@@ -12,7 +12,7 @@ export default function AppShell({
   children: React.ReactNode;
   initialUserName?: string | null;
 }) {
-  const [navOpen, setNavOpen] = useState(false);
+  const [navOpen, setNavOpen] = useState(true);
   const [isMobile, setIsMobile] = useState(false);
   const toggleNav = useCallback(() => setNavOpen((o) => !o), []);
   const pathname = usePathname();
@@ -33,22 +33,13 @@ export default function AppShell({
   }, [isMobile]);
 
   if (isPublic) {
-    return <main className="min-h-screen bg-[var(--surface)]">{children}</main>;
+    return <main className="min-h-screen bg-[var(--app-bg)]">{children}</main>;
   }
 
   return (
     <NavProvider value={{ navOpen, toggleNav }}>
-      <div className="relative min-h-screen bg-white">
-        <GlobalTopBar userName={initialUserName ?? null} />
-        {isMobile && navOpen && (
-          <button
-            type="button"
-            className="fixed inset-0 z-40 bg-black/30"
-            aria-label="Close navigation menu"
-            onClick={() => setNavOpen(false)}
-          />
-        )}
-        <div className="flex min-h-[calc(100vh-56px)] bg-white">
+      <div className="relative min-h-screen bg-[var(--app-bg)] text-[var(--ink)]">
+        <div className="flex min-h-screen">
           <SideNav
             open={navOpen}
             mobile={isMobile}
@@ -56,12 +47,19 @@ export default function AppShell({
               if (isMobile) setNavOpen(false);
             }}
           />
-          <div className="flex min-h-[calc(100vh-56px)] flex-1 flex-col bg-white">
-          <main className="px-2 py-3 sm:px-3 sm:py-4 md:px-6 md:py-5">
-            <div className="w-full space-y-4">
-              {children}
-            </div>
-          </main>
+          <div className="flex min-w-0 flex-1 flex-col">
+            <GlobalTopBar userName={initialUserName ?? null} />
+            {isMobile && navOpen && (
+              <button
+                type="button"
+                className="fixed inset-0 z-40 bg-black/30"
+                aria-label="Close navigation menu"
+                onClick={() => setNavOpen(false)}
+              />
+            )}
+            <main className="workspace-main">
+              <div className="workspace-container">{children}</div>
+            </main>
           </div>
         </div>
       </div>

@@ -72,7 +72,7 @@ export default function NewMonthButton({ existingMonthIds }: Props) {
                 <p className="text-sm text-slate-600">Pick a month to create or open.</p>
               </div>
               <button
-                className="p-2 text-slate-500 hover:text-slate-700 rounded-lg hover:bg-[#f5f7fa] transition"
+                className="rounded-[10px] p-2 text-slate-500 transition hover:bg-[var(--surface-subtle)] hover:text-slate-700"
                 onClick={() => setOpen(false)}
                 aria-label="Close"
               >
@@ -97,7 +97,7 @@ export default function NewMonthButton({ existingMonthIds }: Props) {
                   const disabled = existingSet.has(id);
                   const isSelected = selectedMonth === idx;
                   const selectedStyle = isSelected
-                    ? { borderColor: "rgb(103, 93, 255)", borderWidth: 2 }
+                    ? { borderColor: "var(--accent)", borderWidth: 2 }
                     : undefined;
                   return (
                     <button
@@ -106,8 +106,8 @@ export default function NewMonthButton({ existingMonthIds }: Props) {
                         disabled
                           ? "text-slate-400 border-dashed cursor-not-allowed"
                           : isSelected
-                            ? "bg-white hover:border-[#675dff] hover:bg-[#f5f7fa]"
-                            : "hover:bg-[#f5f7fa] hover:border-[#94a3b8]"
+                            ? "bg-white hover:border-[var(--accent)] hover:bg-[var(--surface-subtle)]"
+                            : "hover:bg-[var(--surface-subtle)] hover:border-[#b8ad9f]"
                       }`}
                       onClick={() => handleSelect(idx)}
                       disabled={disabled}
