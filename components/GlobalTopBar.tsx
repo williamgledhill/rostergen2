@@ -43,18 +43,18 @@ export default function GlobalTopBar({ userName }: { userName?: string | null })
   }
 
   return (
-    <header className="sticky inset-x-0 top-0 z-30 h-14 w-full border-b border-[var(--border)] bg-[rgba(255,254,253,0.86)] px-4 backdrop-blur md:h-16 md:px-7">
+    <header className="sticky inset-x-0 top-0 z-30 h-14 w-full border-b border-[var(--border)] bg-white px-4 md:px-6">
       <div className="relative flex h-full w-full items-center justify-between">
         <button
           type="button"
-          className="flex h-9 w-9 items-center justify-center rounded-[10px] border border-[var(--border)] bg-[var(--surface)] text-[var(--ink)] shadow-[0_6px_16px_rgba(41,29,21,0.06)] transition hover:border-[#d4cbc2] hover:bg-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgba(57,36,147,0.18)]"
+          className="flex h-9 w-9 items-center justify-center rounded-[10px] border border-[var(--border)] bg-[var(--surface)] text-[var(--ink)] shadow-[0_4px_12px_rgba(16,24,40,0.06)] transition hover:border-[#d0d5dd] hover:bg-[var(--surface-subtle)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgba(51,34,139,0.18)]"
           onClick={toggleNav}
           aria-label="Toggle navigation"
         >
           <Menu className="h-5 w-5" aria-hidden="true" />
         </button>
 
-        <div className="ml-auto flex items-center gap-3 md:gap-5">
+        <div className="ml-auto flex items-center gap-3 md:gap-4">
           <button
             type="button"
             className="hidden h-8 items-center gap-2 text-[13px] font-semibold text-[var(--ink)] transition hover:text-[var(--accent)] md:inline-flex"
@@ -74,19 +74,19 @@ export default function GlobalTopBar({ userName }: { userName?: string | null })
           </button>
           <div className="relative" ref={profileRef}>
             <button
-              className="inline-flex h-10 items-center gap-2 rounded-full text-[var(--ink)] transition hover:text-[var(--accent)]"
+              className="inline-flex h-9 items-center gap-2 rounded-full text-[var(--ink)] transition hover:text-[var(--accent)]"
               onClick={() => setProfileOpen((open) => !open)}
               aria-label="Profile menu"
               aria-expanded={profileOpen}
             >
-              <span className="grid h-10 w-10 place-items-center rounded-full bg-[#ece8e1] text-[14px] font-bold" aria-hidden="true">
+              <span className="grid h-9 w-9 place-items-center rounded-full bg-[var(--surface-soft)] text-[13px] font-bold" aria-hidden="true">
                 {initials}
               </span>
               <ChevronDown className="hidden h-4 w-4 md:block" aria-hidden="true" />
               <span className="sr-only">Profile</span>
             </button>
             {profileOpen && (
-              <div className="absolute right-0 z-50 mt-3 w-44 overflow-hidden rounded-[12px] border border-[var(--border)] bg-[var(--surface)] shadow-[0_18px_40px_rgba(41,29,21,0.12)]">
+              <div className="absolute right-0 z-50 mt-3 w-44 overflow-hidden rounded-[12px] border border-[var(--border)] bg-[var(--surface)] shadow-[0_12px_30px_rgba(16,24,40,0.12)]">
                 <Link
                   className="block w-full px-4 py-3 text-left text-sm font-medium text-[var(--ink)] hover:bg-[var(--surface-subtle)]"
                   href="/settings#security"

@@ -141,17 +141,17 @@ export default function LoginView() {
       <main className="flex flex-1 items-center justify-center px-4 pb-10 pt-8 sm:px-5 sm:pb-12 sm:pt-6">
         <section className="w-full max-w-[360px] sm:max-w-[380px]">
           <div className="text-center">
-            <h1 className="font-serif text-[1.9rem] font-semibold text-[var(--ink)] sm:text-[2.35rem]">
+            <h1 className="text-[1.65rem] font-semibold text-[var(--ink)] sm:text-[2rem]">
               {requiresTwoFactor ? "Verify sign in" : "Welcome back"}
             </h1>
-            <p className="mt-3 text-[0.98rem] leading-7 text-[var(--muted-strong)]">
+            <p className="mt-2.5 text-[0.94rem] leading-6 text-[var(--muted-strong)]">
               {requiresTwoFactor
                 ? `Enter the authenticator code for ${twoFactorName || "your account"}. Recovery codes also work.`
                 : "Sign in to continue to your roster workspace."}
             </p>
           </div>
 
-          <form className="mt-7 space-y-4 sm:mt-8" onSubmit={handleLogin}>
+          <form className="mt-6 space-y-3.5" onSubmit={handleLogin}>
             {!requiresTwoFactor && (
               <>
                 <div>
@@ -165,7 +165,7 @@ export default function LoginView() {
                     value={email}
                     onChange={(event) => setEmail(event.target.value)}
                     disabled={isDisabled}
-                    className="h-[50px] w-full rounded-[12px] border border-[var(--border)] bg-[var(--surface)] px-4 text-[15px] text-[var(--ink)] outline-none transition placeholder:text-[#8b837a] focus:border-[rgba(57,36,147,0.55)] focus:ring-2 focus:ring-[rgba(57,36,147,0.16)] sm:h-[52px]"
+                    className="h-11 w-full rounded-[10px] border border-[var(--border)] bg-[var(--surface)] px-3.5 text-[14px] text-[var(--ink)] outline-none transition placeholder:text-[var(--muted)] focus:border-[rgba(51,34,139,0.42)] focus:ring-2 focus:ring-[rgba(51,34,139,0.12)]"
                     placeholder="Email"
                   />
                 </div>
@@ -181,7 +181,7 @@ export default function LoginView() {
                     value={password}
                     onChange={(event) => setPassword(event.target.value)}
                     disabled={isDisabled}
-                    className="h-[50px] w-full rounded-[12px] border border-[var(--border)] bg-[var(--surface)] px-4 pr-12 text-[15px] text-[var(--ink)] outline-none transition placeholder:text-[#8b837a] focus:border-[rgba(57,36,147,0.55)] focus:ring-2 focus:ring-[rgba(57,36,147,0.16)] sm:h-[52px]"
+                    className="h-11 w-full rounded-[10px] border border-[var(--border)] bg-[var(--surface)] px-3.5 pr-12 text-[14px] text-[var(--ink)] outline-none transition placeholder:text-[var(--muted)] focus:border-[rgba(51,34,139,0.42)] focus:ring-2 focus:ring-[rgba(51,34,139,0.12)]"
                     placeholder="Password"
                   />
                   <button
@@ -213,7 +213,7 @@ export default function LoginView() {
                   value={code}
                   onChange={(event) => setCode(event.target.value)}
                   disabled={isDisabled}
-                  className="h-[50px] w-full rounded-[12px] border border-[var(--border)] bg-[var(--surface)] px-4 text-[15px] tracking-[0.28em] text-[var(--ink)] outline-none transition placeholder:tracking-normal placeholder:text-[#8b837a] focus:border-[rgba(57,36,147,0.55)] focus:ring-2 focus:ring-[rgba(57,36,147,0.16)] sm:h-[52px]"
+                  className="h-11 w-full rounded-[10px] border border-[var(--border)] bg-[var(--surface)] px-3.5 text-[14px] tracking-[0.28em] text-[var(--ink)] outline-none transition placeholder:tracking-normal placeholder:text-[var(--muted)] focus:border-[rgba(51,34,139,0.42)] focus:ring-2 focus:ring-[rgba(51,34,139,0.12)]"
                   placeholder="123456 or recovery code"
                 />
               </div>
@@ -222,7 +222,7 @@ export default function LoginView() {
             <button
               type="submit"
               disabled={isDisabled}
-              className="inline-flex h-[50px] w-full items-center justify-center gap-2 rounded-[12px] border border-[var(--accent)] bg-[var(--accent)] px-5 text-[1rem] font-semibold text-white shadow-[0_8px_18px_rgba(57,36,147,0.18)] transition hover:border-[var(--accent-strong)] hover:bg-[var(--accent-strong)] disabled:cursor-not-allowed disabled:opacity-70 sm:h-[52px]"
+              className="inline-flex h-11 w-full items-center justify-center gap-2 rounded-[10px] border border-[var(--accent)] bg-[var(--accent)] px-5 text-sm font-semibold text-white shadow-[0_6px_14px_rgba(51,34,139,0.16)] transition hover:border-[var(--accent-strong)] hover:bg-[var(--accent-strong)] disabled:cursor-not-allowed disabled:opacity-70"
             >
               {submitting ? (
                 <>

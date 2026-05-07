@@ -3417,7 +3417,7 @@ export default function Grid({
                     onChange={(event) => setEmployeePickerQuery(event.target.value)}
                     placeholder="Search by name or email"
                     autoFocus
-                    className="h-10 w-full rounded-[var(--radius-md)] border border-[var(--border)] bg-[var(--surface)] pl-10 pr-3 text-[14px] text-[var(--ink)] shadow-[0_1px_0_rgba(41,29,21,0.02)] outline-none transition focus:border-[rgba(57,36,147,0.45)] focus:ring-2 focus:ring-[rgba(57,36,147,0.14)]"
+                    className="h-10 w-full rounded-[var(--radius-md)] border border-[var(--border)] bg-[var(--surface)] pl-10 pr-3 text-[14px] text-[var(--ink)] shadow-[0_1px_0_rgba(16,24,40,0.02)] outline-none transition focus:border-[rgba(51,34,139,0.42)] focus:ring-2 focus:ring-[rgba(51,34,139,0.12)]"
                   />
                 </div>
 
@@ -3438,7 +3438,7 @@ export default function Grid({
                             className={`flex w-full items-center justify-between gap-3 px-3 py-2.5 text-left transition ${
                               alreadyAdded
                                 ? "bg-emerald-50/45"
-                                : "hover:bg-[#f8faff]"
+                                : "hover:bg-[var(--surface-subtle)]"
                             }`}
                           >
                             <span className="min-w-0">
@@ -3481,7 +3481,7 @@ export default function Grid({
           </div>
         )}
       </div>
-      <aside className="w-[320px] min-w-[320px] rounded-[12px] border border-[var(--border)] bg-[var(--surface)] p-4 shadow-[0_18px_34px_rgba(41,29,21,0.06)]">
+      <aside className="w-[300px] min-w-[300px] rounded-[12px] border border-[var(--border)] bg-[var(--surface)] p-4 shadow-[0_8px_20px_rgba(16,24,40,0.04)]">
         <div className="flex items-start justify-between gap-3">
           <div>
             <div className="flex items-center gap-2 text-slate-900">

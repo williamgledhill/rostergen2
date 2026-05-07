@@ -237,7 +237,7 @@ function RostersView() {
           </div>
         </div>
 
-        <div className="inline-flex rounded-[10px] border border-[var(--border)] bg-[rgba(255,254,253,0.66)] p-1">
+        <div className="inline-flex rounded-[10px] border border-[var(--border)] bg-white p-1">
           <SpaLink
             href="/rosters"
             className="inline-flex h-9 min-w-[150px] items-center justify-center rounded-[7px] bg-[var(--accent-soft)] px-4 text-[13px] font-bold text-[var(--accent)]"

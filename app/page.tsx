@@ -11,7 +11,7 @@ const inter = Inter({
 export default function HomePage() {
   return (
     <div className={`${inter.className} min-h-screen bg-[var(--app-bg)] text-[var(--ink)]`}>
-      <header className="sticky top-0 z-50 border-b border-[var(--border)] bg-[rgba(255,254,253,0.84)] backdrop-blur">
+      <header className="sticky top-0 z-50 border-b border-[var(--border)] bg-white">
         <div className="mx-auto flex w-full max-w-6xl items-center justify-between gap-3 px-4 py-3 sm:px-10 sm:py-4">
           <Link
             href="/"
@@ -46,7 +46,7 @@ export default function HomePage() {
             </Link>
             <Link
               href="/signup"
-              className="inline-flex h-10 items-center rounded-[12px] bg-[var(--accent)] px-4 text-[0.95rem] font-semibold text-white shadow-[0_8px_18px_rgba(57,36,147,0.18)] transition hover:bg-[var(--accent-strong)] sm:h-11 sm:px-6 sm:text-sm"
+              className="inline-flex h-10 items-center rounded-[10px] bg-[var(--accent)] px-4 text-[0.95rem] font-semibold text-white shadow-[0_6px_14px_rgba(51,34,139,0.16)] transition hover:bg-[var(--accent-strong)] sm:px-5 sm:text-sm"
             >
               Get started
             </Link>
@@ -67,7 +67,7 @@ export default function HomePage() {
           <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
             <Link
               href="/signup"
-              className="inline-flex h-11 items-center gap-2 rounded-[12px] bg-[var(--accent)] px-6 text-sm font-semibold text-white shadow-[0_8px_18px_rgba(57,36,147,0.18)] transition hover:bg-[var(--accent-strong)]"
+              className="inline-flex h-10 items-center gap-2 rounded-[10px] bg-[var(--accent)] px-5 text-sm font-semibold text-white shadow-[0_6px_14px_rgba(51,34,139,0.16)] transition hover:bg-[var(--accent-strong)]"
             >
               Get started
               <ArrowRight className="h-4 w-4" />

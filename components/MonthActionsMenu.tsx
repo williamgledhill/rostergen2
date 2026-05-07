@@ -32,7 +32,7 @@ export default function MonthActionsMenu() {
       </button>
       {open && (
         <div
-          className="absolute right-0 z-10 mt-2 w-44 overflow-hidden rounded-[12px] border border-[var(--border)] bg-[var(--surface)] shadow-[0_18px_34px_rgba(41,29,21,0.08)]"
+          className="absolute right-0 z-10 mt-2 w-44 overflow-hidden rounded-[12px] border border-[var(--border)] bg-[var(--surface)] shadow-[0_12px_28px_rgba(16,24,40,0.10)]"
           role="menu"
         >
           <button
