@@ -3,7 +3,7 @@
 import { useMemo } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Download } from "lucide-react";
+import { CalendarDays, ChevronDown, Download } from "lucide-react";
 import type { RosterFile } from "@/lib/rosters";
 import { buildEditorHref } from "@/lib/editorPersistence";
 import { navigateWithinSpa, shouldHandleSpaClick } from "@/lib/spaNavigation";
@@ -38,10 +38,30 @@ export default function RosterTable({ rosters, footer }: Props) {
         <table className="data-table min-w-[900px]">
           <thead>
             <tr>
-              <th>Roster</th>
-              <th>Tours</th>
-              <th>People</th>
-              <th>Updated</th>
+              <th>
+                <span className="inline-flex items-center gap-2">
+                  Roster
+                  <ChevronDown className="h-3.5 w-3.5" aria-hidden="true" />
+                </span>
+              </th>
+              <th>
+                <span className="inline-flex items-center gap-2">
+                  Tours
+                  <ChevronDown className="h-3.5 w-3.5" aria-hidden="true" />
+                </span>
+              </th>
+              <th>
+                <span className="inline-flex items-center gap-2">
+                  People
+                  <ChevronDown className="h-3.5 w-3.5" aria-hidden="true" />
+                </span>
+              </th>
+              <th>
+                <span className="inline-flex items-center gap-2">
+                  Updated
+                  <ChevronDown className="h-3.5 w-3.5" aria-hidden="true" />
+                </span>
+              </th>
               <th aria-label="Actions" className="w-[92px]" />
             </tr>
           </thead>
@@ -62,10 +82,13 @@ export default function RosterTable({ rosters, footer }: Props) {
                   onClick={() => handleRowClick(r.id)}
                 >
                   <td className="align-middle">
-                    <div className="flex min-w-[320px] items-center gap-4">
+                    <div className="flex min-w-[360px] items-center gap-4">
+                      <span className="grid h-10 w-10 shrink-0 place-items-center rounded-[8px] bg-[var(--surface-subtle)] text-[var(--accent)]">
+                        <CalendarDays className="h-5 w-5" aria-hidden="true" />
+                      </span>
                       <Link
                         href={buildEditorHref(r.id)}
-                        className="block truncate text-[14px] font-semibold text-[var(--ink)] hover:underline group-hover:underline"
+                        className="block truncate text-[15px] font-bold text-[var(--ink)] hover:underline group-hover:underline"
                         onClick={(event) => {
                           event.stopPropagation();
                           const href = buildEditorHref(r.id);
@@ -76,13 +99,13 @@ export default function RosterTable({ rosters, footer }: Props) {
                       >
                         {r.title}
                       </Link>
-                      <span className={`status-badge ${status.className}`}>{status.label}</span>
+                      <span className={`status-badge shrink-0 ${status.className}`}>{status.label}</span>
                       {isCurrent && <span className="sr-only">Current roster</span>}
                     </div>
                   </td>
-                  <td className="align-middle">{r.tours} tours</td>
-                  <td className="align-middle">{r.people} people</td>
-                  <td className="align-middle text-[var(--muted-strong)]">{r.updated}</td>
+                  <td className="align-middle text-[15px]">{r.tours} tours</td>
+                  <td className="align-middle text-[15px]">{r.people} people</td>
+                  <td className="align-middle text-[15px] text-[var(--muted-strong)]">{r.updated}</td>
                   <td className="align-middle">
                     <button
                       type="button"

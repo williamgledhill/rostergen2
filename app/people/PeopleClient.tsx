@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Plus, X } from "lucide-react";
+import { ChevronDown, Plus, UserRound, X } from "lucide-react";
 import { ALL_DAYS, type DayKey, type Person, defaultSchedule } from "@/lib/people";
 import { navigateWithinSpa } from "@/lib/spaNavigation";
 import { preloadWorkspaceRoute, upsertCachedPerson } from "@/lib/workspaceData";
@@ -91,7 +91,7 @@ export default function PeopleClient({ initialPeople }: { initialPeople: Person[
 
   return (
     <div className="workspace-page">
-      <div className="flex w-full flex-col items-start space-y-5">
+      <div className="flex w-full flex-col items-start space-y-7">
         <div className="flex items-center justify-between w-full">
           <div>
             <h1 className="page-title">Staff</h1>
@@ -118,8 +118,18 @@ export default function PeopleClient({ initialPeople }: { initialPeople: Person[
               </colgroup>
               <thead className="text-[15px] text-slate-900">
                 <tr className="border-b border-[var(--border)]">
-                  <th className="px-4 py-4 text-left font-bold tracking-[0.01em]">Employee</th>
-                  <th className="px-4 py-4 text-left font-bold tracking-[0.01em]">Default days</th>
+                  <th className="px-4 py-4 text-left font-bold tracking-[0.01em]">
+                    <span className="inline-flex items-center gap-2">
+                      Employee
+                      <ChevronDown className="h-3.5 w-3.5" aria-hidden="true" />
+                    </span>
+                  </th>
+                  <th className="px-4 py-4 text-left font-bold tracking-[0.01em]">
+                    <span className="inline-flex items-center gap-2">
+                      Default days
+                      <ChevronDown className="h-3.5 w-3.5" aria-hidden="true" />
+                    </span>
+                  </th>
                 </tr>
               </thead>
               <tbody className="[&_tr:last-child]:border-b-0">
@@ -138,11 +148,14 @@ export default function PeopleClient({ initialPeople }: { initialPeople: Person[
                     }}
                   >
                     <td className="align-middle px-4 py-4">
-                      <div className="inline-flex items-center gap-2 text-[15px] font-medium text-slate-700">
+                      <div className="inline-flex min-w-0 items-center gap-4 text-[15px] font-bold text-[var(--ink)]">
+                        <span className="grid h-10 w-10 shrink-0 place-items-center rounded-[8px] bg-[var(--surface-subtle)] text-[var(--accent)]">
+                          <UserRound className="h-5 w-5" aria-hidden="true" />
+                        </span>
                         <span className="block truncate">{p.name}</span>
                       </div>
                     </td>
-                    <td className="align-middle px-4 py-4 text-[15px] font-medium text-slate-700">
+                    <td className="align-middle px-4 py-4 text-[15px] font-semibold text-[var(--muted-strong)]">
                       <span className="block truncate">{p.days || ""}</span>
                     </td>
                   </tr>

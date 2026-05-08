@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import React, { useEffect, useMemo, useRef, useState } from "react";
-import { Plus, RefreshCw, Sparkles } from "lucide-react";
+import { ExternalLink, Plus, Sparkles } from "lucide-react";
 import EditorClient from "@/app/editor/EditorClient";
 import PeopleClient from "@/app/people/PeopleClient";
 import PersonDetailClient from "@/app/people/[id]/PersonDetailClient";
@@ -27,7 +27,6 @@ import {
   loadTasksData,
   loadUpcomingRostersData,
   monthRosterDataKey,
-  notifyWorkspaceResourcesChanged,
   peopleDataKey,
   personDataKey,
   preloadWorkspaceRoute,
@@ -171,9 +170,11 @@ function SpaLink({
 function EmptyPage({ title, description }: { title: string; description: string }) {
   return (
     <div className="workspace-page">
-      <div className="space-y-3">
+      <div className="space-y-7">
         <h1 className="page-title">{title}</h1>
-        <p className="page-description">{description}</p>
+        <div className="surface-panel max-w-3xl px-5 py-5">
+          <p className="page-description">{description}</p>
+        </div>
       </div>
     </div>
   );
@@ -220,13 +221,9 @@ function RostersView() {
   if (state.status === "error") return <ErrorBlock message={state.error} />;
 
   const { settings, rosters } = state.data;
-  const regenerateRosters = () => {
-    void refreshUpcomingRostersData().then(() => notifyWorkspaceResourcesChanged([rosterDataKey()]));
-  };
-
   return (
     <div className="workspace-page">
-      <div className="flex w-full flex-col items-start space-y-5">
+      <div className="flex w-full flex-col items-start space-y-7">
         <div className="flex w-full items-start justify-between gap-3">
           <div>
             <h1 className="page-title">Upcoming Rosters</h1>
@@ -237,16 +234,16 @@ function RostersView() {
           </div>
         </div>
 
-        <div className="inline-flex rounded-[10px] border border-[var(--border)] bg-white p-1">
+        <div className="inline-flex overflow-hidden rounded-[8px] border border-[var(--border)] bg-white">
           <SpaLink
             href="/rosters"
-            className="inline-flex h-9 min-w-[150px] items-center justify-center rounded-[7px] bg-[var(--accent-soft)] px-4 text-[13px] font-bold text-[var(--accent)]"
+            className="inline-flex h-11 min-w-[190px] items-center justify-center bg-[var(--accent)] px-5 text-[15px] font-bold text-white"
           >
             Current Rosters
           </SpaLink>
           <SpaLink
             href="/rosters/old"
-            className="inline-flex h-9 min-w-[140px] items-center justify-center rounded-[7px] px-4 text-[13px] font-semibold text-[var(--ink)] transition hover:bg-[var(--surface-subtle)]"
+            className="inline-flex h-11 min-w-[165px] items-center justify-center px-5 text-[15px] font-semibold text-[var(--muted-strong)] transition hover:bg-[var(--surface-subtle)] hover:text-[var(--accent)]"
           >
             Old Rosters
           </SpaLink>
@@ -254,22 +251,19 @@ function RostersView() {
 
         <RosterTable rosters={rosters} />
 
-        <div className="soft-callout flex w-full flex-col gap-3 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
-          <div className="flex items-center gap-3 text-[13px] text-[var(--ink)]">
-            <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-[var(--accent-soft)] text-[var(--accent)]">
-              <Sparkles className="h-4 w-4" aria-hidden="true" />
-            </span>
-            <p>
-              Autogenerates {settings.upcomingDays} roster{settings.upcomingDays === 1 ? "" : "s"}.{" "}
-              <SpaLink href="/settings" className="font-semibold text-[var(--accent)] underline underline-offset-2">
-                Click to change
-              </SpaLink>
-            </p>
+        <div className="soft-callout flex w-full items-center gap-5 px-5 py-4">
+          <div className="grid h-12 w-12 shrink-0 place-items-center rounded-[8px] bg-[var(--accent)] text-white">
+            <Sparkles className="h-6 w-6" aria-hidden="true" />
           </div>
-          <button className="btn whitespace-nowrap" type="button" onClick={regenerateRosters}>
-            <RefreshCw className="h-4 w-4" aria-hidden="true" />
-            Regenerate now
-          </button>
+          <div className="min-w-0 text-[15px] font-medium text-[var(--accent)]">
+            <p>
+              Autogenerate {settings.upcomingDays} roster{settings.upcomingDays === 1 ? "" : "s"} based on your tours, staff and rules.
+            </p>
+            <SpaLink href="/settings" className="mt-1 inline-flex items-center gap-2 font-bold text-[var(--accent)] underline underline-offset-3">
+              Learn more
+              <ExternalLink className="h-4 w-4" aria-hidden="true" />
+            </SpaLink>
+          </div>
         </div>
       </div>
     </div>
@@ -289,7 +283,7 @@ function MonthRostersView({ month }: { month: string }) {
 
   return (
     <div className="workspace-page">
-      <div className="flex w-full flex-col items-start space-y-5">
+      <div className="flex w-full flex-col items-start space-y-7">
         <div className="w-full">
           <div className="flex w-full items-center justify-between">
             <div className="flex flex-col leading-tight">
@@ -456,7 +450,7 @@ export default function WorkspaceRouter({ user }: { user: AuthUser }) {
 
   return (
     <div className="workspace-page">
-      <div className="card max-w-xl p-5">
+      <div className="surface-panel max-w-xl p-5">
         <h1 className="text-xl font-semibold text-slate-900">Page not found</h1>
         <p className="mt-2 text-sm text-slate-600">This workspace view does not exist.</p>
         <SpaLink href="/rosters" className="btn mt-4 h-9 px-4">

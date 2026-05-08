@@ -2,7 +2,7 @@
 
 import React, { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Plus, X } from "lucide-react";
+import { ChevronDown, ClipboardList, Plus, X } from "lucide-react";
 import { navigateWithinSpa } from "@/lib/spaNavigation";
 import {
   invalidateWorkspaceResource,
@@ -142,7 +142,7 @@ export default function TasksClient({ initialTasks }: { initialTasks: TaskTempla
 
   return (
     <div className="workspace-page">
-      <div className="flex w-full flex-col items-start space-y-5">
+      <div className="flex w-full flex-col items-start space-y-7">
         <div className="flex items-center justify-between w-full">
           <div>
             <h1 className="page-title">Tasks</h1>
@@ -162,7 +162,12 @@ export default function TasksClient({ initialTasks }: { initialTasks: TaskTempla
               </colgroup>
               <thead className="text-[15px] text-slate-900">
                 <tr className="border-b border-[var(--border)]">
-                  <th className="px-4 py-4 text-left font-bold tracking-[0.01em]">Task</th>
+                  <th className="px-4 py-4 text-left font-bold tracking-[0.01em]">
+                    <span className="inline-flex items-center gap-2">
+                      Task
+                      <ChevronDown className="h-3.5 w-3.5" aria-hidden="true" />
+                    </span>
+                  </th>
                 </tr>
               </thead>
               <tbody className="[&_tr:last-child]:border-b-0">
@@ -181,13 +186,16 @@ export default function TasksClient({ initialTasks }: { initialTasks: TaskTempla
                     }}
                   >
                     <td className="align-middle px-4 py-4">
-                      <span className="flex min-w-0 items-center gap-3 text-[15px] font-medium text-slate-700">
-                        <span
-                          className="inline-block h-5 w-5 rounded-full border border-slate-400"
-                          style={{ backgroundColor: t.color || "#fff" }}
-                          aria-label={`Colour ${t.color || "default"}`}
-                          title={t.color || "default"}
-                        />
+                      <span className="flex min-w-0 items-center gap-4 text-[15px] font-bold text-[var(--ink)]">
+                        <span className="relative grid h-10 w-10 shrink-0 place-items-center rounded-[8px] bg-[var(--surface-subtle)] text-[var(--accent)]">
+                          <ClipboardList className="h-5 w-5" aria-hidden="true" />
+                          <span
+                            className="absolute -right-1 -top-1 h-4 w-4 rounded-full border border-white"
+                            style={{ backgroundColor: t.color || "#fff" }}
+                            aria-hidden="true"
+                            title={t.color || "default"}
+                          />
+                        </span>
                         <span className="truncate">{t.name}</span>
                       </span>
                     </td>

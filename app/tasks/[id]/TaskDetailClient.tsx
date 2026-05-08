@@ -68,12 +68,12 @@ function SectionCard({
   children: React.ReactNode;
 }) {
   return (
-    <section className="card overflow-hidden">
-      <div className="border-b border-[var(--border)] bg-[var(--surface-subtle)] px-4 py-2.5">
-        <h2 className="text-[18px] font-bold text-slate-900">{title}</h2>
-        {description ? <p className="mt-0.5 text-[13px] font-medium text-slate-600">{description}</p> : null}
+    <section className="surface-panel">
+      <div className="border-b border-[var(--border)] bg-[var(--surface-subtle)] px-5 py-4">
+        <h2 className="text-[18px] font-bold text-[var(--ink)]">{title}</h2>
+        {description ? <p className="mt-0.5 text-[13px] font-medium text-[var(--muted-strong)]">{description}</p> : null}
       </div>
-      <div className="p-3.5 sm:p-4">{children}</div>
+      <div className="p-4 sm:p-5">{children}</div>
     </section>
   );
 }
@@ -89,7 +89,7 @@ function FieldBlock({
 }) {
   return (
     <div className="space-y-1.5">
-      <label className="block text-[14px] font-semibold text-slate-900">{label}</label>
+        <label className="block text-[14px] font-semibold text-[var(--ink)]">{label}</label>
       {children}
       {hint ? <p className="text-[12px] font-medium leading-5 text-slate-500">{hint}</p> : null}
     </div>
@@ -391,7 +391,7 @@ export default function TaskDetailClient({ id, initialTask }: { id: string; init
 
   return (
     <div className="workspace-page">
-      <div className="flex w-full max-w-[1040px] flex-col gap-5">
+      <div className="flex w-full max-w-[1040px] flex-col gap-7">
         <div className="flex items-center gap-1 text-[14px]">
           <Link
             href="/tasks"

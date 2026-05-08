@@ -116,9 +116,9 @@ export default function LoginView() {
         <div className="mx-auto flex w-full max-w-6xl items-center justify-between gap-4">
           <Link
             href="/"
-            className="inline-flex items-center gap-3 font-serif text-lg font-bold uppercase leading-none text-[var(--ink)] transition hover:text-[var(--accent)]"
+            className="inline-flex items-center gap-3 text-[1rem] font-bold leading-[1.15] text-[var(--ink)] transition hover:text-[var(--accent)]"
           >
-            <span className="grid h-11 w-11 place-items-center rounded-full bg-[var(--accent)] text-[20px] text-white">RG</span>
+            <span className="grid h-12 w-12 place-items-center rounded-[8px] bg-[var(--accent)] text-[20px] text-white shadow-[0_10px_24px_rgba(6,26,88,0.16)]">RG</span>
             <span>
               Roster
               <br />
@@ -165,7 +165,7 @@ export default function LoginView() {
                     value={email}
                     onChange={(event) => setEmail(event.target.value)}
                     disabled={isDisabled}
-                    className="h-11 w-full rounded-[10px] border border-[var(--border)] bg-[var(--surface)] px-3.5 text-[14px] text-[var(--ink)] outline-none transition placeholder:text-[var(--muted)] focus:border-[rgba(51,34,139,0.42)] focus:ring-2 focus:ring-[rgba(51,34,139,0.12)]"
+                    className="h-11 w-full rounded-[8px] border border-[var(--border)] bg-[var(--surface)] px-3.5 text-[14px] text-[var(--ink)] outline-none transition placeholder:text-[var(--muted)] focus:border-[rgba(6,26,88,0.34)] focus:ring-2 focus:ring-[rgba(6,26,88,0.1)]"
                     placeholder="Email"
                   />
                 </div>
@@ -181,7 +181,7 @@ export default function LoginView() {
                     value={password}
                     onChange={(event) => setPassword(event.target.value)}
                     disabled={isDisabled}
-                    className="h-11 w-full rounded-[10px] border border-[var(--border)] bg-[var(--surface)] px-3.5 pr-12 text-[14px] text-[var(--ink)] outline-none transition placeholder:text-[var(--muted)] focus:border-[rgba(51,34,139,0.42)] focus:ring-2 focus:ring-[rgba(51,34,139,0.12)]"
+                    className="h-11 w-full rounded-[8px] border border-[var(--border)] bg-[var(--surface)] px-3.5 pr-12 text-[14px] text-[var(--ink)] outline-none transition placeholder:text-[var(--muted)] focus:border-[rgba(6,26,88,0.34)] focus:ring-2 focus:ring-[rgba(6,26,88,0.1)]"
                     placeholder="Password"
                   />
                   <button
@@ -213,7 +213,7 @@ export default function LoginView() {
                   value={code}
                   onChange={(event) => setCode(event.target.value)}
                   disabled={isDisabled}
-                  className="h-11 w-full rounded-[10px] border border-[var(--border)] bg-[var(--surface)] px-3.5 text-[14px] tracking-[0.28em] text-[var(--ink)] outline-none transition placeholder:tracking-normal placeholder:text-[var(--muted)] focus:border-[rgba(51,34,139,0.42)] focus:ring-2 focus:ring-[rgba(51,34,139,0.12)]"
+                  className="h-11 w-full rounded-[8px] border border-[var(--border)] bg-[var(--surface)] px-3.5 text-[14px] tracking-[0.28em] text-[var(--ink)] outline-none transition placeholder:tracking-normal placeholder:text-[var(--muted)] focus:border-[rgba(6,26,88,0.34)] focus:ring-2 focus:ring-[rgba(6,26,88,0.1)]"
                   placeholder="123456 or recovery code"
                 />
               </div>
@@ -222,7 +222,7 @@ export default function LoginView() {
             <button
               type="submit"
               disabled={isDisabled}
-              className="inline-flex h-11 w-full items-center justify-center gap-2 rounded-[10px] border border-[var(--accent)] bg-[var(--accent)] px-5 text-sm font-semibold text-white shadow-[0_6px_14px_rgba(51,34,139,0.16)] transition hover:border-[var(--accent-strong)] hover:bg-[var(--accent-strong)] disabled:cursor-not-allowed disabled:opacity-70"
+              className="inline-flex h-11 w-full items-center justify-center gap-2 rounded-[8px] border border-[var(--accent)] bg-[var(--accent)] px-5 text-sm font-semibold text-white shadow-[0_9px_18px_rgba(6,26,88,0.18)] transition hover:border-[var(--accent-strong)] hover:bg-[var(--accent-strong)] disabled:cursor-not-allowed disabled:opacity-70"
             >
               {submitting ? (
                 <>

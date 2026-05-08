@@ -43,6 +43,7 @@ export default function AppShell({
           <SideNav
             open={navOpen}
             mobile={isMobile}
+            onToggleNav={toggleNav}
             onNavigate={() => {
               if (isMobile) setNavOpen(false);
             }}

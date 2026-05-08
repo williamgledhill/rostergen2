@@ -15,9 +15,9 @@ export default function HomePage() {
         <div className="mx-auto flex w-full max-w-6xl items-center justify-between gap-3 px-4 py-3 sm:px-10 sm:py-4">
           <Link
             href="/"
-            className="inline-flex items-center gap-3 font-serif text-[1.2rem] font-bold uppercase leading-none text-[var(--ink)] sm:text-[1.35rem]"
+            className="inline-flex items-center gap-3 text-[1rem] font-bold leading-[1.15] text-[var(--ink)] sm:text-[1.05rem]"
           >
-            <span className="grid h-11 w-11 place-items-center rounded-full bg-[var(--accent)] text-[20px] text-white">RG</span>
+            <span className="grid h-12 w-12 place-items-center rounded-[8px] bg-[var(--accent)] text-[20px] text-white shadow-[0_10px_24px_rgba(6,26,88,0.16)]">RG</span>
             <span>
               Roster
               <br />
@@ -46,7 +46,7 @@ export default function HomePage() {
             </Link>
             <Link
               href="/signup"
-              className="inline-flex h-10 items-center rounded-[10px] bg-[var(--accent)] px-4 text-[0.95rem] font-semibold text-white shadow-[0_6px_14px_rgba(51,34,139,0.16)] transition hover:bg-[var(--accent-strong)] sm:px-5 sm:text-sm"
+              className="inline-flex h-10 items-center rounded-[8px] bg-[var(--accent)] px-4 text-[0.95rem] font-semibold text-white shadow-[0_9px_18px_rgba(6,26,88,0.18)] transition hover:bg-[var(--accent-strong)] sm:px-5 sm:text-sm"
             >
               Get started
             </Link>
@@ -56,7 +56,7 @@ export default function HomePage() {
 
       <main className="mx-auto w-full max-w-6xl px-4 pb-20 sm:px-10">
         <section id="hero" className="hero-copy-animate mx-auto max-w-3xl py-20 text-center sm:py-24">
-          <h1 className="font-serif text-[2rem] font-semibold leading-[1.05] text-[var(--ink)] sm:text-[3.4rem] lg:text-[4rem]">
+          <h1 className="text-[2rem] font-extrabold leading-[1.05] text-[var(--ink)] sm:text-[3.4rem] lg:text-[4rem]">
             Create rosters in seconds
           </h1>
 
@@ -67,7 +67,7 @@ export default function HomePage() {
           <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
             <Link
               href="/signup"
-              className="inline-flex h-10 items-center gap-2 rounded-[10px] bg-[var(--accent)] px-5 text-sm font-semibold text-white shadow-[0_6px_14px_rgba(51,34,139,0.16)] transition hover:bg-[var(--accent-strong)]"
+              className="inline-flex h-10 items-center gap-2 rounded-[8px] bg-[var(--accent)] px-5 text-sm font-semibold text-white shadow-[0_9px_18px_rgba(6,26,88,0.18)] transition hover:bg-[var(--accent-strong)]"
             >
               Get started
               <ArrowRight className="h-4 w-4" />

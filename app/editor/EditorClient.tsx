@@ -113,7 +113,7 @@ export default function EditorClient({
 
   return (
     <div className="workspace-page overflow-x-hidden">
-      <div className="flex w-full flex-col gap-5">
+      <div className="flex w-full flex-col gap-7">
         <div className="flex flex-col leading-tight">
           <h1 className="page-title break-words">{dayLabel}</h1>
           <p className="page-description mt-1.5">Edit coverage, adjust hours, and export this day&apos;s roster.</p>

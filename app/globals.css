@@ -3,29 +3,29 @@
 @tailwind utilities;
 
 :root{
-  --blk:#111827;
-  --ink:#101828;
-  --app-bg:#ffffff;
+  --blk:#06123d;
+  --ink:#061a4d;
+  --app-bg:#f8fbff;
   --canvas:#ffffff;
   --frame-surface:#ffffff;
-  --frame-border:#e5e7eb;
-  --border:#e5e7eb;
-  --muted:#667085;
-  --muted-strong:#344054;
+  --frame-border:#dfe6f1;
+  --border:#dfe6f1;
+  --muted:#6c7896;
+  --muted-strong:#405174;
   --surface:#ffffff;
-  --surface-subtle:#f8fafc;
-  --surface-soft:#f4f4f5;
-  --accent:#33228b;
-  --accent-strong:#25156f;
-  --accent-soft:#f4f3ff;
-  --accent-border:#ddd6fe;
-  --success:#067647;
-  --success-bg:#ecfdf3;
-  --warning:#c2410c;
-  --warning-bg:#fff7ed;
-  --info:#175cd3;
-  --info-bg:#eff8ff;
-  --radius-md: 10px;
+  --surface-subtle:#f7faff;
+  --surface-soft:#eaf2ff;
+  --accent:#061a58;
+  --accent-strong:#020d3a;
+  --accent-soft:#edf4ff;
+  --accent-border:#d6e6ff;
+  --success:#087443;
+  --success-bg:#ecfdf5;
+  --warning:#ff6a00;
+  --warning-bg:#fff6ef;
+  --info:#006be6;
+  --info-bg:#eef7ff;
+  --radius-md: 8px;
   --radius-lg: 12px;
   --timew: 130px;
   --empw: 170px;
@@ -44,6 +44,9 @@ body {
   font-family: "Inter", "Segoe UI", "Helvetica Neue", Arial, sans-serif;
   margin: 0;
   color: var(--ink);
+  background:
+    radial-gradient(circle at 34% 18%, rgba(213, 228, 255, 0.46), transparent 28rem),
+    linear-gradient(180deg, #fbfdff 0%, var(--app-bg) 100%);
 }
 
 /* headings */
@@ -58,56 +61,59 @@ h1, h2 {
 
 /* atoms */
 .btn {
-  @apply inline-flex items-center justify-center gap-2 border font-medium rounded-md text-slate-900;
+  @apply inline-flex items-center justify-center gap-2 border font-medium text-slate-900;
   background: #ffffff;
   border-color: var(--border);
-  box-shadow: 0 1px 2px rgba(16, 24, 40, 0.04);
+  box-shadow: 0 4px 14px rgba(6, 26, 77, 0.04);
   transition: all 0.15s ease;
-  border-radius: 9px;
+  border-radius: 8px;
   font-size: 13px;
   height: 36px;
   padding: 0 12px;
+  color: var(--ink);
 }
 .btn:hover {
-  background: #f9fafb;
-  border-color: #d0d5dd;
-  box-shadow: 0 6px 14px rgba(16, 24, 40, 0.06);
+  background: var(--surface-subtle);
+  border-color: #cdd8e8;
+  box-shadow: 0 8px 18px rgba(6, 26, 77, 0.07);
 }
 .btn-primary {
   @apply text-white inline-flex items-center justify-center gap-2;
   background: var(--accent);
   border-color: var(--accent);
-  border-radius: 9px;
-  box-shadow: 0 6px 14px rgba(51, 34, 139, 0.16);
+  border-radius: 8px;
+  box-shadow: 0 9px 18px rgba(6, 26, 88, 0.18);
   min-width: 0;
   height: 36px;
   padding: 0 12px;
   font-size: 13px;
   font-weight: 500;
 }
-.btn-primary:hover { background: var(--accent-strong); box-shadow: 0 8px 18px rgba(51, 34, 139, 0.22); }
+.btn-primary:hover { background: var(--accent-strong); box-shadow: 0 10px 22px rgba(6, 26, 88, 0.24); }
 .badge {
-  @apply inline-flex items-center gap-2 px-2 py-1 rounded-full text-xs font-semibold;
+  @apply inline-flex items-center gap-2 px-2 py-1 text-xs font-semibold;
   background: var(--accent-soft);
   color: var(--accent);
   border: 1px solid var(--accent-border);
+  border-radius: 7px;
 }
 .card {
   background: #ffffff;
-  border-radius: 12px;
+  border-radius: var(--radius-lg);
   border: 1px solid var(--border);
-  box-shadow: 0 8px 20px rgba(16, 24, 40, 0.04);
+  box-shadow: 0 10px 28px rgba(6, 26, 77, 0.04);
 }
 .input {
   @apply px-3 py-2 focus:outline-none;
   background: #ffffff;
   border: 1px solid var(--border);
-  border-radius: 10px;
-  box-shadow: 0 1px 0 rgba(16, 24, 40, 0.02);
+  border-radius: 8px;
+  box-shadow: 0 1px 0 rgba(6, 26, 77, 0.02);
+  color: var(--ink);
 }
 .input:focus {
-  border-color: rgba(51, 34, 139, 0.42);
-  box-shadow: 0 0 0 3px rgba(51, 34, 139, 0.11);
+  border-color: rgba(6, 26, 88, 0.34);
+  box-shadow: 0 0 0 3px rgba(6, 26, 88, 0.09);
 }
 
 input[type="checkbox"] {
@@ -169,12 +175,12 @@ input[type="checkbox"]::after {
 
 .workspace-main {
   flex: 1;
-  padding: 24px 28px 32px;
+  padding: 42px 48px 36px;
 }
 
 .workspace-container {
   width: 100%;
-  max-width: 1440px;
+  max-width: 1530px;
 }
 
 .workspace-page {
@@ -189,24 +195,26 @@ input[type="checkbox"]::after {
 .page-title {
   color: var(--ink);
   font-family: inherit;
-  font-size: clamp(1.35rem, 1.35vw, 1.75rem);
-  font-weight: 700;
-  line-height: 1.2;
+  font-size: clamp(2rem, 2.35vw, 2.55rem);
+  font-weight: 800;
+  line-height: 1.08;
+  letter-spacing: 0;
 }
 
 .page-description {
   color: var(--muted);
-  font-size: 13px;
+  font-size: 14px;
   line-height: 1.5;
+  font-weight: 500;
 }
 
 .surface-panel {
   width: 100%;
   overflow: hidden;
   border: 1px solid var(--border);
-  border-radius: 12px;
+  border-radius: var(--radius-lg);
   background: #ffffff;
-  box-shadow: 0 8px 20px rgba(16, 24, 40, 0.04);
+  box-shadow: 0 10px 30px rgba(6, 26, 77, 0.035);
 }
 
 .data-table {
@@ -216,22 +224,23 @@ input[type="checkbox"]::after {
 }
 
 .data-table thead {
-  background: var(--surface-subtle);
+  background: linear-gradient(180deg, #ffffff 0%, #fbfdff 100%);
   color: var(--muted-strong);
 }
 
 .data-table th {
-  padding: 13px 24px;
+  padding: 17px 22px;
   text-align: left;
   font-size: 13px;
   font-weight: 600;
+  border-bottom: 1px solid var(--border);
 }
 
 .data-table td {
-  padding: 14px 24px;
+  padding: 13px 22px;
   border-top: 1px solid var(--border);
   color: var(--ink);
-  font-weight: 500;
+  font-weight: 600;
 }
 
 .data-table tbody tr {
@@ -239,22 +248,23 @@ input[type="checkbox"]::after {
 }
 
 .data-table tbody tr:hover {
-  background: #f9fafb;
+  background: #f8fbff;
 }
 
 .table-footer {
   border-top: 1px solid var(--border);
-  background: var(--surface-subtle);
+  background: #fbfdff;
   padding: 11px 16px;
   color: var(--muted);
   font-size: 13px;
+  font-weight: 500;
 }
 
 .soft-callout {
-  border: 1px solid var(--border);
+  border: 1px solid var(--accent-border);
   border-radius: 12px;
-  background: #ffffff;
-  box-shadow: 0 8px 20px rgba(16, 24, 40, 0.04);
+  background: rgba(248, 251, 255, 0.78);
+  box-shadow: 0 10px 30px rgba(6, 26, 77, 0.03);
 }
 
 .status-badge {
@@ -263,44 +273,48 @@ input[type="checkbox"]::after {
   height: 20px;
   border-radius: 6px;
   padding: 0 8px;
-  font-size: 10px;
+  font-size: 11px;
   font-weight: 700;
   text-transform: uppercase;
   line-height: 1;
+  border: 1px solid transparent;
 }
 
 .status-badge-published {
   background: var(--success-bg);
   color: var(--success);
+  border-color: #bfead1;
 }
 
 .status-badge-empty {
   background: var(--warning-bg);
   color: var(--warning);
+  border-color: #ffd9bf;
 }
 
 .status-badge-draft {
   background: var(--info-bg);
   color: var(--info);
+  border-color: #cbe4ff;
 }
 
 .icon-button {
   display: inline-flex;
-  height: 34px;
-  width: 34px;
+  height: 42px;
+  width: 52px;
   align-items: center;
   justify-content: center;
   border: 1px solid var(--border);
-  border-radius: 9px;
+  border-radius: 8px;
   background: #ffffff;
   color: var(--ink);
   transition: all 140ms ease;
 }
 
 .icon-button:hover {
-  background: #f9fafb;
-  border-color: #d0d5dd;
-  box-shadow: 0 6px 14px rgba(16, 24, 40, 0.06);
+  background: var(--surface-subtle);
+  border-color: #cdd8e8;
+  box-shadow: 0 8px 18px rgba(6, 26, 77, 0.07);
 }
 
 .grid-outer { position:relative; }
@@ -362,7 +376,7 @@ input[type="checkbox"]::after {
   }
 
   .workspace-main {
-    padding: 18px 14px 26px;
+    padding: 22px 14px 28px;
   }
 
   .data-table th,

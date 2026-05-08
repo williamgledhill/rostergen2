@@ -3172,7 +3172,7 @@ export default function Grid({
   const firstEmployeeCol = employeeCols[0]?.col;
   const selectedTaskCol = tasks.find((t) => t.id === selected)?.col ?? null;
   const emphasizedCol = selectedTaskCol;
-  const gridLineColor = "rgba(71,85,105,0.98)";
+  const gridLineColor = "rgba(126,145,178,0.92)";
   const lastGridRow = maxRowEx - 1;
   const hasToolbar = toolbar != null;
   const schoolTourCount = schoolTours.length;
@@ -3181,8 +3181,8 @@ export default function Grid({
     <div className="flex w-full items-start gap-4 overflow-x-auto">
       <div
         ref={containerRef}
-        className="card p-0 inline-block overflow-hidden"
-        style={{ borderColor: gridLineColor }}
+        className="surface-panel inline-block p-0"
+        style={{ borderColor: gridLineColor, width: "fit-content" }}
         onClick={() => setSelected(undefined)}
       >
       {toolbar}
@@ -3417,7 +3417,7 @@ export default function Grid({
                     onChange={(event) => setEmployeePickerQuery(event.target.value)}
                     placeholder="Search by name or email"
                     autoFocus
-                    className="h-10 w-full rounded-[var(--radius-md)] border border-[var(--border)] bg-[var(--surface)] pl-10 pr-3 text-[14px] text-[var(--ink)] shadow-[0_1px_0_rgba(16,24,40,0.02)] outline-none transition focus:border-[rgba(51,34,139,0.42)] focus:ring-2 focus:ring-[rgba(51,34,139,0.12)]"
+                    className="h-10 w-full rounded-[var(--radius-md)] border border-[var(--border)] bg-[var(--surface)] pl-10 pr-3 text-[14px] text-[var(--ink)] shadow-[0_1px_0_rgba(6,26,77,0.02)] outline-none transition focus:border-[rgba(6,26,88,0.34)] focus:ring-2 focus:ring-[rgba(6,26,88,0.1)]"
                   />
                 </div>
 
@@ -3481,7 +3481,7 @@ export default function Grid({
           </div>
         )}
       </div>
-      <aside className="w-[300px] min-w-[300px] rounded-[12px] border border-[var(--border)] bg-[var(--surface)] p-4 shadow-[0_8px_20px_rgba(16,24,40,0.04)]">
+      <aside className="w-[300px] min-w-[300px] rounded-[12px] border border-[var(--border)] bg-[var(--surface)] p-4 shadow-[0_10px_28px_rgba(6,26,77,0.04)]">
         <div className="flex items-start justify-between gap-3">
           <div>
             <div className="flex items-center gap-2 text-slate-900">

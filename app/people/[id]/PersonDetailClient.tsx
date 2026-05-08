@@ -221,7 +221,7 @@ export default function PersonDetailClient({ id, initialPerson }: { id: string; 
 
   return (
     <div className="workspace-page">
-      <div className="space-y-5">
+      <div className="space-y-7">
         <div className="flex w-full flex-col gap-2">
           <div className="flex flex-col leading-tight">
             <h1 className="page-title break-words">{formatTitle(person.name)}</h1>
@@ -254,12 +254,12 @@ export default function PersonDetailClient({ id, initialPerson }: { id: string; 
           {notice && <p className="mt-2 text-sm text-slate-600">{notice}</p>}
         </div>
 
-        <div className="card overflow-hidden">
-          <div className="border-b border-[var(--border)] bg-[var(--surface-subtle)] px-4 py-3">
+        <div className="surface-panel">
+          <div className="border-b border-[var(--border)] bg-[var(--surface-subtle)] px-5 py-4">
             <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
               <div>
-                <h2 className="text-lg font-semibold">Fortnight Schedule</h2>
-                <p className="text-sm text-slate-600">Set both weeks in one view. Weeks alternate every 7 days.</p>
+                <h2 className="text-lg font-bold text-[var(--ink)]">Fortnight Schedule</h2>
+                <p className="text-sm font-medium text-[var(--muted-strong)]">Set both weeks in one view. Weeks alternate every 7 days.</p>
               </div>
               <div className="flex flex-wrap items-center gap-2">
                 <label className="text-xs font-semibold uppercase tracking-[0.1em] text-slate-500">Cycle start</label>

@@ -198,7 +198,7 @@ export default function SettingsClient({
 
   return (
     <div className="workspace-page">
-      <div className="flex w-full flex-col items-start space-y-5">
+      <div className="flex w-full flex-col items-start space-y-7">
         <div>
           <h1 className="page-title">Settings</h1>
           <p className="page-description mt-1.5">Security and roster defaults.</p>
@@ -206,17 +206,17 @@ export default function SettingsClient({
         </div>
 
         <div id="security" className="surface-panel">
-          <div className="px-4 py-3 border-b border-[var(--border)] space-y-1">
-            <h2 className="text-lg font-semibold">Two-Factor Authentication</h2>
-            <p className="text-sm text-slate-600">
+          <div className="space-y-1 border-b border-[var(--border)] bg-[var(--surface-subtle)] px-5 py-4">
+            <h2 className="text-lg font-bold text-[var(--ink)]">Two-Factor Authentication</h2>
+            <p className="text-sm font-medium text-[var(--muted-strong)]">
               Protects the current account with an authenticator app and recovery codes.
             </p>
           </div>
-          <div className="px-4 py-4 space-y-4 text-sm">
-            <div className="rounded-md border border-slate-200 bg-slate-50 px-3 py-3">
-              <div className="font-semibold text-slate-800">{sessionUser?.name || "Current user"}</div>
-              <div className="text-slate-600">{sessionUser?.email || "Loading..."}</div>
-              <div className="mt-1 text-xs uppercase tracking-[0.12em] text-slate-500">
+          <div className="space-y-4 px-5 py-5 text-sm">
+            <div className="rounded-[8px] border border-[var(--border)] bg-[var(--surface-subtle)] px-4 py-4">
+              <div className="font-bold text-[var(--ink)]">{sessionUser?.name || "Current user"}</div>
+              <div className="font-medium text-[var(--muted-strong)]">{sessionUser?.email || "Loading..."}</div>
+              <div className="mt-1 text-xs font-bold uppercase tracking-[0.12em] text-[var(--muted)]">
                 {mfaStatus.enabled ? "2FA enabled" : mfaStatus.setupPending ? "Setup pending" : "2FA not enabled"}
               </div>
             </div>
@@ -333,9 +333,9 @@ export default function SettingsClient({
         </div>
 
         <div className="surface-panel">
-          <div className="px-4 py-3 border-b border-[var(--border)] space-y-3">
-            <h2 className="text-lg font-semibold">Default Hours</h2>
-            <p className="text-sm text-slate-600">Used when creating or opening a roster day.</p>
+          <div className="space-y-3 border-b border-[var(--border)] bg-[var(--surface-subtle)] px-5 py-4">
+            <h2 className="text-lg font-bold text-[var(--ink)]">Default Hours</h2>
+            <p className="text-sm font-medium text-[var(--muted-strong)]">Used when creating or opening a roster day.</p>
             <div className="flex items-center gap-3 pt-1">
               <label className="text-sm font-semibold" htmlFor="upcoming-days">Upcoming roster days</label>
               <input
@@ -353,14 +353,14 @@ export default function SettingsClient({
             </div>
           </div>
           <div className="divide-y divide-[var(--border)]">
-            <div className="grid grid-cols-[160px,1fr,1fr] gap-3 bg-[var(--surface-subtle)] px-4 py-2 text-[12px] font-semibold text-slate-700">
+            <div className="grid grid-cols-[160px,1fr,1fr] gap-3 bg-white px-5 py-3 text-[12px] font-bold text-[var(--muted-strong)]">
               <span>Day</span>
               <span>From</span>
               <span>To</span>
             </div>
             {DAY_KEYS.map((day) => (
-              <div key={day} className="grid grid-cols-[160px,1fr,1fr] items-center gap-3 px-4 py-3">
-                <span className="text-sm font-normal text-slate-700">{DAY_LABELS[day]}</span>
+              <div key={day} className="grid grid-cols-[160px,1fr,1fr] items-center gap-3 px-5 py-3">
+                <span className="text-sm font-semibold text-[var(--ink)]">{DAY_LABELS[day]}</span>
                 <input
                   type="time"
                   className="input text-[14px] w-[140px]"
@@ -382,7 +382,7 @@ export default function SettingsClient({
               </div>
             ))}
           </div>
-          <div className="px-4 py-3 flex items-center justify-between">
+          <div className="flex items-center justify-between px-5 py-4">
             {invalidDays.length > 0 ? (
               <span className="text-xs text-red-600">End time must be after start time.</span>
             ) : !isAdmin ? (
