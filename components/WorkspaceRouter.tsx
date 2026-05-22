@@ -9,6 +9,7 @@ import PersonDetailClient from "@/app/people/[id]/PersonDetailClient";
 import SettingsClient from "@/app/settings/SettingsClient";
 import TaskDetailClient from "@/app/tasks/[id]/TaskDetailClient";
 import TasksClient from "@/app/tasks/TasksClient";
+import ToursClient from "@/app/tours/ToursClient";
 import RosterTable from "@/components/RosterTable";
 import { buildEditorHref } from "@/lib/editorPersistence";
 import { formatLocalId, parseLocalId } from "@/lib/dateUtils";
@@ -20,11 +21,13 @@ import {
   editorDataKey,
   loadEditorData,
   loadMonthRostersData,
+  loadOldRostersData,
   loadPeopleData,
   loadPersonData,
   loadSettingsData,
   loadTaskData,
   loadTasksData,
+  loadToursData,
   loadUpcomingRostersData,
   monthRosterDataKey,
   peopleDataKey,
@@ -33,23 +36,29 @@ import {
   readCachedResource,
   refreshEditorData,
   refreshMonthRostersData,
+  refreshOldRostersData,
   refreshPeopleData,
   refreshPersonData,
   refreshSettingsData,
   refreshTaskData,
   refreshTasksData,
+  refreshToursData,
   refreshUpcomingRostersData,
+  oldRosterDataKey,
   rosterDataKey,
   settingsDataKey,
   isWorkspaceResourceAffected,
   subscribeWorkspaceResourceChanges,
   taskDataKey,
   tasksDataKey,
+  toursDataKey,
   type EditorPayload,
   type SettingsPayload,
   type UpcomingPayload,
 } from "@/lib/workspaceData";
 import type { TaskTemplate } from "@/lib/taskTemplates";
+import type { SchoolTour } from "@/lib/schoolTourTypes";
+import { isSchoolTourTask } from "@/lib/schoolTourTypes";
 
 type ResourceState<T> =
   | { status: "loading"; data: null; error: null }
@@ -211,60 +220,92 @@ function hasMeaningfulSavedLayout(roster: { employees?: any[]; tasks?: any[] } |
   if (!roster) return false;
   const employees = Array.isArray(roster.employees) ? roster.employees : [];
   const tasks = Array.isArray(roster.tasks) ? roster.tasks : [];
-  return employees.length > 0 || tasks.length > 0;
+  return employees.length > 0 || tasks.some((task) => !isSchoolTourTask(task));
 }
 
-function RostersView() {
+type RosterTableMode = "current" | "old";
+
+function tabClassName(active: boolean) {
+  return active
+    ? "inline-flex h-11 min-w-[190px] items-center justify-center bg-[var(--accent)] px-5 text-[15px] font-bold text-white"
+    : "inline-flex h-11 min-w-[165px] items-center justify-center px-5 text-[15px] font-semibold text-[var(--muted-strong)] transition hover:bg-[var(--surface-subtle)] hover:text-[var(--accent)]";
+}
+
+function OldRosterTable() {
+  const state = useResource<RosterFile[]>(oldRosterDataKey(), loadOldRostersData, refreshOldRostersData);
+
+  if (state.status === "loading") return <LoadingBlock label="Loading old rosters..." />;
+  if (state.status === "error") return <ErrorBlock message={state.error} />;
+
+  return <RosterTable rosters={state.data} emptyMessage="No old saved rosters yet." />;
+}
+
+function RostersView({ initialMode = "current" }: { initialMode?: RosterTableMode }) {
+  const [mode, setMode] = useState<RosterTableMode>(initialMode);
   const state = useResource<UpcomingPayload>(rosterDataKey(), loadUpcomingRostersData, refreshUpcomingRostersData);
+
+  useEffect(() => {
+    setMode(initialMode);
+  }, [initialMode]);
 
   if (state.status === "loading") return <LoadingBlock label="Loading rosters..." />;
   if (state.status === "error") return <ErrorBlock message={state.error} />;
 
   const { settings, rosters } = state.data;
+  const isOld = mode === "old";
   return (
     <div className="workspace-page">
       <div className="flex w-full flex-col items-start space-y-7">
         <div className="flex w-full items-start justify-between gap-3">
           <div>
-            <h1 className="page-title">Upcoming Rosters</h1>
+            <h1 className="page-title">{isOld ? "Old Rosters" : "Upcoming Rosters"}</h1>
             <p className="page-description mt-1.5">
-              Review the next {settings.upcomingDays} roster{settings.upcomingDays === 1 ? "" : "s"} and jump
-              straight into the editor.
+              {isOld
+                ? "Review saved rosters from previous dates and jump straight into the editor."
+                : `Review the next ${settings.upcomingDays} roster${settings.upcomingDays === 1 ? "" : "s"} and jump straight into the editor.`}
             </p>
           </div>
         </div>
 
         <div className="inline-flex overflow-hidden rounded-[8px] border border-[var(--border)] bg-white">
-          <SpaLink
-            href="/rosters"
-            className="inline-flex h-11 min-w-[190px] items-center justify-center bg-[var(--accent)] px-5 text-[15px] font-bold text-white"
+          <button
+            type="button"
+            className={tabClassName(mode === "current")}
+            aria-pressed={mode === "current"}
+            onClick={() => setMode("current")}
           >
             Current Rosters
-          </SpaLink>
-          <SpaLink
-            href="/rosters/old"
-            className="inline-flex h-11 min-w-[165px] items-center justify-center px-5 text-[15px] font-semibold text-[var(--muted-strong)] transition hover:bg-[var(--surface-subtle)] hover:text-[var(--accent)]"
+          </button>
+          <button
+            type="button"
+            className={tabClassName(mode === "old")}
+            aria-pressed={mode === "old"}
+            onMouseEnter={() => loadOldRostersData().catch(() => undefined)}
+            onFocus={() => loadOldRostersData().catch(() => undefined)}
+            onClick={() => setMode("old")}
           >
             Old Rosters
-          </SpaLink>
+          </button>
         </div>
 
-        <RosterTable rosters={rosters} />
+        {isOld ? <OldRosterTable /> : <RosterTable rosters={rosters} />}
 
-        <div className="soft-callout flex w-full items-center gap-5 px-5 py-4">
-          <div className="grid h-12 w-12 shrink-0 place-items-center rounded-[8px] bg-[var(--accent)] text-white">
-            <Sparkles className="h-6 w-6" aria-hidden="true" />
+        {!isOld && (
+          <div className="soft-callout flex w-full items-center gap-5 px-5 py-4">
+            <div className="grid h-12 w-12 shrink-0 place-items-center rounded-[8px] bg-[var(--accent)] text-white">
+              <Sparkles className="h-6 w-6" aria-hidden="true" />
+            </div>
+            <div className="min-w-0 text-[15px] font-medium text-[var(--accent)]">
+              <p>
+                Autogenerate {settings.upcomingDays} roster{settings.upcomingDays === 1 ? "" : "s"} based on your tours, staff and rules.
+              </p>
+              <SpaLink href="/settings" className="mt-1 inline-flex items-center gap-2 font-bold text-[var(--accent)] underline underline-offset-3">
+                Learn more
+                <ExternalLink className="h-4 w-4" aria-hidden="true" />
+              </SpaLink>
+            </div>
           </div>
-          <div className="min-w-0 text-[15px] font-medium text-[var(--accent)]">
-            <p>
-              Autogenerate {settings.upcomingDays} roster{settings.upcomingDays === 1 ? "" : "s"} based on your tours, staff and rules.
-            </p>
-            <SpaLink href="/settings" className="mt-1 inline-flex items-center gap-2 font-bold text-[var(--accent)] underline underline-offset-3">
-              Learn more
-              <ExternalLink className="h-4 w-4" aria-hidden="true" />
-            </SpaLink>
-          </div>
-        </div>
+        )}
       </div>
     </div>
   );
@@ -322,7 +363,7 @@ function EditorView({ dateId }: { dateId?: string }) {
   const savedTasks = Array.isArray(savedRoster?.tasks) ? savedRoster!.tasks : [];
   const hasSavedLayout = hasMeaningfulSavedLayout(savedRoster);
   const baseEmployees = hasSavedLayout ? savedEmployees : defaultEmployees;
-  const baseTasks = hasSavedLayout ? savedTasks : [];
+  const baseTasks = savedTasks;
   const savedAt =
     typeof savedRoster?.updatedAt === "string"
       ? savedRoster.updatedAt
@@ -373,6 +414,13 @@ function TasksView() {
   return <TasksClient initialTasks={state.data} />;
 }
 
+function ToursView() {
+  const state = useResource<SchoolTour[]>(toursDataKey(), loadToursData, refreshToursData);
+  if (state.status === "loading") return <LoadingBlock label="Loading tours..." />;
+  if (state.status === "error") return <ErrorBlock message={state.error} />;
+  return <ToursClient initialTours={state.data} />;
+}
+
 function TaskView({ id }: { id: string }) {
   const state = useResource<TaskTemplate | null>(
     taskDataKey(id),
@@ -414,21 +462,19 @@ export default function WorkspaceRouter({ user }: { user: AuthUser }) {
   const dateId = normalizeDateFromSearch(searchParams);
 
   useEffect(() => {
-    ["/rosters", "/people", "/tasks", "/settings", buildEditorHref(formatLocalId(new Date()))].forEach((href) => {
+    ["/rosters", "/tours", "/people", "/tasks", "/settings", buildEditorHref(formatLocalId(new Date()))].forEach((href) => {
       preloadWorkspaceRoute(href);
     });
   }, [user.id]);
 
   if (pathname === "/rosters" || pathname === "/") return <RostersView />;
+  if (pathname === "/rosters/old") return <RostersView initialMode="old" />;
   if (pathname === "/editor") return <EditorView dateId={dateId} />;
-  if (pathname === "/tours") return <EmptyPage title="Tours" description="Tour management will appear here." />;
+  if (pathname === "/tours") return <ToursView />;
   if (pathname === "/people") return <PeopleView />;
   if (pathname === "/tasks") return <TasksView />;
   if (pathname === "/settings") return <SettingsView user={user} />;
   if (pathname === "/history") return <EmptyPage title="History" description="Content coming soon." />;
-  if (pathname === "/rosters/old") {
-    return <EmptyPage title="Old Rosters" description="No past rosters to show yet." />;
-  }
   if (pathname === "/rosters/archive") {
     return <EmptyPage title="Archive" description="Archived rosters will appear here." />;
   }

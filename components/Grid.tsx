@@ -5,6 +5,7 @@ import Block from "@/components/Block";
 import Modal from "@/components/Modal";
 import { AutosaveState, readDraftRecord, writeDraftRecord } from "@/lib/clientDrafts";
 import { buildEditorDraftStorageKey } from "@/lib/editorPersistence";
+import { invalidateWorkspaceResources } from "@/lib/workspaceData";
 import {
   TASK_TEMPLATE_REFRESH_EVENT,
   TASK_TEMPLATE_REFRESH_STORAGE_KEY,
@@ -2739,6 +2740,7 @@ export default function Grid({
             mode,
             savedAt: lastSavedAtRef.current,
           });
+          invalidateWorkspaceResources(["rosters", "rosters-old", "rosters-month"]);
         }
       } catch (err) {
         console.error(err);

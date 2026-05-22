@@ -5,6 +5,7 @@ import { enforceSameOrigin, requireSession } from "@/lib/apiAuth";
 import { z } from "zod";
 import { revalidatePath, revalidateTag } from "next/cache";
 import { CACHE_TAGS } from "@/lib/cacheTags";
+import { isSchoolTourTask } from "@/lib/schoolTourTypes";
 
 const timeSchema = z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/);
 const rosterUpsertSchema = z.object({
@@ -38,7 +39,7 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Invalid hours range" }, { status: 400 });
     }
 
-    const tours = tasks.filter((t: any) => String(t.type).toLowerCase() === "tour").length;
+    const tours = tasks.filter((t: any) => String(t.type).toLowerCase() === "tour" || isSchoolTourTask(t)).length;
     const people = employees.length;
 
     const saved = await saveRosterEntry({

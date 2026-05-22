@@ -12,9 +12,10 @@ import { preloadWorkspaceRoute } from "@/lib/workspaceData";
 type Props = {
   rosters: RosterFile[];
   footer?: React.ReactNode;
+  emptyMessage?: string;
 };
 
-export default function RosterTable({ rosters, footer }: Props) {
+export default function RosterTable({ rosters, footer, emptyMessage = "No rosters yet." }: Props) {
   const today = useMemo(() => new Date(), []);
   const router = useRouter();
 
@@ -125,7 +126,7 @@ export default function RosterTable({ rosters, footer }: Props) {
             })}
             {rosters.length === 0 && (
               <tr>
-                <td colSpan={5} className="py-10 text-center text-[15px] text-[var(--muted)]">No rosters yet.</td>
+                <td colSpan={5} className="py-10 text-center text-[15px] text-[var(--muted)]">{emptyMessage}</td>
               </tr>
             )}
           </tbody>

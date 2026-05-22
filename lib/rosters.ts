@@ -3,6 +3,7 @@ import { ensureAppPersistenceSeeded } from "./appPersistenceSeed";
 import { formatFullDay, formatLocalId, parseLocalId } from "./dateUtils";
 import { unstable_cache } from "next/cache";
 import { CACHE_TAGS } from "./cacheTags";
+import { isSchoolTourTask } from "./schoolTourTypes";
 
 export type RosterFile = {
   id: string;
@@ -59,6 +60,14 @@ function normalizeUpcomingWindowDays(input: number) {
   const rounded = Math.floor(input);
   if (rounded < 1) return 1;
   if (rounded > 90) return 90;
+  return rounded;
+}
+
+function normalizeOldRosterLimit(input: number) {
+  if (!Number.isFinite(input)) return 5000;
+  const rounded = Math.floor(input);
+  if (rounded < 1) return 1;
+  if (rounded > 5000) return 5000;
   return rounded;
 }
 
@@ -178,6 +187,11 @@ function mapRosterRecord(record: any): RosterFile {
       ...(task.isLocked ? { isLocked: true } : {}),
       ...(task.readOnly ? { readOnly: true } : {}),
     }));
+  const persistedSchoolTours = Array.isArray(record.tasks) ? record.tasks.filter(isSchoolTourTask) : [];
+  const taskList = [
+    ...tasks.filter((task: any) => !isSchoolTourTask(task)),
+    ...persistedSchoolTours,
+  ];
 
   return normalizeRosterForDate(
     {
@@ -190,7 +204,7 @@ function mapRosterRecord(record: any): RosterFile {
       tours: record.tours,
       people: record.people,
       employees,
-      tasks,
+      tasks: taskList,
       hoursStart: record.hoursStart || undefined,
       hoursEnd: record.hoursEnd || undefined,
       updatedAt: record.updatedAt ? new Date(record.updatedAt) : undefined,
@@ -369,6 +383,27 @@ export function buildUpcomingRosterWindow(
   return result;
 }
 
+export function buildOldSavedRosterList(
+  savedRosters: RosterFile[],
+  fromDate: Date = new Date(),
+  limit = 5000
+): RosterFile[] {
+  const maxRows = normalizeOldRosterLimit(limit);
+  const cutoff = startOfDay(fromDate).getTime();
+
+  return savedRosters
+    .filter((roster) => {
+      const rosterDate = parseLocalId(roster.id) ?? toLocalStartDate(roster.start);
+      return rosterDate ? rosterDate.getTime() < cutoff : false;
+    })
+    .sort((a, b) => {
+      const aDate = parseLocalId(a.id) ?? toLocalStartDate(a.start);
+      const bDate = parseLocalId(b.id) ?? toLocalStartDate(b.start);
+      return (bDate?.getTime() ?? 0) - (aDate?.getTime() ?? 0);
+    })
+    .slice(0, maxRows);
+}
+
 async function loadUpcomingRosters(upcomingDays = 7, fromDateId = formatLocalId(new Date())): Promise<RosterFile[]> {
   await ensureAppPersistenceSeeded();
 
@@ -400,6 +435,42 @@ const getUpcomingRostersCached = unstable_cache(
 export async function getUpcomingRosters(upcomingDays = 7): Promise<RosterFile[]> {
   return rehydrateRosters(
     await getUpcomingRostersCached(upcomingDays, formatLocalId(startOfDay(new Date())))
+  );
+}
+
+async function loadOldSavedRosters(limit = 5000, fromDateId = formatLocalId(new Date())): Promise<RosterFile[]> {
+  await ensureAppPersistenceSeeded();
+
+  const rowLimit = normalizeOldRosterLimit(limit);
+  const cutoff = parseLocalId(fromDateId) ?? startOfDay(new Date());
+
+  const saved = await prisma.appRoster.findMany({
+    where: {
+      date: {
+        lt: cutoff,
+      },
+    },
+    include: {
+      rosterEmployees: true,
+      rosterTasks: true,
+    },
+    orderBy: { date: "desc" },
+    take: rowLimit,
+  });
+
+  return saved.map(mapRosterRecord);
+}
+
+const getOldSavedRostersCached = unstable_cache(
+  async (limit = 5000, fromDateId = formatLocalId(new Date())) =>
+    loadOldSavedRosters(limit, fromDateId),
+  ["rosters:old"],
+  { tags: [CACHE_TAGS.rosters] }
+);
+
+export async function getOldSavedRosters(limit = 5000): Promise<RosterFile[]> {
+  return rehydrateRosters(
+    await getOldSavedRostersCached(limit, formatLocalId(startOfDay(new Date())))
   );
 }
 

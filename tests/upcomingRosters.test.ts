@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { formatLocalId } from "../lib/dateUtils";
-import { buildUpcomingRosterWindow, type RosterFile } from "../lib/rosters";
+import { buildOldSavedRosterList, buildUpcomingRosterWindow, type RosterFile } from "../lib/rosters";
 
 function atLocalNoon(year: number, month: number, day: number) {
   return new Date(year, month - 1, day, 12, 0, 0, 0);
@@ -108,5 +108,34 @@ describe("buildUpcomingRosterWindow", () => {
     expect(rows[0].end).toBeInstanceOf(Date);
     expect(rows[0].updatedAt).toBeInstanceOf(Date);
     expect(rows[0].updatedAt?.toISOString()).toBe("2026-03-23T07:45:00.000Z");
+  });
+});
+
+describe("buildOldSavedRosterList", () => {
+  it("returns only saved rosters before today, newest first", () => {
+    const today = atLocalNoon(2026, 3, 23);
+    const older = makeRoster(atLocalNoon(2026, 3, 20), { tours: 1 });
+    const yesterday = makeRoster(atLocalNoon(2026, 3, 22), { tours: 2 });
+    const current = makeRoster(today, { tours: 3 });
+    const future = makeRoster(atLocalNoon(2026, 3, 24), { tours: 4 });
+
+    const rows = buildOldSavedRosterList([older, future, current, yesterday], today);
+
+    expect(rows.map((r) => r.id)).toEqual(["2026-03-22", "2026-03-20"]);
+  });
+
+  it("respects the requested limit", () => {
+    const today = atLocalNoon(2026, 3, 23);
+    const rows = buildOldSavedRosterList(
+      [
+        makeRoster(atLocalNoon(2026, 3, 19)),
+        makeRoster(atLocalNoon(2026, 3, 20)),
+        makeRoster(atLocalNoon(2026, 3, 21)),
+      ],
+      today,
+      2
+    );
+
+    expect(rows.map((r) => r.id)).toEqual(["2026-03-21", "2026-03-20"]);
   });
 });

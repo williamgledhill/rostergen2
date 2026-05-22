@@ -4,6 +4,7 @@ import { formatLocalId } from "@/lib/dateUtils";
 import type { AuthUser } from "@/lib/auth";
 import type { Person } from "@/lib/people";
 import type { RosterFile } from "@/lib/rosters";
+import type { SchoolTour } from "@/lib/schoolTourTypes";
 import type { AppSettings } from "@/lib/settingsDefaults";
 import type { TaskTemplate } from "@/lib/taskTemplates";
 
@@ -186,6 +187,10 @@ export function monthRosterDataKey(month: string) {
   return `rosters-month:${month}`;
 }
 
+export function oldRosterDataKey() {
+  return "rosters-old";
+}
+
 export function editorDataKey(dateId: string) {
   return `editor:${dateId}`;
 }
@@ -202,6 +207,10 @@ export function tasksDataKey() {
   return "tasks";
 }
 
+export function toursDataKey() {
+  return "tours";
+}
+
 export function taskDataKey(id: string) {
   return `task:${id}`;
 }
@@ -216,6 +225,14 @@ export function loadUpcomingRostersData() {
 
 export function refreshUpcomingRostersData() {
   return refreshCachedResource(rosterDataKey(), () => fetchJson<UpcomingPayload>("/api/rosters/upcoming") as Promise<UpcomingPayload>);
+}
+
+export function loadOldRostersData() {
+  return loadCachedResource(oldRosterDataKey(), () => fetchJson<RosterFile[]>("/api/rosters/old") as Promise<RosterFile[]>);
+}
+
+export function refreshOldRostersData() {
+  return refreshCachedResource(oldRosterDataKey(), () => fetchJson<RosterFile[]>("/api/rosters/old") as Promise<RosterFile[]>);
 }
 
 export function loadMonthRostersData(month: string) {
@@ -298,6 +315,14 @@ export function refreshTasksData() {
   return refreshCachedResource(tasksDataKey(), () => fetchJson<TaskTemplate[]>("/api/task-templates") as Promise<TaskTemplate[]>);
 }
 
+export function loadToursData() {
+  return loadCachedResource(toursDataKey(), () => fetchJson<SchoolTour[]>("/api/tours") as Promise<SchoolTour[]>);
+}
+
+export function refreshToursData() {
+  return refreshCachedResource(toursDataKey(), () => fetchJson<SchoolTour[]>("/api/tours") as Promise<SchoolTour[]>);
+}
+
 export function loadTaskData(id: string) {
   return loadCachedResource(
     taskDataKey(id),
@@ -349,12 +374,20 @@ export function preloadWorkspaceRoute(href: string) {
     safeLoad(loadUpcomingRostersData());
     return;
   }
+  if (pathname === "/rosters/old") {
+    safeLoad(loadOldRostersData());
+    return;
+  }
   if (pathname === "/people") {
     safeLoad(loadPeopleData());
     return;
   }
   if (pathname === "/tasks") {
     safeLoad(loadTasksData());
+    return;
+  }
+  if (pathname === "/tours") {
+    safeLoad(loadToursData());
     return;
   }
   if (pathname === "/editor") {

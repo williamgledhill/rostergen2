@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import * as XLSX from "xlsx";
 import { parseSchoolTourWorkbook } from "../lib/schoolTourImports";
 
-function buildWorkbookBuffer(rows: (string | number)[][]) {
+function buildWorkbookBuffer(rows: (string | number | Date)[][]) {
   const workbook = XLSX.utils.book_new();
   const sheet = XLSX.utils.aoa_to_sheet(rows);
   XLSX.utils.book_append_sheet(workbook, sheet, "Worksheet");
