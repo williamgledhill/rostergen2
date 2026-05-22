@@ -57,7 +57,6 @@ import {
   type UpcomingPayload,
 } from "@/lib/workspaceData";
 import type { TaskTemplate } from "@/lib/taskTemplates";
-import type { SchoolTour } from "@/lib/schoolTourTypes";
 import { isSchoolTourTask } from "@/lib/schoolTourTypes";
 
 type ResourceState<T> =
@@ -415,13 +414,23 @@ function TasksView() {
 }
 
 function ToursView() {
-  const state = useResource<SchoolTour[]>(toursDataKey(), loadToursData, refreshToursData);
+  const state = useResource<TaskTemplate[]>(toursDataKey(), loadToursData, refreshToursData);
   if (state.status === "loading") return <LoadingBlock label="Loading tours..." />;
   if (state.status === "error") return <ErrorBlock message={state.error} />;
-  return <ToursClient initialTours={state.data} />;
+  return <ToursClient initialTemplates={state.data} />;
 }
 
-function TaskView({ id }: { id: string }) {
+function TaskView({
+  id,
+  returnHref = "/tasks",
+  returnLabel = "Tasks",
+  entityLabel = "Task",
+}: {
+  id: string;
+  returnHref?: string;
+  returnLabel?: string;
+  entityLabel?: string;
+}) {
   const state = useResource<TaskTemplate | null>(
     taskDataKey(id),
     () => loadTaskData(id),
@@ -429,7 +438,15 @@ function TaskView({ id }: { id: string }) {
   );
   if (state.status === "loading") return <LoadingBlock label="Loading task..." />;
   if (state.status === "error") return <ErrorBlock message={state.error} />;
-  return <TaskDetailClient id={id} initialTask={state.data} />;
+  return (
+    <TaskDetailClient
+      id={id}
+      initialTask={state.data}
+      returnHref={returnHref}
+      returnLabel={returnLabel}
+      entityLabel={entityLabel}
+    />
+  );
 }
 
 function SettingsView({ user }: { user: AuthUser }) {
@@ -493,6 +510,18 @@ export default function WorkspaceRouter({ user }: { user: AuthUser }) {
 
   const taskMatch = pathname.match(/^\/tasks\/([^/]+)$/);
   if (taskMatch?.[1]) return <TaskView id={decodeURIComponent(taskMatch[1])} />;
+
+  const tourMatch = pathname.match(/^\/tours\/([^/]+)$/);
+  if (tourMatch?.[1]) {
+    return (
+      <TaskView
+        id={decodeURIComponent(tourMatch[1])}
+        returnHref="/tours"
+        returnLabel="Tours"
+        entityLabel="Tour"
+      />
+    );
+  }
 
   return (
     <div className="workspace-page">

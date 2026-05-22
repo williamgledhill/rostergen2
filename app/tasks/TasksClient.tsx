@@ -18,6 +18,7 @@ import {
   TASK_TEMPLATE_REFRESH_STORAGE_KEY,
   type TaskTemplate,
 } from "@/lib/taskTemplates";
+import { isTourTemplate } from "@/lib/tourTemplates";
 
 const DEFAULT_TASK_COLOR = "#BFDBFE";
 
@@ -85,6 +86,8 @@ export default function TasksClient({ initialTasks }: { initialTasks: TaskTempla
       window.removeEventListener("storage", handleStorage);
     };
   }, [refreshTasks, removePendingDeletedTask]);
+
+  const taskTemplates = tasks.filter((task) => !isTourTemplate(task));
 
   function openTaskCreator() {
     setNewTaskName("");
@@ -171,7 +174,7 @@ export default function TasksClient({ initialTasks }: { initialTasks: TaskTempla
                 </tr>
               </thead>
               <tbody className="[&_tr:last-child]:border-b-0">
-                {tasks.map((t) => (
+                {taskTemplates.map((t) => (
                   <tr
                     key={t.id}
                     className="cursor-pointer border-b border-[var(--border)] hover:bg-[var(--surface-subtle)]"
@@ -201,7 +204,7 @@ export default function TasksClient({ initialTasks }: { initialTasks: TaskTempla
                     </td>
                   </tr>
                 ))}
-                {tasks.length === 0 && (
+                {taskTemplates.length === 0 && (
                   <tr>
                     <td colSpan={1} className="py-10 text-center text-[15px] text-[var(--muted)]">No tasks yet. Add one to get started.</td>
                   </tr>
@@ -209,7 +212,7 @@ export default function TasksClient({ initialTasks }: { initialTasks: TaskTempla
               </tbody>
             </table>
           </div>
-          <div className="table-footer">{tasks.length} task{tasks.length === 1 ? "" : "s"}</div>
+          <div className="table-footer">{taskTemplates.length} task{taskTemplates.length === 1 ? "" : "s"}</div>
         </div>
 
         {modalOpen && (

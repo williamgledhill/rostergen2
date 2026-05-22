@@ -4,7 +4,6 @@ import { formatLocalId } from "@/lib/dateUtils";
 import type { AuthUser } from "@/lib/auth";
 import type { Person } from "@/lib/people";
 import type { RosterFile } from "@/lib/rosters";
-import type { SchoolTour } from "@/lib/schoolTourTypes";
 import type { AppSettings } from "@/lib/settingsDefaults";
 import type { TaskTemplate } from "@/lib/taskTemplates";
 
@@ -208,7 +207,7 @@ export function tasksDataKey() {
 }
 
 export function toursDataKey() {
-  return "tours";
+  return tasksDataKey();
 }
 
 export function taskDataKey(id: string) {
@@ -316,11 +315,11 @@ export function refreshTasksData() {
 }
 
 export function loadToursData() {
-  return loadCachedResource(toursDataKey(), () => fetchJson<SchoolTour[]>("/api/tours") as Promise<SchoolTour[]>);
+  return loadCachedResource(toursDataKey(), () => fetchJson<TaskTemplate[]>("/api/task-templates") as Promise<TaskTemplate[]>);
 }
 
 export function refreshToursData() {
-  return refreshCachedResource(toursDataKey(), () => fetchJson<SchoolTour[]>("/api/tours") as Promise<SchoolTour[]>);
+  return refreshCachedResource(toursDataKey(), () => fetchJson<TaskTemplate[]>("/api/task-templates") as Promise<TaskTemplate[]>);
 }
 
 export function loadTaskData(id: string) {
@@ -388,6 +387,11 @@ export function preloadWorkspaceRoute(href: string) {
   }
   if (pathname === "/tours") {
     safeLoad(loadToursData());
+    return;
+  }
+  const tourMatch = pathname.match(/^\/tours\/([^/]+)$/);
+  if (tourMatch?.[1]) {
+    safeLoad(loadTaskData(decodeURIComponent(tourMatch[1])));
     return;
   }
   if (pathname === "/editor") {

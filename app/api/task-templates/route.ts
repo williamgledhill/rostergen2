@@ -93,6 +93,7 @@ export async function POST(request: Request) {
     revalidateTag(CACHE_TAGS.tasks, "max");
     revalidatePath("/editor");
     revalidatePath("/tasks");
+    revalidatePath("/tours");
     return NextResponse.json(created, { status: 201 });
   } catch (err: any) {
     return NextResponse.json({ error: err?.message || "Failed to add template" }, { status: 500 });
@@ -142,6 +143,7 @@ export async function PUT(request: Request) {
     revalidateTag(CACHE_TAGS.tasks, "max");
     revalidatePath("/editor");
     revalidatePath("/tasks");
+    revalidatePath("/tours");
     return NextResponse.json(updated);
   } catch (err: any) {
     return NextResponse.json({ error: err?.message || "Failed to update template" }, { status: 500 });
@@ -166,6 +168,7 @@ export async function DELETE(request: Request) {
     revalidateTag(CACHE_TAGS.tasks, "max");
     revalidatePath("/editor");
     revalidatePath("/tasks");
+    revalidatePath("/tours");
     return NextResponse.json({ ok: true });
   } catch (err: any) {
     return NextResponse.json({ error: err?.message || "Failed to delete template" }, { status: 500 });

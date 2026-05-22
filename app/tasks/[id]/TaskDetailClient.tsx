@@ -156,7 +156,19 @@ function TimeChip({
   );
 }
 
-export default function TaskDetailClient({ id, initialTask }: { id: string; initialTask: TaskTemplate | null }) {
+export default function TaskDetailClient({
+  id,
+  initialTask,
+  returnHref = "/tasks",
+  returnLabel = "Tasks",
+  entityLabel = "Task",
+}: {
+  id: string;
+  initialTask: TaskTemplate | null;
+  returnHref?: string;
+  returnLabel?: string;
+  entityLabel?: string;
+}) {
   const router = useRouter();
   const initialTaskValue = useMemo(() => initialTask, [initialTask]);
   const [newDayTimeSlots, setNewDayTimeSlots] = useState<Record<string, string>>({});
@@ -351,7 +363,7 @@ export default function TaskDetailClient({ id, initialTask }: { id: string; init
       }
       invalidateWorkspaceResource("tasks");
       invalidateWorkspaceResource(taskDataKey(id));
-      if (!navigateWithinSpa("/tasks")) router.push("/tasks");
+      if (!navigateWithinSpa(returnHref)) router.push(returnHref);
       router.refresh();
     } catch (err) {
       console.error(err);
@@ -363,19 +375,19 @@ export default function TaskDetailClient({ id, initialTask }: { id: string; init
     return (
       <div className="workspace-page">
         <div className="card max-w-xl p-5">
-          <h1 className="text-xl font-semibold text-slate-900">Task not found</h1>
-          <p className="mt-2 text-sm text-slate-600">That task template does not exist.</p>
+          <h1 className="text-xl font-semibold text-slate-900">{entityLabel} not found</h1>
+          <p className="mt-2 text-sm text-slate-600">That {entityLabel.toLowerCase()} template does not exist.</p>
           <div className="mt-4">
             <Link
-              href="/tasks"
+              href={returnHref}
               className="btn h-9 px-4"
               onClick={(event) => {
-                if (shouldHandleSpaClick(event) && navigateWithinSpa("/tasks")) {
+                if (shouldHandleSpaClick(event) && navigateWithinSpa(returnHref)) {
                   event.preventDefault();
                 }
               }}
             >
-              Back to tasks
+              Back to {returnLabel.toLowerCase()}
             </Link>
           </div>
         </div>
@@ -394,26 +406,26 @@ export default function TaskDetailClient({ id, initialTask }: { id: string; init
       <div className="flex w-full max-w-[1040px] flex-col gap-7">
         <div className="flex items-center gap-1 text-[14px]">
           <Link
-            href="/tasks"
+            href={returnHref}
             className="font-semibold text-[var(--accent)] hover:underline"
             onClick={(event) => {
-              if (shouldHandleSpaClick(event) && navigateWithinSpa("/tasks")) {
+              if (shouldHandleSpaClick(event) && navigateWithinSpa(returnHref)) {
                 event.preventDefault();
               }
             }}
           >
-            Tasks
+            {returnLabel}
           </Link>
           <ChevronRight className="h-4 w-4 text-slate-700" />
-          <span className="font-medium text-slate-600">{task.name || "Task"}</span>
+          <span className="font-medium text-slate-600">{task.name || entityLabel}</span>
         </div>
 
         <div className="flex flex-col gap-2 lg:flex-row lg:items-start lg:justify-between">
           <div className="min-w-0 space-y-1">
             <h1 className="page-title break-words">
-              {task.name || "Task"}
+              {task.name || entityLabel}
             </h1>
-            <p className="page-description mt-1.5">Task settings and fixed-time rules.</p>
+            <p className="page-description mt-1.5">{entityLabel} settings and fixed-time rules.</p>
             <p className={`text-[12px] font-medium ${saveStatusClassName}`}>{saveStatusText}</p>
           </div>
 
@@ -436,7 +448,7 @@ export default function TaskDetailClient({ id, initialTask }: { id: string; init
           </div>
         </div>
 
-        <SectionCard title="Task details">
+        <SectionCard title={`${entityLabel} details`}>
           <div className="grid gap-4 md:grid-cols-[minmax(0,1fr)_180px]">
             <FieldBlock label="Name">
               <input
