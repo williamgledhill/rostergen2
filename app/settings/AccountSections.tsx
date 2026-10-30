@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useCallback, useEffect, useState } from "react";
-import { Check, Copy, KeyRound, LogOut, ShieldOff, UserCheck, UserX, X } from "lucide-react";
+import { Check, Copy, KeyRound, LogOut, Mail, ShieldOff, UserCheck, UserPlus, UserX, X } from "lucide-react";
 import { useFeedback } from "@/components/ui/Feedback";
 import type { AccountRequest, AuthUser } from "@/lib/auth";
 import type { AuditEntry, ManagedUser } from "@/lib/userAdmin";
@@ -137,13 +137,119 @@ export function AccountRequestsSection() {
   );
 }
 
+const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+function AddUserForm({
+  onCreated,
+  onCancel,
+}: {
+  onCreated: (link: { name: string; url: string; expiresAt: string }) => void;
+  onCancel: () => void;
+}) {
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
+  const [role, setRole] = useState<ManagedUser["role"]>("EDITOR");
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState("");
+
+  async function submit(event: React.FormEvent) {
+    event.preventDefault();
+    setError("");
+    if (!name.trim()) {
+      setError("Enter their name.");
+      return;
+    }
+    if (!EMAIL_REGEX.test(email.trim())) {
+      setError("Enter a valid email address.");
+      return;
+    }
+    setBusy(true);
+    try {
+      const data = await requestJson("/api/users", {
+        method: "POST",
+        body: { name: name.trim(), email: email.trim(), role },
+      });
+      onCreated({ name: name.trim(), url: data.inviteUrl, expiresAt: data.expiresAt });
+    } catch (err) {
+      setError(errorMessage(err));
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <form className="space-y-3 border-b border-[var(--border)] bg-[var(--surface-subtle)] p-5 text-[14px]" onSubmit={submit}>
+      <p className="font-medium">Add a user</p>
+      <div className="grid gap-3 sm:grid-cols-[1fr_1fr_150px]">
+        <div>
+          <label className="field-label" htmlFor="invite-name">
+            Name
+          </label>
+          <input
+            id="invite-name"
+            className="input"
+            autoComplete="off"
+            value={name}
+            onChange={(event) => setName(event.target.value)}
+            autoFocus
+          />
+        </div>
+        <div>
+          <label className="field-label" htmlFor="invite-email">
+            Email
+          </label>
+          <input
+            id="invite-email"
+            type="email"
+            className="input"
+            autoComplete="off"
+            value={email}
+            onChange={(event) => setEmail(event.target.value)}
+          />
+        </div>
+        <div>
+          <label className="field-label" htmlFor="invite-role">
+            Role
+          </label>
+          <select id="invite-role" className="input" value={role} onChange={(event) => setRole(event.target.value as ManagedUser["role"])}>
+            <option value="EDITOR">Editor</option>
+            <option value="ADMIN">Administrator</option>
+          </select>
+        </div>
+      </div>
+      <p className="text-[13px] text-[var(--text-muted)]">
+        You&apos;ll get an invitation link to send them. They choose their own password when they open it.
+      </p>
+      {error && (
+        <p className="text-[13px] text-[var(--danger)]" role="alert">
+          {error}
+        </p>
+      )}
+      <div className="flex gap-2">
+        <button type="submit" className="btn btn-primary" disabled={busy}>
+          {busy ? "Adding…" : "Add user and create link"}
+        </button>
+        <button type="button" className="btn btn-ghost" disabled={busy} onClick={onCancel}>
+          Cancel
+        </button>
+      </div>
+    </form>
+  );
+}
+
 export function UsersSection({ currentUser }: { currentUser: AuthUser }) {
   const { notify, confirm } = useFeedback();
   const { value: users, error, setError } = useAccountsResource<ManagedUser[]>("/api/users", (data) =>
     Array.isArray(data?.users) ? data.users : []
   );
   const [busyId, setBusyId] = useState<string | null>(null);
-  const [resetLink, setResetLink] = useState<{ name: string; url: string; expiresAt: string } | null>(null);
+  const [resetLink, setResetLink] = useState<{
+    name: string;
+    url: string;
+    expiresAt: string;
+    invitation: boolean;
+  } | null>(null);
+  const [adding, setAdding] = useState(false);
 
   async function act(user: ManagedUser, action: () => Promise<void>) {
     setBusyId(user.id);
@@ -183,16 +289,19 @@ export function UsersSection({ currentUser }: { currentUser: AuthUser }) {
   };
 
   const issueReset = async (user: ManagedUser) => {
+    const invited = !user.lastLoginAt;
     const confirmed = await confirm({
-      title: `Create a password reset link for ${user.name}?`,
-      message:
-        "You'll get a single-use link to send them. It works for 24 hours, and any earlier link stops working. Their current password keeps working until they use it.",
+      title: invited ? `Create a new invitation link for ${user.name}?` : `Create a password reset link for ${user.name}?`,
+      message: invited
+        ? "You'll get a new link to send them. It works for 7 days, and any earlier link stops working."
+        : "You'll get a single-use link to send them. It works for 24 hours, and any earlier link stops working. Their current password keeps working until they use it.",
       confirmLabel: "Create link",
     });
     if (!confirmed) return;
     await act(user, async () => {
       const data = await requestJson(userUrl(user, "/password-reset"), { method: "POST" });
-      setResetLink({ name: user.name, url: data.resetUrl, expiresAt: data.expiresAt });
+      setAdding(false);
+      setResetLink({ name: user.name, url: data.resetUrl, expiresAt: data.expiresAt, invitation: Boolean(data.invitation) });
     });
   };
 
@@ -229,17 +338,44 @@ export function UsersSection({ currentUser }: { currentUser: AuthUser }) {
         <div>
           <h2 className="card-title">Users</h2>
           <p className="card-description">
-            Manage who can sign in. You never see anyone&apos;s password: send them a reset link instead.
+            Manage who can sign in. You never see anyone&apos;s password: send them an invitation or reset link instead.
           </p>
         </div>
+        {!adding && (
+          <button
+            type="button"
+            className="btn btn-primary btn-sm"
+            onClick={() => {
+              setResetLink(null);
+              setAdding(true);
+            }}
+          >
+            <UserPlus />
+            Add user
+          </button>
+        )}
       </div>
+
+      {adding && (
+        <AddUserForm
+          onCancel={() => setAdding(false)}
+          onCreated={(link) => {
+            setAdding(false);
+            setResetLink({ ...link, invitation: true });
+            announceAccountsChanged();
+            notify({ tone: "success", title: `${link.name} added`, message: "Send them the invitation link." });
+          }}
+        />
+      )}
 
       {resetLink && (
         <div className="border-b border-[var(--border)] bg-[var(--warning-soft)] p-5 text-[14px]">
-          <p className="font-medium text-amber-900">Reset link for {resetLink.name}</p>
+          <p className="font-medium text-amber-900">
+            {resetLink.invitation ? "Invitation link" : "Reset link"} for {resetLink.name}
+          </p>
           <p className="mt-0.5 text-[13px] text-amber-900">
-            Send this to them privately. It works once, until {formatDateTime(resetLink.expiresAt)}, and won&apos;t be
-            shown again.
+            Send this to them privately. {resetLink.invitation ? "They'll set up their password with it. " : ""}It works
+            once, until {formatDateTime(resetLink.expiresAt)}, and won&apos;t be shown again.
           </p>
           <div className="mt-3 flex flex-wrap items-center gap-2">
             <input className="input min-w-0 flex-1 font-mono text-[12px]" readOnly value={resetLink.url} />
@@ -275,6 +411,7 @@ export function UsersSection({ currentUser }: { currentUser: AuthUser }) {
                       {user.name}
                       {isSelf && <span className="badge">You</span>}
                       {!user.isActive && <span className="badge badge-danger">Deactivated</span>}
+                      {user.isActive && !user.lastLoginAt && <span className="badge badge-warning">Invited</span>}
                       {user.totpEnabled && <span className="badge badge-success">2FA</span>}
                     </p>
                     <p className="truncate text-[13px] text-[var(--text-muted)]">
@@ -297,8 +434,8 @@ export function UsersSection({ currentUser }: { currentUser: AuthUser }) {
                   <div className="flex flex-wrap gap-2">
                     {user.isActive && (
                       <button type="button" className="btn btn-sm" disabled={busy} onClick={() => void issueReset(user)}>
-                        <KeyRound />
-                        Reset password
+                        {user.lastLoginAt ? <KeyRound /> : <Mail />}
+                        {user.lastLoginAt ? "Reset password" : "Resend invite"}
                       </button>
                     )}
                     {user.totpEnabled && (
@@ -347,6 +484,9 @@ const AUDIT_ACTION_LABELS: Record<string, string> = {
   "user.sessions_revoked": "signed out everywhere:",
   "user.two_factor_reset": "turned off two-factor for",
   "user.password_reset_issued": "created a password reset link for",
+  "user.invited": "added and invited",
+  "user.invite_resent": "created a new invitation link for",
+  "user.invite_accepted": "accepted their invitation:",
   "user.password_reset_completed": "reset their password using a link:",
   "user.password_changed": "changed their password:",
 };
@@ -355,7 +495,12 @@ function describeAudit(entry: AuditEntry) {
   const actor = entry.actorEmail ?? "Someone";
   const label = AUDIT_ACTION_LABELS[entry.action] ?? entry.action;
   const details = entry.details as { from?: string; to?: string } | null;
-  const roleChange = entry.action === "user.role_changed" && details?.to ? ` (${details.from} → ${details.to})` : "";
+  const roleChange =
+    entry.action === "user.role_changed" && details?.to
+      ? ` (${details.from} → ${details.to})`
+      : entry.action === "user.invited" && details && "role" in details
+      ? ` as ${(details as { role: string }).role === "ADMIN" ? "an administrator" : "an editor"}`
+      : "";
   return `${actor} ${label} ${entry.targetEmail ?? ""}${roleChange}`;
 }
 

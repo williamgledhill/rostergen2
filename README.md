@@ -27,6 +27,9 @@ The first sign-in account comes from `APP_BOOTSTRAP_ADMIN_EMAIL` and
 - Anyone can request access from the sign-in page. The account stays inactive
   until an administrator approves it under Settings → Account requests; approved
   accounts are editors.
+- Administrators can also add someone directly under Settings → Users → Add user.
+  That creates the account and gives an invitation link (valid 7 days) to send
+  them; they choose their own password at `/signup/reset`.
 - Administrators manage everyone else under Settings → Users: change role,
   deactivate or reactivate, sign out everywhere, turn off two-factor, and issue a
   password reset link. Administrators never see or set passwords: a reset link

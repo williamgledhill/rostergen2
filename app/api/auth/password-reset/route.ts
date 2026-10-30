@@ -16,7 +16,7 @@ export async function GET(request: Request) {
 
   try {
     const account = await describePasswordReset(token);
-    if (!account) return jsonError("This reset link is invalid or has expired. Ask an administrator for a new one.", 404);
+    if (!account) return jsonError("This link is invalid or has expired. Ask an administrator for a new one.", 404);
     return NextResponse.json({ account });
   } catch (err) {
     return serverError(err, "Could not check the reset link.");

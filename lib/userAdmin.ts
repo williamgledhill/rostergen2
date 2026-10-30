@@ -1,3 +1,4 @@
+import crypto from "crypto";
 import { Prisma, type AppUserRole } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { forgetCachedSessions } from "@/lib/auth";
@@ -11,6 +12,8 @@ import { createOpaqueAuthToken, hashAuthToken } from "@/lib/sessionToken";
  */
 
 export const PASSWORD_RESET_MAX_AGE_SECONDS = 60 * 60 * 24;
+/** Invitations wait longer than resets: people don't always open them straight away. */
+export const INVITE_MAX_AGE_SECONDS = 60 * 60 * 24 * 7;
 
 export type Actor = { id: string; email: string; ipAddress?: string | null };
 
@@ -173,26 +176,69 @@ export async function resetUserTwoFactor(actor: Actor, id: string) {
   forgetCachedSessions();
 }
 
+/** Someone who has never signed in is still setting up, so their link is an invitation. */
+function isInvitation(user: { lastLoginAt: Date | null }) {
+  return !user.lastLoginAt;
+}
+
+async function createResetToken(db: Db, userId: string, createdById: string | null, maxAgeSeconds: number) {
+  const rawToken = createOpaqueAuthToken();
+  const expiresAt = new Date(Date.now() + maxAgeSeconds * 1000);
+  await db.appPasswordReset.updateMany({ where: { userId, usedAt: null }, data: { usedAt: new Date() } });
+  await db.appPasswordReset.create({
+    data: { userId, tokenHash: hashAuthToken(rawToken), expiresAt, createdById },
+  });
+  return { token: rawToken, expiresAt };
+}
+
 /**
- * Issues a single-use reset link. Any earlier unused link for the user stops
- * working. Only the token's hash is stored, so the link can't be shown again.
+ * Creates an account and returns an invitation link for the administrator to
+ * send. The person chooses their own password when they open it; until then
+ * the account has a random password nobody knows.
+ */
+export async function inviteUser(actor: Actor, input: { name: string; email: string; role: AppUserRole }) {
+  const email = input.email.trim().toLowerCase();
+  const passwordHash = await hashPassword(crypto.randomBytes(32).toString("base64url"));
+
+  return prisma.$transaction(async (tx) => {
+    const existing = await tx.appUser.findUnique({ where: { email }, select: { pendingApproval: true } });
+    if (existing) {
+      throw new UserAdminError(
+        existing.pendingApproval
+          ? "This person has already requested access. Approve them under Account requests."
+          : "An account with this email already exists."
+      );
+    }
+
+    const user = await tx.appUser.create({
+      data: { email, name: input.name.trim(), role: input.role, passwordHash },
+    });
+    const invite = await createResetToken(tx, user.id, actor.id, INVITE_MAX_AGE_SECONDS);
+    await recordAudit(tx, actor, "user.invited", user, { role: input.role });
+    return invite;
+  });
+}
+
+/**
+ * Issues a single-use link: an invitation again for someone who has never
+ * signed in, otherwise a password reset. Any earlier unused link stops working.
+ * Only the token's hash is stored, so the link can't be shown again.
  */
 export async function issuePasswordReset(actor: Actor, id: string) {
-  const rawToken = createOpaqueAuthToken();
-  const expiresAt = new Date(Date.now() + PASSWORD_RESET_MAX_AGE_SECONDS * 1000);
-
-  await prisma.$transaction(async (tx) => {
+  return prisma.$transaction(async (tx) => {
     const user = await findManagedUser(tx, id);
     if (!user.isActive) throw new UserAdminError("Reactivate this account before resetting its password.");
 
-    await tx.appPasswordReset.updateMany({ where: { userId: id, usedAt: null }, data: { usedAt: new Date() } });
-    await tx.appPasswordReset.create({
-      data: { userId: id, tokenHash: hashAuthToken(rawToken), expiresAt, createdById: actor.id },
-    });
-    await recordAudit(tx, actor, "user.password_reset_issued", user);
+    const invitation = isInvitation(user);
+    const link = await createResetToken(
+      tx,
+      id,
+      actor.id,
+      invitation ? INVITE_MAX_AGE_SECONDS : PASSWORD_RESET_MAX_AGE_SECONDS
+    );
+    await recordAudit(tx, actor, invitation ? "user.invite_resent" : "user.password_reset_issued", user);
+    return { ...link, invitation };
   });
-
-  return { token: rawToken, expiresAt };
 }
 
 async function findUsableReset(db: Db, rawToken: string) {
@@ -207,7 +253,7 @@ async function findUsableReset(db: Db, rawToken: string) {
 /** What the reset page shows before the new password is chosen. */
 export async function describePasswordReset(rawToken: string) {
   const reset = await findUsableReset(prisma, rawToken);
-  return reset ? { name: reset.user.name, email: reset.user.email } : null;
+  return reset ? { name: reset.user.name, email: reset.user.email, invitation: isInvitation(reset.user) } : null;
 }
 
 export async function completePasswordReset(rawToken: string, newPassword: string, ipAddress?: string | null) {
@@ -232,13 +278,13 @@ export async function completePasswordReset(rawToken: string, newPassword: strin
     await recordAudit(
       tx,
       { id: reset.user.id, email: reset.user.email, ipAddress },
-      "user.password_reset_completed",
+      isInvitation(reset.user) ? "user.invite_accepted" : "user.password_reset_completed",
       reset.user
     );
     return true;
   });
 
-  if (!completed) throw new UserAdminError("This reset link is invalid or has expired. Ask an administrator for a new one.");
+  if (!completed) throw new UserAdminError("This link is invalid or has expired. Ask an administrator for a new one.");
   forgetCachedSessions();
 }
 

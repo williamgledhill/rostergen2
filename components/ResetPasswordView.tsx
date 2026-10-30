@@ -12,7 +12,7 @@ type Status = "checking" | "ready" | "invalid" | "done";
 export default function ResetPasswordView() {
   const token = useSearchParams().get("token") ?? "";
   const [status, setStatus] = useState<Status>("checking");
-  const [account, setAccount] = useState<{ name: string; email: string } | null>(null);
+  const [account, setAccount] = useState<{ name: string; email: string; invitation?: boolean } | null>(null);
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [submitting, setSubmitting] = useState(false);
@@ -64,17 +64,30 @@ export default function ResetPasswordView() {
     }
   }
 
+  const invitation = Boolean(account?.invitation);
   const title =
-    status === "done" ? "Password updated" : status === "invalid" ? "This link doesn't work" : "Choose a new password";
+    status === "done"
+      ? invitation
+        ? "You're all set"
+        : "Password updated"
+      : status === "invalid"
+      ? "This link doesn't work"
+      : invitation
+      ? "Set up your account"
+      : "Choose a new password";
   const description =
     status === "checking"
       ? "Checking your link…"
       : status === "ready" && account
-      ? `Setting a new password for ${account.name} (${account.email}).`
+      ? invitation
+        ? `Welcome, ${account.name}. Choose a password for ${account.email} to finish setting up your account.`
+        : `Setting a new password for ${account.name} (${account.email}).`
       : status === "invalid"
       ? error || "This reset link is invalid or has expired."
       : status === "done"
-      ? "You've been signed out on every device. Sign in with your new password."
+      ? invitation
+        ? `Your account is ready. Sign in with ${account?.email ?? "your email"} and the password you just chose.`
+        : "You've been signed out on every device. Sign in with your new password."
       : undefined;
 
   return (
@@ -83,7 +96,7 @@ export default function ResetPasswordView() {
         <form className="space-y-4" onSubmit={submit} noValidate>
           <div>
             <label htmlFor="new-password" className={authLabelClass}>
-              New password
+              {invitation ? "Password" : "New password"}
             </label>
             <input
               id="new-password"
@@ -98,7 +111,7 @@ export default function ResetPasswordView() {
           </div>
           <div>
             <label htmlFor="confirm-password" className={authLabelClass}>
-              Confirm new password
+              {invitation ? "Confirm password" : "Confirm new password"}
             </label>
             <input
               id="confirm-password"
@@ -113,13 +126,13 @@ export default function ResetPasswordView() {
           {error && <AuthAlert tone="error">{error}</AuthAlert>}
           <button type="submit" disabled={submitting} className={authPrimaryButtonClass}>
             {submitting && <LoaderCircle className="h-4 w-4 animate-spin" />}
-            {submitting ? "Saving" : "Set new password"}
+            {submitting ? "Saving" : invitation ? "Create account" : "Set new password"}
           </button>
         </form>
       )}
 
       {status === "invalid" && (
-        <p className="mb-5 text-[14px] text-[#5b6474]">Reset links work once and expire after 24 hours. Ask an administrator for a new one.</p>
+        <p className="mb-5 text-[14px] text-[#5b6474]">Links work once. Invitations expire after 7 days and password resets after 24 hours. Ask an administrator for a new one.</p>
       )}
 
       {(status === "done" || status === "invalid") && (
