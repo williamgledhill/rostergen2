@@ -105,6 +105,41 @@ export default function LoginView() {
     return next && next.startsWith("/") && !next.startsWith("//") ? next : "/rosters";
   })();
 
+  const [forgotEnabled, setForgotEnabled] = useState(false);
+  const [forgotOpen, setForgotOpen] = useState(false);
+  const [forgotSent, setForgotSent] = useState(false);
+
+  useEffect(() => {
+    fetch("/api/auth/forgot-password")
+      .then((res) => (res.ok ? res.json() : { enabled: false }))
+      .then((data) => setForgotEnabled(Boolean(data?.enabled)))
+      .catch(() => undefined);
+  }, []);
+
+  async function handleForgot(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setError("");
+    const normalizedEmail = email.trim().toLowerCase();
+    if (!EMAIL_REGEX.test(normalizedEmail)) {
+      setError("Enter a valid email address.");
+      return;
+    }
+    try {
+      setSubmitting(true);
+      const res = await fetch("/api/auth/forgot-password", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: normalizedEmail }),
+      });
+      if (!res.ok) throw new Error("Could not send the email. Please try again.");
+      setForgotSent(true);
+    } catch (err: any) {
+      setError(err?.message || "Could not send the email. Please try again.");
+    } finally {
+      setSubmitting(false);
+    }
+  }
+
   useEffect(() => {
     fetch("/api/auth/session")
       .then((res) => (res.ok ? res.json() : { session: null }))
@@ -123,6 +158,8 @@ export default function LoginView() {
 
   function switchMode(next: Mode) {
     setMode(next);
+    setForgotOpen(false);
+    setForgotSent(false);
     setError("");
     setRequestSent(false);
     setRequiresTwoFactor(false);
@@ -236,6 +273,62 @@ export default function LoginView() {
     if (isRequest) await handleRequest();
     else if (requiresTwoFactor) await handleTwoFactor();
     else await handleSignIn();
+  }
+
+  if (forgotOpen) {
+    return (
+      <AuthLayout
+        title={forgotSent ? "Check your email" : "Reset your password"}
+        description={
+          forgotSent
+            ? `If ${email.trim().toLowerCase()} belongs to an account, we've sent it a link to choose a new password. The link works for 24 hours.`
+            : "Enter the email you sign in with and we'll send you a link to choose a new password."
+        }
+      >
+        {forgotSent ? (
+          <div className="space-y-4">
+            <p className="text-[14px] text-[#5b6474]">
+              Nothing after a few minutes? Check your spam folder, or ask an administrator to send you a link.
+            </p>
+            <button type="button" onClick={() => switchMode("signin")} className={authPrimaryButtonClass}>
+              Back to sign in
+            </button>
+          </div>
+        ) : (
+          <form className="space-y-4" onSubmit={handleForgot} noValidate>
+            <div>
+              <label htmlFor="forgot-email" className={authLabelClass}>
+                Email
+              </label>
+              <input
+                id="forgot-email"
+                type="email"
+                autoComplete="email"
+                autoFocus
+                value={email}
+                onChange={(event) => setEmail(event.target.value)}
+                disabled={submitting}
+                className={authInputClass}
+                placeholder="you@example.com"
+              />
+            </div>
+            {error && <AuthAlert tone="error">{error}</AuthAlert>}
+            <button type="submit" disabled={submitting} className={authPrimaryButtonClass}>
+              {submitting && <LoaderCircle className="h-4 w-4 animate-spin" />}
+              {submitting ? "Sending" : "Send reset link"}
+            </button>
+            <button
+              type="button"
+              onClick={() => switchMode("signin")}
+              className="inline-flex w-full items-center justify-center gap-1.5 text-[14px] font-medium text-[#5b6474] transition hover:text-[#111827]"
+            >
+              <ArrowLeft className="h-4 w-4" />
+              Back to sign in
+            </button>
+          </form>
+        )}
+      </AuthLayout>
+    );
   }
 
   if (requiresTwoFactor && !isRequest) {
@@ -359,9 +452,21 @@ export default function LoginView() {
             disabled={isDisabled}
           />
           {isRequest && <PasswordRequirements password={password} className="mt-2.5" />}
-          {!isRequest && (
-            <p className="mt-1.5 text-[13px] text-[#6b7280]">Forgot it? Ask an administrator for a reset link.</p>
-          )}
+          {!isRequest &&
+            (forgotEnabled ? (
+              <button
+                type="button"
+                onClick={() => {
+                  setError("");
+                  setForgotOpen(true);
+                }}
+                className="mt-1.5 text-[13px] font-medium text-[var(--accent)] hover:underline"
+              >
+                Forgot password?
+              </button>
+            ) : (
+              <p className="mt-1.5 text-[13px] text-[#6b7280]">Forgot it? Ask an administrator for a reset link.</p>
+            ))}
         </div>
 
         {error && <AuthAlert tone="error">{error}</AuthAlert>}

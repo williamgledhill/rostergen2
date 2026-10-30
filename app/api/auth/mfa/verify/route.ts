@@ -9,7 +9,7 @@ const verifySchema = z.object({
 });
 
 export async function POST(request: Request) {
-  const auth = await requireSession();
+  const auth = await requireSession({ allowWithoutTwoFactor: true });
   if (!auth.ok) return auth.response;
 
   const originError = enforceSameOrigin(request);

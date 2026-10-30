@@ -37,8 +37,6 @@ function SecuritySection({ user, initialStatus }: { user: AuthUser; initialStatu
   const [otpauthUri, setOtpauthUri] = useState("");
   const [code, setCode] = useState("");
   const [recoveryCodes, setRecoveryCodes] = useState<string[]>([]);
-  const [disablePassword, setDisablePassword] = useState("");
-  const [disableCode, setDisableCode] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
 
@@ -79,20 +77,6 @@ function SecuritySection({ user, initialStatus }: { user: AuthUser; initialStatu
     });
   };
 
-  const disable = (event: React.FormEvent) => {
-    event.preventDefault();
-    return run(async () => {
-      if (!disablePassword || !disableCode.trim()) {
-        throw new Error("Enter your password and a current authenticator or recovery code.");
-      }
-      await postJson("/api/auth/mfa/disable", { password: disablePassword, code: disableCode.trim() });
-      setDisablePassword("");
-      setDisableCode("");
-      setRecoveryCodes([]);
-      setStatus({ enabled: false, setupPending: false, setupExpiresAt: null });
-      notify({ tone: "success", title: "Two-factor authentication is off" });
-    });
-  };
 
   return (
     <section id="security" className="card scroll-mt-20">
@@ -198,31 +182,10 @@ function SecuritySection({ user, initialStatus }: { user: AuthUser; initialStatu
         )}
 
         {status.enabled && (
-          <form className="space-y-3" onSubmit={disable}>
-            <p className="text-[var(--text-muted)]">
-              To turn it off, confirm your password and enter a current authenticator code or an unused recovery code.
-            </p>
-            <div className="grid gap-3 sm:grid-cols-2">
-              <input
-                type="password"
-                className="input"
-                placeholder="Current password"
-                autoComplete="current-password"
-                value={disablePassword}
-                onChange={(event) => setDisablePassword(event.target.value)}
-              />
-              <input
-                className="input"
-                placeholder="Authenticator or recovery code"
-                autoComplete="one-time-code"
-                value={disableCode}
-                onChange={(event) => setDisableCode(event.target.value)}
-              />
-            </div>
-            <button type="submit" className="btn btn-danger" disabled={busy}>
-              Turn off two-factor
-            </button>
-          </form>
+          <p className="text-[var(--text-muted)]">
+            Two-factor authentication is required for every account. Lost your phone? Sign in with one of your recovery
+            codes, or ask an administrator to reset it so you can set it up again.
+          </p>
         )}
 
         {recoveryCodes.length > 0 && (

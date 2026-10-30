@@ -30,6 +30,13 @@ The first sign-in account comes from `APP_BOOTSTRAP_ADMIN_EMAIL` and
 - Administrators can also add someone directly under Settings → Users → Add user.
   That creates the account and gives an invitation link (valid 7 days) to send
   them; they choose their own password at `/signup/reset`.
+- Two-factor authentication is required for every account. Anyone without it
+  is sent to set it up straight after signing in, and the API refuses their
+  requests until they do. People can't turn it off; an administrator can reset
+  it (Settings → Users → Reset 2FA), which makes them set it up again.
+- With email set up (below), administrators email invitations and reset links,
+  and the sign-in page offers "Forgot password?" (at most one email per account
+  every 5 minutes). Without it, administrators copy links by hand.
 - Sign-in emails can be changed by an administrator (Settings → Users → Edit)
   or by the person themselves in Settings after confirming their password.
   There is no confirmation email yet, as the app has no email service.
@@ -75,3 +82,6 @@ Set in production:
 - `SESSION_SECRET` – random, at least 32 characters.
 - `APP_ENCRYPTION_KEY` – base64-encoded 32-byte key used to encrypt MFA secrets.
 - `APP_BOOTSTRAP_ADMIN_*` – only until the first admin exists, then remove.
+- `RESEND_API_KEY` and `EMAIL_FROM` – optional, turn on email through
+  [Resend](https://resend.com). `EMAIL_FROM` must use a domain verified in
+  Resend, e.g. `Roster Generator <no-reply@yourdomain.com>`.

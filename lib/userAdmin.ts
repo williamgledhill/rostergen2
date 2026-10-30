@@ -16,7 +16,7 @@ export const PASSWORD_RESET_MAX_AGE_SECONDS = 60 * 60 * 24;
 /** Invitations wait longer than resets: people don't always open them straight away. */
 export const INVITE_MAX_AGE_SECONDS = 60 * 60 * 24 * 7;
 
-export type Actor = { id: string; email: string; ipAddress?: string | null };
+export type Actor = { id: string; email: string; name?: string; ipAddress?: string | null };
 
 export type ManagedUser = {
   id: string;
@@ -238,7 +238,7 @@ export async function issuePasswordReset(actor: Actor, id: string) {
       invitation ? INVITE_MAX_AGE_SECONDS : PASSWORD_RESET_MAX_AGE_SECONDS
     );
     await recordAudit(tx, actor, invitation ? "user.invite_resent" : "user.password_reset_issued", user);
-    return { ...link, invitation };
+    return { ...link, invitation, name: user.name, email: user.email };
   });
 }
 
@@ -379,4 +379,30 @@ export async function changeOwnEmail(actor: Actor, currentPassword: string, newE
   }
   forgetCachedSessions();
   return email;
+}
+
+/** How often one person can be sent a "forgot password" email. */
+const FORGOT_PASSWORD_COOLDOWN_MS = 5 * 60 * 1000;
+
+/**
+ * Someone asking for a reset link on the sign-in page. Returns the link only
+ * when it should be emailed: never for unknown, pending or deactivated
+ * accounts, and not again within a few minutes, so the form can't be used to
+ * flood an inbox. The caller answers the same way either way.
+ */
+export async function requestPasswordResetByEmail(rawEmail: string) {
+  const email = normalizeEmail(rawEmail);
+  return prisma.$transaction(async (tx) => {
+    const user = await tx.appUser.findUnique({ where: { email } });
+    if (!user || !user.isActive || user.pendingApproval) return null;
+
+    const recent = await tx.appPasswordReset.count({
+      where: { userId: user.id, createdAt: { gt: new Date(Date.now() - FORGOT_PASSWORD_COOLDOWN_MS) } },
+    });
+    if (recent > 0) return null;
+
+    const link = await createResetToken(tx, user.id, null, PASSWORD_RESET_MAX_AGE_SECONDS);
+    await recordAudit(tx, { id: user.id, email: user.email }, "user.password_reset_requested", user);
+    return { ...link, name: user.name, email: user.email };
+  });
 }

@@ -21,10 +21,23 @@ export async function getSessionContext(): Promise<SessionContext | null> {
   return getSessionContextFromToken(rawToken);
 }
 
-export async function requireSession(options?: { adminOnly?: boolean }): Promise<AuthResult> {
+/**
+ * Every account must use two-factor authentication. Until it is set up, the
+ * only requests allowed are the ones that set it up (allowWithoutTwoFactor).
+ */
+export async function requireSession(options?: { adminOnly?: boolean; allowWithoutTwoFactor?: boolean }): Promise<AuthResult> {
   const session = await getSessionContext();
   if (!session) {
     return { ok: false, response: NextResponse.json({ error: "Unauthorized" }, { status: 401 }) };
+  }
+  if (!session.user.totpEnabled && !options?.allowWithoutTwoFactor) {
+    return {
+      ok: false,
+      response: NextResponse.json(
+        { error: "Set up two-factor authentication to continue.", code: "two_factor_setup_required" },
+        { status: 403 }
+      ),
+    };
   }
   if (options?.adminOnly && session.user.role !== "ADMIN") {
     return { ok: false, response: NextResponse.json({ error: "Forbidden" }, { status: 403 }) };

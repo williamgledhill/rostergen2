@@ -141,13 +141,20 @@ export function AccountRequestsSection() {
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
+type InviteResult =
+  | { name: string; emailed: true; sentTo: string }
+  | { name: string; emailed: false; emailFailed: boolean; url: string; expiresAt: string };
+
 function AddUserForm({
+  emailEnabled,
   onCreated,
   onCancel,
 }: {
-  onCreated: (link: { name: string; url: string; expiresAt: string }) => void;
+  emailEnabled: boolean;
+  onCreated: (result: InviteResult) => void;
   onCancel: () => void;
 }) {
+  const [sendInviteEmail, setSendInviteEmail] = useState(true);
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [role, setRole] = useState<ManagedUser["role"]>("EDITOR");
@@ -169,9 +176,19 @@ function AddUserForm({
     try {
       const data = await requestJson("/api/users", {
         method: "POST",
-        body: { name: name.trim(), email: email.trim(), role },
+        body: { name: name.trim(), email: email.trim(), role, sendEmail: emailEnabled && sendInviteEmail },
       });
-      onCreated({ name: name.trim(), url: data.inviteUrl, expiresAt: data.expiresAt });
+      onCreated(
+        data.emailed
+          ? { name: name.trim(), emailed: true, sentTo: data.sentTo }
+          : {
+              name: name.trim(),
+              emailed: false,
+              emailFailed: Boolean(data.emailFailed),
+              url: data.inviteUrl,
+              expiresAt: data.expiresAt,
+            }
+      );
     } catch (err) {
       setError(errorMessage(err));
     } finally {
@@ -220,8 +237,20 @@ function AddUserForm({
         </div>
       </div>
       <p className="text-[13px] text-[var(--text-muted)]">
-        You&apos;ll get an invitation link to send them. They choose their own password when they open it.
+        {emailEnabled && sendInviteEmail
+          ? "We'll email them an invitation link. They choose their own password when they open it."
+          : "You'll get an invitation link to send them. They choose their own password when they open it."}
       </p>
+      {emailEnabled && (
+        <label className="flex items-center gap-2 text-[13px]">
+          <input
+            type="checkbox"
+            checked={sendInviteEmail}
+            onChange={(event) => setSendInviteEmail(event.target.checked)}
+          />
+          Email the invitation to them
+        </label>
+      )}
       {error && (
         <p className="text-[13px] text-[var(--danger)]" role="alert">
           {error}
@@ -229,7 +258,7 @@ function AddUserForm({
       )}
       <div className="flex gap-2">
         <button type="submit" className="btn btn-primary" disabled={busy}>
-          {busy ? "Adding…" : "Add user and create link"}
+          {busy ? "Adding…" : emailEnabled && sendInviteEmail ? "Add user and send invitation" : "Add user and create link"}
         </button>
         <button type="button" className="btn btn-ghost" disabled={busy} onClick={onCancel}>
           Cancel
@@ -332,9 +361,18 @@ function EditUserForm({
 
 export function UsersSection({ currentUser }: { currentUser: AuthUser }) {
   const { notify, confirm } = useFeedback();
-  const { value: users, setValue: setUsers, error, setError } = useAccountsResource<ManagedUser[]>("/api/users", (data) =>
-    Array.isArray(data?.users) ? data.users : []
-  );
+  const { value: usersData, setValue: setUsersData, error, setError } = useAccountsResource<{
+    users: ManagedUser[];
+    emailEnabled: boolean;
+  }>("/api/users", (data) => ({
+    users: Array.isArray(data?.users) ? data.users : [],
+    emailEnabled: Boolean(data?.emailEnabled),
+  }));
+  const users = usersData?.users ?? null;
+  const emailEnabled = Boolean(usersData?.emailEnabled);
+  const setUsers = (update: (prev: ManagedUser[]) => ManagedUser[]) =>
+    setUsersData((prev) => (prev ? { ...prev, users: update(prev.users) } : prev));
+  const [sentNotice, setSentNotice] = useState<{ user: ManagedUser; sentTo: string; invitation: boolean } | null>(null);
   const [busyId, setBusyId] = useState<string | null>(null);
   const [resetLink, setResetLink] = useState<{
     name: string;
@@ -382,27 +420,44 @@ export function UsersSection({ currentUser }: { currentUser: AuthUser }) {
     });
   };
 
-  const issueReset = async (user: ManagedUser) => {
+  const issueReset = async (user: ManagedUser, delivery: "email" | "link" = emailEnabled ? "email" : "link") => {
     const invited = !user.lastLoginAt;
+    const lifetime = invited ? "7 days" : "24 hours";
     const confirmed = await confirm({
-      title: invited ? `Create a new invitation link for ${user.name}?` : `Create a password reset link for ${user.name}?`,
-      message: invited
-        ? "You'll get a new link to send them. It works for 7 days, and any earlier link stops working."
-        : "You'll get a single-use link to send them. It works for 24 hours, and any earlier link stops working. Their current password keeps working until they use it.",
-      confirmLabel: "Create link",
+      title:
+        delivery === "email"
+          ? invited
+            ? `Email a new invitation to ${user.name}?`
+            : `Email a password reset link to ${user.name}?`
+          : invited
+          ? `Create a new invitation link for ${user.name}?`
+          : `Create a password reset link for ${user.name}?`,
+      message: `${
+        delivery === "email" ? `We'll send it to ${user.email}.` : "You'll get a link to send them yourself."
+      } It works once, for ${lifetime}, and any earlier link stops working.${
+        invited ? "" : " Their current password keeps working until they use it."
+      }`,
+      confirmLabel: delivery === "email" ? "Send email" : "Create link",
     });
     if (!confirmed) return;
     await act(user, async () => {
-      const data = await requestJson(userUrl(user, "/password-reset"), { method: "POST" });
+      const data = await requestJson(userUrl(user, "/password-reset"), { method: "POST", body: { delivery } });
       setAdding(false);
-      setResetLink({ name: user.name, url: data.resetUrl, expiresAt: data.expiresAt, invitation: Boolean(data.invitation) });
+      if (data.emailed) {
+        setResetLink(null);
+        setSentNotice({ user, sentTo: data.sentTo, invitation: Boolean(data.invitation) });
+        notify({ tone: "success", title: `Email sent to ${data.sentTo}` });
+      } else {
+        setSentNotice(null);
+        setResetLink({ name: user.name, url: data.resetUrl, expiresAt: data.expiresAt, invitation: Boolean(data.invitation) });
+      }
     });
   };
 
   const resetTwoFactor = async (user: ManagedUser) => {
     const confirmed = await confirm({
       title: `Turn off two-factor for ${user.name}?`,
-      message: "Use this when they've lost their authenticator. They'll be signed out and can set it up again in Settings.",
+      message: "Use this when they've lost their authenticator. They'll be signed out and asked to set it up again the next time they sign in.",
       confirmLabel: "Turn off",
       tone: "danger",
     });
@@ -453,13 +508,38 @@ export function UsersSection({ currentUser }: { currentUser: AuthUser }) {
       {adding && (
         <AddUserForm
           onCancel={() => setAdding(false)}
-          onCreated={(link) => {
+          emailEnabled={emailEnabled}
+          onCreated={(result) => {
             setAdding(false);
-            setResetLink({ ...link, invitation: true });
             announceAccountsChanged();
-            notify({ tone: "success", title: `${link.name} added`, message: "Send them the invitation link." });
+            if (result.emailed) {
+              notify({ tone: "success", title: `${result.name} added`, message: `Invitation emailed to ${result.sentTo}.` });
+              return;
+            }
+            setResetLink({ name: result.name, url: result.url, expiresAt: result.expiresAt, invitation: true });
+            notify(
+              result.emailFailed
+                ? { tone: "error", title: `${result.name} added, but the email didn't send`, message: "Send them the link below instead." }
+                : { tone: "success", title: `${result.name} added`, message: "Send them the invitation link." }
+            );
           }}
         />
+      )}
+
+      {sentNotice && (
+        <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[var(--border)] bg-[var(--success-soft)] px-5 py-3 text-[14px]">
+          <p className="text-[var(--success)]">
+            {sentNotice.invitation ? "Invitation" : "Reset link"} emailed to {sentNotice.sentTo}.
+          </p>
+          <div className="flex gap-2">
+            <button type="button" className="btn btn-sm" onClick={() => void issueReset(sentNotice.user, "link")}>
+              Didn&apos;t arrive? Copy a link instead
+            </button>
+            <button type="button" className="btn btn-sm btn-ghost" onClick={() => setSentNotice(null)}>
+              Dismiss
+            </button>
+          </div>
+        </div>
       )}
 
       {resetLink && (
@@ -505,7 +585,7 @@ export function UsersSection({ currentUser }: { currentUser: AuthUser }) {
                     onCancel={() => setEditingId(null)}
                     onSaved={(changes) => {
                       setEditingId(null);
-                      setUsers((prev) => (prev ?? []).map((item) => (item.id === user.id ? { ...item, ...changes } : item)));
+                      setUsers((prev) => prev.map((item) => (item.id === user.id ? { ...item, ...changes } : item)));
                       announceAccountsChanged();
                       notify({ tone: "success", title: `${changes.name}'s details updated` });
                     }}
@@ -550,7 +630,7 @@ export function UsersSection({ currentUser }: { currentUser: AuthUser }) {
                     {user.isActive && (
                       <button type="button" className="btn btn-sm" disabled={busy} onClick={() => void issueReset(user)}>
                         {user.lastLoginAt ? <KeyRound /> : <Mail />}
-                        {user.lastLoginAt ? "Reset password" : "Resend invite"}
+                        {user.lastLoginAt ? (emailEnabled ? "Email reset link" : "Reset password") : "Resend invite"}
                       </button>
                     )}
                     {user.totpEnabled && (
@@ -605,6 +685,7 @@ const AUDIT_ACTION_LABELS: Record<string, string> = {
   "user.invite_accepted": "accepted their invitation:",
   "user.details_changed": "changed the details of",
   "user.email_changed": "changed their sign-in email:",
+  "user.password_reset_requested": "asked for a password reset email:",
   "user.password_reset_completed": "reset their password using a link:",
   "user.password_changed": "changed their password:",
 };

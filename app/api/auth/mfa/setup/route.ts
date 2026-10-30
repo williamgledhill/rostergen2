@@ -4,7 +4,7 @@ import { beginTotpSetup } from "@/lib/auth";
 import { enforceSameOrigin, requireSession } from "@/lib/apiAuth";
 
 export async function POST(request: Request) {
-  const auth = await requireSession();
+  const auth = await requireSession({ allowWithoutTwoFactor: true });
   if (!auth.ok) return auth.response;
 
   const originError = enforceSameOrigin(request);

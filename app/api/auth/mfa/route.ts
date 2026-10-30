@@ -3,7 +3,7 @@ import { getMfaStatus } from "@/lib/auth";
 import { requireSession } from "@/lib/apiAuth";
 
 export async function GET() {
-  const auth = await requireSession();
+  const auth = await requireSession({ allowWithoutTwoFactor: true });
   if (!auth.ok) return auth.response;
 
   return NextResponse.json(await getMfaStatus(auth.session.user.id));

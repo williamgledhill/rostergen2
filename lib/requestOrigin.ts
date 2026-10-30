@@ -38,3 +38,13 @@ export function isAllowedRequestOrigin(
   const allowed = new Set<string>([requestOrigin, ...extraAllowedOrigins]);
   return candidateOrigins.some((sourceOrigin) => allowed.has(sourceOrigin));
 }
+
+/**
+ * A full link into the app, for links that leave it (emails, invitations).
+ * Uses APP_ORIGIN when set, so links never depend on the request's Host header.
+ */
+export function buildAppUrl(requestUrl: string, path: string) {
+  const configured = process.env.APP_ORIGIN?.split(",")[0]?.trim();
+  const origin = (configured && normalizeOrigin(configured)) || new URL(requestUrl).origin;
+  return new URL(path, origin);
+}

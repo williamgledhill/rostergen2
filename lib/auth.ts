@@ -419,32 +419,7 @@ export async function confirmTotpSetup(userId: string, code: string) {
     return recoveryCodes;
   });
 
-  return result;
-}
-
-export async function disableTotp(userId: string, password: string, code: string) {
-  const result = await prisma.$transaction(async (tx) => {
-    const user = await tx.appUser.findUnique({ where: { id: userId } });
-    if (!user || !user.isActive || !user.totpEnabled) return false;
-
-    const passwordMatches = await verifyPassword(password, user.passwordHash);
-    if (!passwordMatches) return false;
-
-    const mfaCheck = verifyTotpOrRecoveryCode(user, code);
-    if (!mfaCheck.ok) return false;
-
-    await tx.appUser.update({
-      where: { id: userId },
-      data: {
-        totpEnabled: false,
-        totpSecretCiphertext: null,
-        totpSecretNonce: null,
-        totpRecoveryCodes: Prisma.JsonNull,
-      },
-    });
-    await tx.appMfaSetup.deleteMany({ where: { userId } });
-    return true;
-  });
-
+  // Sessions remember whether two-factor is on; let them see the change now.
+  if (result) forgetCachedSessions();
   return result;
 }
