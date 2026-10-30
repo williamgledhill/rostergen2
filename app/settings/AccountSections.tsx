@@ -2,7 +2,9 @@
 
 import React, { useCallback, useEffect, useState } from "react";
 import { Check, Copy, KeyRound, LogOut, Mail, ShieldOff, UserCheck, UserPlus, UserX, X } from "lucide-react";
+import PasswordRequirements from "@/components/PasswordRequirements";
 import { useFeedback } from "@/components/ui/Feedback";
+import { meetsPasswordPolicy, PASSWORD_POLICY_MESSAGE } from "@/lib/passwordRules";
 import type { AccountRequest, AuthUser } from "@/lib/auth";
 import type { AuditEntry, ManagedUser } from "@/lib/userAdmin";
 
@@ -551,8 +553,8 @@ export function ChangePasswordSection() {
   async function submit(event: React.FormEvent) {
     event.preventDefault();
     setError("");
-    if (newPassword.trim().length < 12) {
-      setError("Use a new password of at least 12 characters.");
+    if (!meetsPasswordPolicy(newPassword)) {
+      setError(PASSWORD_POLICY_MESSAGE);
       return;
     }
     if (newPassword !== confirmPassword) {
@@ -594,7 +596,7 @@ export function ChangePasswordSection() {
           <input
             type="password"
             className="input"
-            placeholder="New password (12+ characters)"
+            placeholder="New password"
             autoComplete="new-password"
             value={newPassword}
             onChange={(event) => setNewPassword(event.target.value)}
@@ -608,6 +610,7 @@ export function ChangePasswordSection() {
             onChange={(event) => setConfirmPassword(event.target.value)}
           />
         </div>
+        {newPassword && <PasswordRequirements password={newPassword} />}
         <button type="submit" className="btn btn-primary" disabled={busy || !currentPassword || !newPassword}>
           {busy ? "Changing…" : "Change password"}
         </button>

@@ -9,9 +9,10 @@ import AuthLayout, {
   authLabelClass,
   authPrimaryButtonClass,
 } from "@/components/AuthLayout";
+import PasswordRequirements from "@/components/PasswordRequirements";
+import { meetsPasswordPolicy, PASSWORD_POLICY_MESSAGE } from "@/lib/passwordRules";
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-const MIN_PASSWORD_LENGTH = 12;
 
 type Mode = "signin" | "request";
 
@@ -139,8 +140,8 @@ export default function LoginView() {
       setError("Enter a valid email address.");
       return;
     }
-    if (password.trim().length < MIN_PASSWORD_LENGTH) {
-      setError(`Use a password of at least ${MIN_PASSWORD_LENGTH} characters.`);
+    if (!meetsPasswordPolicy(password)) {
+      setError(PASSWORD_POLICY_MESSAGE);
       return;
     }
 
@@ -356,8 +357,8 @@ export default function LoginView() {
             onChange={setPassword}
             autoComplete={isRequest ? "new-password" : "current-password"}
             disabled={isDisabled}
-            placeholder={isRequest ? `At least ${MIN_PASSWORD_LENGTH} characters` : undefined}
           />
+          {isRequest && <PasswordRequirements password={password} className="mt-2.5" />}
           {!isRequest && (
             <p className="mt-1.5 text-[13px] text-[#6b7280]">Forgot it? Ask an administrator for a reset link.</p>
           )}

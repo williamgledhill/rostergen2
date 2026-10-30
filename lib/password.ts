@@ -1,4 +1,5 @@
 import crypto from "crypto";
+import { meetsPasswordPolicy } from "@/lib/passwordRules";
 
 const SCRYPT_KEY_LENGTH = 64;
 const SCRYPT_N = 16384;
@@ -36,8 +37,7 @@ function timingSafeHexEqual(leftHex: string, rightHex: string) {
 }
 
 export function validatePasswordStrength(password: string) {
-  const trimmed = password.trim();
-  return trimmed.length >= 12;
+  return meetsPasswordPolicy(password);
 }
 
 export async function hashPassword(password: string) {

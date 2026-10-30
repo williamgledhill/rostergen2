@@ -4,6 +4,7 @@ import { jsonError, parseJsonBody, serverError } from "@/lib/apiHelpers";
 import { enforceSameOrigin } from "@/lib/apiAuth";
 import { requestAccount } from "@/lib/auth";
 import { validatePasswordStrength } from "@/lib/password";
+import { PASSWORD_POLICY_MESSAGE } from "@/lib/passwordRules";
 
 const signupRequestSchema = z.object({
   name: z.string().trim().min(1).max(120),
@@ -19,7 +20,7 @@ export async function POST(request: Request) {
   if (!body.ok) return body.response;
 
   if (!validatePasswordStrength(body.data.password)) {
-    return jsonError("Use a password of at least 12 characters.", 400);
+    return jsonError(PASSWORD_POLICY_MESSAGE, 400);
   }
 
   try {

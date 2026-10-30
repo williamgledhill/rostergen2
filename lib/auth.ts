@@ -1,6 +1,7 @@
 import { Prisma, type AppUser, type AppUserRole } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { hashPassword, validatePasswordStrength, verifyPassword } from "@/lib/password";
+import { PASSWORD_POLICY_MESSAGE } from "@/lib/passwordRules";
 import {
   buildOtpAuthUri,
   createTotpSecret,
@@ -109,7 +110,7 @@ export async function ensureBootstrapUser() {
     const name = process.env.APP_BOOTSTRAP_ADMIN_NAME?.trim() || "Administrator";
     if (!email || !password) return;
     if (!validatePasswordStrength(password)) {
-      throw new Error("APP_BOOTSTRAP_ADMIN_PASSWORD must be at least 12 characters.");
+      throw new Error(`APP_BOOTSTRAP_ADMIN_PASSWORD doesn't meet the password policy. ${PASSWORD_POLICY_MESSAGE}`);
     }
 
     await prisma.appUser.create({

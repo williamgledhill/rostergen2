@@ -3,9 +3,10 @@
 import React, { useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { LoaderCircle } from "lucide-react";
+import PasswordRequirements from "@/components/PasswordRequirements";
+import { meetsPasswordPolicy, PASSWORD_POLICY_MESSAGE } from "@/lib/passwordRules";
 import AuthLayout, { AuthAlert, authInputClass, authLabelClass, authPrimaryButtonClass } from "@/components/AuthLayout";
 
-const MIN_PASSWORD_LENGTH = 12;
 
 type Status = "checking" | "ready" | "invalid" | "done";
 
@@ -39,8 +40,8 @@ export default function ResetPasswordView() {
   async function submit(event: React.FormEvent) {
     event.preventDefault();
     setError("");
-    if (password.trim().length < MIN_PASSWORD_LENGTH) {
-      setError(`Use a password of at least ${MIN_PASSWORD_LENGTH} characters.`);
+    if (!meetsPasswordPolicy(password)) {
+      setError(PASSWORD_POLICY_MESSAGE);
       return;
     }
     if (password !== confirmPassword) {
@@ -103,11 +104,11 @@ export default function ResetPasswordView() {
               type="password"
               autoComplete="new-password"
               className={authInputClass}
-              placeholder={`At least ${MIN_PASSWORD_LENGTH} characters`}
               value={password}
               onChange={(event) => setPassword(event.target.value)}
               disabled={submitting}
             />
+            <PasswordRequirements password={password} className="mt-2.5" />
           </div>
           <div>
             <label htmlFor="confirm-password" className={authLabelClass}>

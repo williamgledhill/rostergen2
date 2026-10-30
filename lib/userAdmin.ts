@@ -3,6 +3,7 @@ import { Prisma, type AppUserRole } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { forgetCachedSessions } from "@/lib/auth";
 import { hashPassword, validatePasswordStrength, verifyPassword } from "@/lib/password";
+import { PASSWORD_POLICY_MESSAGE } from "@/lib/passwordRules";
 import { createOpaqueAuthToken, hashAuthToken } from "@/lib/sessionToken";
 
 /**
@@ -258,7 +259,7 @@ export async function describePasswordReset(rawToken: string) {
 
 export async function completePasswordReset(rawToken: string, newPassword: string, ipAddress?: string | null) {
   if (!validatePasswordStrength(newPassword)) {
-    throw new UserAdminError("Use a password of at least 12 characters.");
+    throw new UserAdminError(PASSWORD_POLICY_MESSAGE);
   }
   const passwordHash = await hashPassword(newPassword);
 
@@ -296,7 +297,7 @@ export async function changeOwnPassword(
   newPassword: string
 ) {
   if (!validatePasswordStrength(newPassword)) {
-    throw new UserAdminError("Use a new password of at least 12 characters.");
+    throw new UserAdminError(PASSWORD_POLICY_MESSAGE);
   }
 
   const user = await prisma.appUser.findUnique({ where: { id: actor.id } });

@@ -9,8 +9,9 @@ describe("password hashing", () => {
     await expect(verifyPassword("incorrect", hash)).resolves.toBe(false);
   });
 
-  it("enforces a minimum password length policy", () => {
+  it("enforces the password policy", () => {
     expect(validatePasswordStrength("short")).toBe(false);
-    expect(validatePasswordStrength("long-enough-password")).toBe(true);
+    expect(validatePasswordStrength("long-enough-password")).toBe(false);
+    expect(validatePasswordStrength("Long-enough-password")).toBe(true);
   });
 });
