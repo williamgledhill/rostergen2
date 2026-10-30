@@ -35,3 +35,6 @@ pnpm-debug.log*
 next-env.d.ts
 .vercel
 .env*.local
+
+# Production settings pulled with `vercel env pull` for one-off commands
+.env.prod

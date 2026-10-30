@@ -36,8 +36,9 @@ The first sign-in account comes from `APP_BOOTSTRAP_ADMIN_EMAIL` and
   administrator can't change their own role or deactivate themselves.
 - Every account change is written to `AppAuditLog`, shown under Settings →
   Account activity.
-- Locked out of every admin account? Set a user's role from the database:
-  `UPDATE "AppUser" SET role = 'ADMIN', "isActive" = true WHERE email = '…';`
+- Locked out? `scripts/account-recovery.ts` lists accounts and prints a reset
+  link for any of them (optionally turning off two-factor). Run it with the
+  production settings, as described at the top of the script.
 
 ## Tests
 
