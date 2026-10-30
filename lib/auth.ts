@@ -130,13 +130,9 @@ export async function ensureBootstrapUser() {
 }
 
 /**
- * A request for access is stored as an inactive editor that has never signed in.
+ * A request for access is stored as an inactive editor marked pendingApproval.
  * An administrator approves it (activates the account) or rejects it (deletes it).
  */
-function isPendingRequest(user: Pick<AppUser, "isActive" | "lastLoginAt">) {
-  return !user.isActive && !user.lastLoginAt;
-}
-
 export type AccountRequest = {
   id: string;
   email: string;
@@ -164,6 +160,7 @@ export async function requestAccount(input: { name: string; email: string; passw
         role: "EDITOR",
         passwordHash: await hashPassword(input.password),
         isActive: false,
+        pendingApproval: true,
       },
     });
   } catch (error) {
@@ -175,7 +172,7 @@ export async function requestAccount(input: { name: string; email: string; passw
 
 export async function listAccountRequests(): Promise<AccountRequest[]> {
   const users = await prisma.appUser.findMany({
-    where: { isActive: false, lastLoginAt: null },
+    where: { pendingApproval: true },
     select: { id: true, email: true, name: true, createdAt: true },
     orderBy: { createdAt: "asc" },
   });
@@ -183,18 +180,20 @@ export async function listAccountRequests(): Promise<AccountRequest[]> {
 }
 
 export async function approveAccountRequest(id: string) {
+  const user = await prisma.appUser.findFirst({ where: { id, pendingApproval: true }, select: { email: true } });
+  if (!user) return null;
   const result = await prisma.appUser.updateMany({
-    where: { id, isActive: false, lastLoginAt: null },
-    data: { isActive: true },
+    where: { id, pendingApproval: true },
+    data: { isActive: true, pendingApproval: false },
   });
-  return result.count > 0;
+  return result.count > 0 ? user : null;
 }
 
 export async function rejectAccountRequest(id: string) {
-  const result = await prisma.appUser.deleteMany({
-    where: { id, isActive: false, lastLoginAt: null },
-  });
-  return result.count > 0;
+  const user = await prisma.appUser.findFirst({ where: { id, pendingApproval: true }, select: { email: true } });
+  if (!user) return null;
+  const result = await prisma.appUser.deleteMany({ where: { id, pendingApproval: true } });
+  return result.count > 0 ? user : null;
 }
 
 export async function authenticateUser(email: string, password: string, meta: AuthRequestMeta) {
@@ -208,7 +207,7 @@ export async function authenticateUser(email: string, password: string, meta: Au
   if (!passwordMatches) return null;
 
   // Only someone who knows the password learns the account is waiting.
-  if (isPendingRequest(user)) return { pendingApproval: true as const };
+  if (user.pendingApproval) return { pendingApproval: true as const };
   if (!user.isActive) return null;
 
   if (user.totpEnabled) {
@@ -328,6 +327,14 @@ export async function getSessionContextFromToken(rawToken?: string | null) {
     for (const [key, entry] of sessionCache) if (now - entry.cachedAt >= SESSION_CACHE_MS) sessionCache.delete(key);
   }
   return value;
+}
+
+/**
+ * Forgets every remembered session on this server, so a revoked or deactivated
+ * account stops working at once here (other servers catch up within a minute).
+ */
+export function forgetCachedSessions() {
+  sessionCache.clear();
 }
 
 export async function revokeSession(rawToken?: string | null) {

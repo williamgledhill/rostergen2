@@ -1,5 +1,6 @@
 import { redirect } from "next/navigation";
 import LoginView from "@/components/LoginView";
+import ResetPasswordView from "@/components/ResetPasswordView";
 import WorkspaceRouter from "@/components/WorkspaceRouter";
 import { getSessionContext } from "@/lib/apiAuth";
 
@@ -28,7 +29,7 @@ export default async function SpaCatchAllPage({
   const session = await getSessionContext();
 
   if (slug[0] === "signup") {
-    return <LoginView />;
+    return slug[1] === "reset" ? <ResetPasswordView /> : <LoginView />;
   }
 
   if (!session) {

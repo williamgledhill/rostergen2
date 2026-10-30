@@ -1,11 +1,12 @@
 "use client";
 
-import React, { useEffect, useMemo, useState } from "react";
-import { Check, Copy, Save, ShieldCheck, X } from "lucide-react";
+import React, { useMemo, useState } from "react";
+import { Copy, Save, ShieldCheck } from "lucide-react";
 import { useFeedback } from "@/components/ui/Feedback";
+import { AccountRequestsSection, AuditLogSection, ChangePasswordSection, UsersSection } from "./AccountSections";
 import PageHeader from "@/components/ui/PageHeader";
 import SaveStatus from "@/components/ui/SaveStatus";
-import type { AccountRequest, AuthUser } from "@/lib/auth";
+import type { AuthUser } from "@/lib/auth";
 import { buildDraftStorageKey } from "@/lib/clientDrafts";
 import { AppSettings, DAY_KEYS, DAY_LABELS, DEFAULT_SETTINGS, type DayKey } from "@/lib/settingsDefaults";
 import { usePersistedAutosave } from "@/lib/usePersistedAutosave";
@@ -213,99 +214,6 @@ function SecuritySection({ user, initialStatus }: { user: AuthUser; initialStatu
   );
 }
 
-function AccountRequestsSection() {
-  const { notify } = useFeedback();
-  const [requests, setRequests] = useState<AccountRequest[] | null>(null);
-  const [busyId, setBusyId] = useState<string | null>(null);
-  const [error, setError] = useState("");
-
-  useEffect(() => {
-    fetch("/api/users/requests")
-      .then(async (res) => {
-        const data = await res.json().catch(() => ({}));
-        if (!res.ok) throw new Error(data?.error || "Could not load account requests.");
-        setRequests(Array.isArray(data?.requests) ? data.requests : []);
-      })
-      .catch((err) => setError(err instanceof Error ? err.message : "Could not load account requests."));
-  }, []);
-
-  async function decide(request: AccountRequest, approve: boolean) {
-    setBusyId(request.id);
-    setError("");
-    try {
-      const res = await fetch(`/api/users/requests/${encodeURIComponent(request.id)}`, {
-        method: approve ? "POST" : "DELETE",
-      });
-      const data = await res.json().catch(() => ({}));
-      if (!res.ok) throw new Error(data?.error || "Request failed");
-      setRequests((prev) => (prev ?? []).filter((item) => item.id !== request.id));
-      notify({ tone: "success", title: approve ? `${request.name} can now sign in` : "Request rejected" });
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Something went wrong.");
-    } finally {
-      setBusyId(null);
-    }
-  }
-
-  return (
-    <section id="account-requests" className="card scroll-mt-20">
-      <div className="card-header">
-        <div>
-          <h2 className="card-title">Account requests</h2>
-          <p className="card-description">
-            People who asked for access from the sign-in page. Approved accounts can edit rosters.
-          </p>
-        </div>
-        {requests && requests.length > 0 && <span className="badge">{requests.length}</span>}
-      </div>
-
-      {requests === null && !error && <p className="p-5 text-[14px] text-[var(--text-muted)]">Loading…</p>}
-      {requests && requests.length === 0 && (
-        <p className="p-5 text-[14px] text-[var(--text-muted)]">No requests waiting.</p>
-      )}
-      {requests && requests.length > 0 && (
-        <ul className="divide-y divide-[var(--border)]">
-          {requests.map((request) => (
-            <li key={request.id} className="flex flex-wrap items-center gap-x-4 gap-y-2 px-5 py-3 text-[14px]">
-              <div className="min-w-0 flex-1">
-                <p className="font-medium">{request.name}</p>
-                <p className="truncate text-[13px] text-[var(--text-muted)]">
-                  {request.email} · requested {new Date(request.createdAt).toLocaleDateString()}
-                </p>
-              </div>
-              <div className="flex gap-2">
-                <button
-                  type="button"
-                  className="btn btn-sm btn-primary"
-                  disabled={busyId !== null}
-                  onClick={() => void decide(request, true)}
-                >
-                  <Check />
-                  Approve
-                </button>
-                <button
-                  type="button"
-                  className="btn btn-sm"
-                  disabled={busyId !== null}
-                  onClick={() => void decide(request, false)}
-                >
-                  <X />
-                  Reject
-                </button>
-              </div>
-            </li>
-          ))}
-        </ul>
-      )}
-      {error && (
-        <p className="px-5 pb-4 text-[13px] text-[var(--danger)]" role="alert">
-          {error}
-        </p>
-      )}
-    </section>
-  );
-}
-
 export default function SettingsClient({
   initialSettings,
   initialSessionUser,
@@ -361,7 +269,7 @@ export default function SettingsClient({
     <div className="mx-auto max-w-4xl">
       <PageHeader
         title="Settings"
-        description={isAdmin ? "Roster defaults, account requests and security." : "Roster defaults and account security."}
+        description={isAdmin ? "Roster defaults, users and account security." : "Roster defaults and account security."}
         meta={isAdmin ? <SaveStatus state={saveState} /> : undefined}
         actions={
           isAdmin && (
@@ -440,8 +348,12 @@ export default function SettingsClient({
         </section>
 
         {isAdmin && <AccountRequestsSection />}
+        {isAdmin && <UsersSection currentUser={initialSessionUser} />}
 
+        <ChangePasswordSection />
         <SecuritySection user={initialSessionUser} initialStatus={initialMfaStatus} />
+
+        {isAdmin && <AuditLogSection />}
       </div>
     </div>
   );

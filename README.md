@@ -22,6 +22,23 @@ built-in task templates and sample people.
 The first sign-in account comes from `APP_BOOTSTRAP_ADMIN_EMAIL` and
 `APP_BOOTSTRAP_ADMIN_PASSWORD`, created only when there are no users yet.
 
+## Accounts
+
+- Anyone can request access from the sign-in page. The account stays inactive
+  until an administrator approves it under Settings → Account requests; approved
+  accounts are editors.
+- Administrators manage everyone else under Settings → Users: change role,
+  deactivate or reactivate, sign out everywhere, turn off two-factor, and issue a
+  password reset link. Administrators never see or set passwords: a reset link
+  works once, for 24 hours, and the user chooses the new password at
+  `/signup/reset`. Completing a reset signs the user out everywhere.
+- The app refuses changes that would leave no active administrator, and an
+  administrator can't change their own role or deactivate themselves.
+- Every account change is written to `AppAuditLog`, shown under Settings →
+  Account activity.
+- Locked out of every admin account? Set a user's role from the database:
+  `UPDATE "AppUser" SET role = 'ADMIN', "isActive" = true WHERE email = '…';`
+
 ## Tests
 
 ```bash

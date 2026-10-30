@@ -262,6 +262,7 @@ model AppUser {
   role              AppUserRole         @default(EDITOR)
   passwordHash      String
   isActive          Boolean             @default(true)
+  pendingApproval   Boolean             @default(false)
   mustChangePassword Boolean            @default(false)
   totpEnabled       Boolean             @default(false)
   totpSecretCiphertext String?
@@ -273,6 +274,37 @@ model AppUser {
   sessions          AppSession[]
   loginChallenges   AppLoginChallenge[]
   mfaSetup          AppMfaSetup?
+  passwordResets    AppPasswordReset[]
+}
+
+model AppPasswordReset {
+  id          String    @id @default(cuid())
+  userId      String
+  tokenHash   String    @unique
+  expiresAt   DateTime
+  usedAt      DateTime?
+  createdById String?
+  createdAt   DateTime  @default(now())
+  user        AppUser   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([expiresAt])
+}
+
+/// Kept without foreign keys so the record survives when an account is deleted.
+model AppAuditLog {
+  id           String   @id @default(cuid())
+  actorId      String?
+  actorEmail   String?
+  action       String
+  targetUserId String?
+  targetEmail  String?
+  details      Json?
+  ipAddress    String?
+  createdAt    DateTime @default(now())
+
+  @@index([createdAt])
+  @@index([targetUserId])
 }
 
 model AppSession {

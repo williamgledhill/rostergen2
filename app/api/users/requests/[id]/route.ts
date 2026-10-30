@@ -1,40 +1,30 @@
 import { NextResponse } from "next/server";
-import { jsonError, serverError } from "@/lib/apiHelpers";
-import { enforceSameOrigin, requireSession } from "@/lib/apiAuth";
+import { jsonError } from "@/lib/apiHelpers";
 import { approveAccountRequest, rejectAccountRequest } from "@/lib/auth";
+import { prisma } from "@/lib/prisma";
+import { recordAudit } from "@/lib/userAdmin";
+import { runAdminAction } from "@/lib/userAdminRoute";
 
 type RouteContext = { params: Promise<{ id: string }> };
 
 /** Approves the request: the account becomes an active editor. */
 export async function POST(request: Request, { params }: RouteContext) {
-  const auth = await requireSession({ adminOnly: true });
-  if (!auth.ok) return auth.response;
-
-  const originError = enforceSameOrigin(request);
-  if (originError) return originError;
-
-  try {
-    const approved = await approveAccountRequest((await params).id);
-    if (!approved) return jsonError("Request not found", 404);
+  return runAdminAction(request, "Could not approve the request.", async (actor) => {
+    const { id } = await params;
+    const user = await approveAccountRequest(id);
+    if (!user) return jsonError("Request not found", 404);
+    await recordAudit(prisma, actor, "user.request_approved", { id, email: user.email });
     return NextResponse.json({ ok: true });
-  } catch (err) {
-    return serverError(err, "Could not approve the request.");
-  }
+  });
 }
 
 /** Rejects the request and removes the account. */
 export async function DELETE(request: Request, { params }: RouteContext) {
-  const auth = await requireSession({ adminOnly: true });
-  if (!auth.ok) return auth.response;
-
-  const originError = enforceSameOrigin(request);
-  if (originError) return originError;
-
-  try {
-    const rejected = await rejectAccountRequest((await params).id);
-    if (!rejected) return jsonError("Request not found", 404);
+  return runAdminAction(request, "Could not reject the request.", async (actor) => {
+    const { id } = await params;
+    const user = await rejectAccountRequest(id);
+    if (!user) return jsonError("Request not found", 404);
+    await recordAudit(prisma, actor, "user.request_rejected", { id, email: user.email });
     return NextResponse.json({ ok: true });
-  } catch (err) {
-    return serverError(err, "Could not reject the request.");
-  }
+  });
 }
