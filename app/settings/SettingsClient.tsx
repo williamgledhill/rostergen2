@@ -3,7 +3,13 @@
 import React, { useMemo, useState } from "react";
 import { Copy, Save, ShieldCheck } from "lucide-react";
 import { useFeedback } from "@/components/ui/Feedback";
-import { AccountRequestsSection, AuditLogSection, ChangePasswordSection, UsersSection } from "./AccountSections";
+import {
+  AccountRequestsSection,
+  AuditLogSection,
+  ChangeEmailSection,
+  ChangePasswordSection,
+  UsersSection,
+} from "./AccountSections";
 import PageHeader from "@/components/ui/PageHeader";
 import SaveStatus from "@/components/ui/SaveStatus";
 import type { AuthUser } from "@/lib/auth";
@@ -381,6 +387,7 @@ export default function SettingsClient({
         {isAdmin && <AccountRequestsSection />}
         {isAdmin && <UsersSection currentUser={initialSessionUser} />}
 
+        <ChangeEmailSection initialEmail={initialSessionUser.email} />
         <ChangePasswordSection />
         <SecuritySection user={initialSessionUser} initialStatus={initialMfaStatus} />
 

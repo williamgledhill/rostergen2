@@ -313,3 +313,70 @@ export async function changeOwnPassword(
   });
   forgetCachedSessions();
 }
+
+function normalizeEmail(email: string) {
+  return email.trim().toLowerCase();
+}
+
+/** The email is how people sign in, so it has to be unique across every account, including requests. */
+async function assertEmailAvailable(db: Db, email: string, userId: string) {
+  const existing = await db.appUser.findUnique({ where: { email }, select: { id: true, pendingApproval: true } });
+  if (existing && existing.id !== userId) {
+    throw new UserAdminError(
+      existing.pendingApproval
+        ? "Someone has already requested access with this email. Approve or reject that request first."
+        : "Another account already uses this email."
+    );
+  }
+}
+
+function rethrowDuplicateEmail(error: unknown): never {
+  if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002") {
+    throw new UserAdminError("Another account already uses this email.");
+  }
+  throw error;
+}
+
+/** An administrator changing someone's name or sign-in email. Their sessions stay signed in. */
+export async function updateUserDetails(actor: Actor, id: string, input: { name?: string; email?: string }) {
+  try {
+    await prisma.$transaction(async (tx) => {
+      const user = await findManagedUser(tx, id);
+      const name = input.name?.trim() ?? user.name;
+      const email = input.email ? normalizeEmail(input.email) : user.email;
+      if (name === user.name && email === user.email) return;
+      if (email !== user.email) await assertEmailAvailable(tx, email, user.id);
+
+      await tx.appUser.update({ where: { id }, data: { name, email } });
+      const details: Record<string, string> = {};
+      if (email !== user.email) Object.assign(details, { emailFrom: user.email, emailTo: email });
+      if (name !== user.name) Object.assign(details, { nameFrom: user.name, nameTo: name });
+      await recordAudit(tx, actor, "user.details_changed", { id: user.id, email }, details);
+    });
+  } catch (error) {
+    rethrowDuplicateEmail(error);
+  }
+  forgetCachedSessions();
+}
+
+/** A signed-in user changing their own sign-in email, confirmed with their password. */
+export async function changeOwnEmail(actor: Actor, currentPassword: string, newEmail: string) {
+  const email = normalizeEmail(newEmail);
+  const user = await prisma.appUser.findUnique({ where: { id: actor.id } });
+  if (!user || !(await verifyPassword(currentPassword, user.passwordHash))) {
+    throw new UserAdminError("Your current password is incorrect.");
+  }
+  if (email === user.email) throw new UserAdminError("That's already your email.");
+
+  try {
+    await prisma.$transaction(async (tx) => {
+      await assertEmailAvailable(tx, email, user.id);
+      await tx.appUser.update({ where: { id: user.id }, data: { email } });
+      await recordAudit(tx, actor, "user.email_changed", { id: user.id, email }, { emailFrom: user.email, emailTo: email });
+    });
+  } catch (error) {
+    rethrowDuplicateEmail(error);
+  }
+  forgetCachedSessions();
+  return email;
+}

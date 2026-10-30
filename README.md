@@ -30,6 +30,9 @@ The first sign-in account comes from `APP_BOOTSTRAP_ADMIN_EMAIL` and
 - Administrators can also add someone directly under Settings → Users → Add user.
   That creates the account and gives an invitation link (valid 7 days) to send
   them; they choose their own password at `/signup/reset`.
+- Sign-in emails can be changed by an administrator (Settings → Users → Edit)
+  or by the person themselves in Settings after confirming their password.
+  There is no confirmation email yet, as the app has no email service.
 - Administrators manage everyone else under Settings → Users: change role,
   deactivate or reactivate, sign out everywhere, turn off two-factor, and issue a
   password reset link. Administrators never see or set passwords: a reset link

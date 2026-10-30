@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useCallback, useEffect, useState } from "react";
-import { Check, Copy, KeyRound, LogOut, Mail, ShieldOff, UserCheck, UserPlus, UserX, X } from "lucide-react";
+import { Check, Copy, KeyRound, LogOut, Mail, Pencil, ShieldOff, UserCheck, UserPlus, UserX, X } from "lucide-react";
 import PasswordRequirements from "@/components/PasswordRequirements";
 import { useFeedback } from "@/components/ui/Feedback";
 import { meetsPasswordPolicy, PASSWORD_POLICY_MESSAGE } from "@/lib/passwordRules";
@@ -239,9 +239,100 @@ function AddUserForm({
   );
 }
 
+function EditUserForm({
+  user,
+  onSaved,
+  onCancel,
+}: {
+  user: ManagedUser;
+  onSaved: (changes: { name: string; email: string }) => void;
+  onCancel: () => void;
+}) {
+  const [name, setName] = useState(user.name);
+  const [email, setEmail] = useState(user.email);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState("");
+
+  async function submit(event: React.FormEvent) {
+    event.preventDefault();
+    setError("");
+    if (!name.trim()) {
+      setError("Enter a name.");
+      return;
+    }
+    if (!EMAIL_REGEX.test(email.trim())) {
+      setError("Enter a valid email address.");
+      return;
+    }
+    setBusy(true);
+    try {
+      await requestJson(`/api/users/${encodeURIComponent(user.id)}`, {
+        method: "PATCH",
+        body: { name: name.trim(), email: email.trim() },
+      });
+      onSaved({ name: name.trim(), email: email.trim().toLowerCase() });
+    } catch (err) {
+      setError(errorMessage(err));
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <form className="space-y-3" onSubmit={submit}>
+      <div className="grid gap-3 sm:grid-cols-2">
+        <div>
+          <label className="field-label" htmlFor={`edit-name-${user.id}`}>
+            Name
+          </label>
+          <input
+            id={`edit-name-${user.id}`}
+            className="input"
+            autoComplete="off"
+            value={name}
+            onChange={(event) => setName(event.target.value)}
+            autoFocus
+          />
+        </div>
+        <div>
+          <label className="field-label" htmlFor={`edit-email-${user.id}`}>
+            Sign-in email
+          </label>
+          <input
+            id={`edit-email-${user.id}`}
+            type="email"
+            className="input"
+            autoComplete="off"
+            value={email}
+            onChange={(event) => setEmail(event.target.value)}
+          />
+        </div>
+      </div>
+      {email.trim().toLowerCase() !== user.email && (
+        <p className="text-[13px] text-[var(--text-muted)]">
+          They&apos;ll sign in with the new email from now on. Let them know, as it isn&apos;t sent to them.
+        </p>
+      )}
+      {error && (
+        <p className="text-[13px] text-[var(--danger)]" role="alert">
+          {error}
+        </p>
+      )}
+      <div className="flex gap-2">
+        <button type="submit" className="btn btn-primary btn-sm" disabled={busy}>
+          {busy ? "Saving…" : "Save"}
+        </button>
+        <button type="button" className="btn btn-ghost btn-sm" disabled={busy} onClick={onCancel}>
+          Cancel
+        </button>
+      </div>
+    </form>
+  );
+}
+
 export function UsersSection({ currentUser }: { currentUser: AuthUser }) {
   const { notify, confirm } = useFeedback();
-  const { value: users, error, setError } = useAccountsResource<ManagedUser[]>("/api/users", (data) =>
+  const { value: users, setValue: setUsers, error, setError } = useAccountsResource<ManagedUser[]>("/api/users", (data) =>
     Array.isArray(data?.users) ? data.users : []
   );
   const [busyId, setBusyId] = useState<string | null>(null);
@@ -252,6 +343,7 @@ export function UsersSection({ currentUser }: { currentUser: AuthUser }) {
     invitation: boolean;
   } | null>(null);
   const [adding, setAdding] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
 
   async function act(user: ManagedUser, action: () => Promise<void>) {
     setBusyId(user.id);
@@ -405,6 +497,22 @@ export function UsersSection({ currentUser }: { currentUser: AuthUser }) {
           {users.map((user) => {
             const isSelf = user.id === currentUser.id;
             const busy = busyId !== null;
+            if (editingId === user.id) {
+              return (
+                <li key={user.id} className="bg-[var(--surface-subtle)] px-5 py-4 text-[14px]">
+                  <EditUserForm
+                    user={user}
+                    onCancel={() => setEditingId(null)}
+                    onSaved={(changes) => {
+                      setEditingId(null);
+                      setUsers((prev) => (prev ?? []).map((item) => (item.id === user.id ? { ...item, ...changes } : item)));
+                      announceAccountsChanged();
+                      notify({ tone: "success", title: `${changes.name}'s details updated` });
+                    }}
+                  />
+                </li>
+              );
+            }
             return (
               <li key={user.id} className="space-y-2 px-5 py-3 text-[14px]">
                 <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
@@ -432,8 +540,13 @@ export function UsersSection({ currentUser }: { currentUser: AuthUser }) {
                     <option value="ADMIN">Administrator</option>
                   </select>
                 </div>
+                <div className="flex flex-wrap gap-2">
+                  <button type="button" className="btn btn-sm" disabled={busy} onClick={() => setEditingId(user.id)}>
+                    <Pencil />
+                    Edit
+                  </button>
                 {!isSelf && (
-                  <div className="flex flex-wrap gap-2">
+                  <>
                     {user.isActive && (
                       <button type="button" className="btn btn-sm" disabled={busy} onClick={() => void issueReset(user)}>
                         {user.lastLoginAt ? <KeyRound /> : <Mail />}
@@ -461,8 +574,9 @@ export function UsersSection({ currentUser }: { currentUser: AuthUser }) {
                       {user.isActive ? <UserX /> : <UserCheck />}
                       {user.isActive ? "Deactivate" : "Reactivate"}
                     </button>
-                  </div>
+                  </>
                 )}
+                </div>
               </li>
             );
           })}
@@ -489,6 +603,8 @@ const AUDIT_ACTION_LABELS: Record<string, string> = {
   "user.invited": "added and invited",
   "user.invite_resent": "created a new invitation link for",
   "user.invite_accepted": "accepted their invitation:",
+  "user.details_changed": "changed the details of",
+  "user.email_changed": "changed their sign-in email:",
   "user.password_reset_completed": "reset their password using a link:",
   "user.password_changed": "changed their password:",
 };
@@ -496,14 +612,16 @@ const AUDIT_ACTION_LABELS: Record<string, string> = {
 function describeAudit(entry: AuditEntry) {
   const actor = entry.actorEmail ?? "Someone";
   const label = AUDIT_ACTION_LABELS[entry.action] ?? entry.action;
-  const details = entry.details as { from?: string; to?: string } | null;
-  const roleChange =
-    entry.action === "user.role_changed" && details?.to
-      ? ` (${details.from} → ${details.to})`
-      : entry.action === "user.invited" && details && "role" in details
-      ? ` as ${(details as { role: string }).role === "ADMIN" ? "an administrator" : "an editor"}`
-      : "";
-  return `${actor} ${label} ${entry.targetEmail ?? ""}${roleChange}`;
+  const details = (entry.details ?? {}) as Record<string, string | undefined>;
+  const changes: string[] = [];
+  if (entry.action === "user.role_changed" && details.to) changes.push(`${details.from} → ${details.to}`);
+  if (entry.action === "user.invited" && details.role) {
+    changes.push(details.role === "ADMIN" ? "as an administrator" : "as an editor");
+  }
+  if (details.emailTo) changes.push(`email ${details.emailFrom} → ${details.emailTo}`);
+  if (details.nameTo) changes.push(`name ${details.nameFrom} → ${details.nameTo}`);
+  const suffix = changes.length ? ` (${changes.join(", ")})` : "";
+  return `${actor} ${label} ${entry.targetEmail ?? ""}${suffix}`;
 }
 
 export function AuditLogSection() {
@@ -538,6 +656,81 @@ export function AuditLogSection() {
           {error}
         </p>
       )}
+    </section>
+  );
+}
+
+export function ChangeEmailSection({ initialEmail }: { initialEmail: string }) {
+  const { notify } = useFeedback();
+  const [currentEmail, setCurrentEmail] = useState(initialEmail);
+  const [newEmail, setNewEmail] = useState("");
+  const [currentPassword, setCurrentPassword] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState("");
+
+  async function submit(event: React.FormEvent) {
+    event.preventDefault();
+    setError("");
+    if (!EMAIL_REGEX.test(newEmail.trim())) {
+      setError("Enter a valid email address.");
+      return;
+    }
+    setBusy(true);
+    try {
+      const data = await requestJson("/api/auth/email", {
+        method: "POST",
+        body: { currentPassword, newEmail: newEmail.trim() },
+      });
+      setCurrentEmail(data.email);
+      setNewEmail("");
+      setCurrentPassword("");
+      announceAccountsChanged();
+      notify({ tone: "success", title: "Email changed", message: `Sign in with ${data.email} from now on.` });
+    } catch (err) {
+      setError(errorMessage(err));
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <section id="email" className="card scroll-mt-20">
+      <div className="card-header">
+        <div>
+          <h2 className="card-title">Sign-in email</h2>
+          <p className="card-description">
+            You sign in with <span className="font-medium text-[var(--text)]">{currentEmail}</span>.
+          </p>
+        </div>
+      </div>
+      <form className="space-y-3 p-5 text-[14px]" onSubmit={submit}>
+        <div className="grid gap-3 sm:grid-cols-2">
+          <input
+            type="email"
+            className="input"
+            placeholder="New email"
+            autoComplete="email"
+            value={newEmail}
+            onChange={(event) => setNewEmail(event.target.value)}
+          />
+          <input
+            type="password"
+            className="input"
+            placeholder="Current password"
+            autoComplete="current-password"
+            value={currentPassword}
+            onChange={(event) => setCurrentPassword(event.target.value)}
+          />
+        </div>
+        <button type="submit" className="btn btn-primary" disabled={busy || !newEmail || !currentPassword}>
+          {busy ? "Changing…" : "Change email"}
+        </button>
+        {error && (
+          <p className="text-[13px] text-[var(--danger)]" role="alert">
+            {error}
+          </p>
+        )}
+      </form>
     </section>
   );
 }
