@@ -91,7 +91,7 @@ function totpAtCounter(secretBytes: Buffer, counter: number) {
 }
 
 export function buildOtpAuthUri(email: string, secret: string) {
-  const issuer = "Roster Planner";
+  const issuer = "Roster Generator";
   const label = `${issuer}:${email}`;
   const params = new URLSearchParams({
     secret,
@@ -100,7 +100,8 @@ export function buildOtpAuthUri(email: string, secret: string) {
     digits: String(TOTP_DIGITS),
     period: String(TOTP_PERIOD_SECONDS),
   });
-  return `otpauth://totp/${encodeURIComponent(label)}?${params.toString()}`;
+  // Some authenticator apps show "+" literally, so spaces are encoded as %20.
+  return `otpauth://totp/${encodeURIComponent(label)}?${params.toString().replace(/\+/g, "%20")}`;
 }
 
 export function verifyTotpCode(secret: string, code: string, nowMs = Date.now()) {

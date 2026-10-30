@@ -30,6 +30,7 @@ describe("totp helpers", () => {
   it("builds an otpauth URI", () => {
     const uri = buildOtpAuthUri("admin@example.com", "JBSWY3DPEHPK3PXP");
     expect(uri.startsWith("otpauth://totp/")).toBe(true);
-    expect(uri).toContain("issuer=Roster+Planner");
+    expect(uri).toContain("issuer=Roster%20Generator");
+    expect(uri).toContain("totp/Roster%20Generator%3A");
   });
 });

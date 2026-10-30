@@ -27,6 +27,8 @@ function SecuritySection({ user, initialStatus }: { user: AuthUser; initialStatu
   const { notify } = useFeedback();
   const [status, setStatus] = useState(initialStatus);
   const [secret, setSecret] = useState("");
+  const [qrCode, setQrCode] = useState("");
+  const [otpauthUri, setOtpauthUri] = useState("");
   const [code, setCode] = useState("");
   const [recoveryCodes, setRecoveryCodes] = useState<string[]>([]);
   const [disablePassword, setDisablePassword] = useState("");
@@ -51,6 +53,8 @@ function SecuritySection({ user, initialStatus }: { user: AuthUser; initialStatu
       setRecoveryCodes([]);
       const data = await postJson("/api/auth/mfa/setup");
       setSecret(data.secret || "");
+      setQrCode(data.qrCodeDataUrl || "");
+      setOtpauthUri(data.otpauthUri || "");
       setStatus((prev) => ({ ...prev, setupPending: true, setupExpiresAt: data.expiresAt || null }));
     });
 
@@ -61,6 +65,8 @@ function SecuritySection({ user, initialStatus }: { user: AuthUser; initialStatu
       const data = await postJson("/api/auth/mfa/verify", { code: code.trim() });
       setRecoveryCodes(Array.isArray(data?.recoveryCodes) ? data.recoveryCodes : []);
       setSecret("");
+      setQrCode("");
+      setOtpauthUri("");
       setCode("");
       setStatus({ enabled: true, setupPending: false, setupExpiresAt: null });
       notify({ tone: "success", title: "Two-factor authentication is on" });
@@ -111,8 +117,32 @@ function SecuritySection({ user, initialStatus }: { user: AuthUser; initialStatu
         {!status.enabled && status.setupPending && (
           <form className="space-y-4" onSubmit={verifySetup}>
             <div>
-              <p className="font-medium">1. Add this key to your authenticator app</p>
+              <p className="font-medium">1. Scan this QR code with your authenticator app</p>
               {secret ? (
+                <>
+                <p className="mt-0.5 text-[13px] text-[var(--text-muted)]">
+                  Google Authenticator, Microsoft Authenticator, 1Password and similar apps will list it as Roster Generator.
+                </p>
+                {qrCode && (
+                  <div className="mt-3 flex flex-wrap items-center gap-4">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={qrCode}
+                      alt="QR code for adding Roster Generator to an authenticator app"
+                      width={176}
+                      height={176}
+                      className="rounded-[var(--radius-md)] border border-[var(--border)] bg-white p-1"
+                    />
+                    {otpauthUri && (
+                      <a href={otpauthUri} className="btn btn-sm md:hidden">
+                        Open in authenticator app
+                      </a>
+                    )}
+                  </div>
+                )}
+                <p className="mt-3 text-[13px] text-[var(--text-muted)]">
+                  Can&apos;t scan it? Enter this key instead, and name the account Roster Generator:
+                </p>
                 <div className="mt-2 flex flex-wrap items-center gap-2">
                   <code className="rounded-[var(--radius-md)] bg-[var(--surface-muted)] px-3 py-2 font-mono text-[14px] tracking-wider">
                     {secret.match(/.{1,4}/g)?.join(" ")}
@@ -129,11 +159,12 @@ function SecuritySection({ user, initialStatus }: { user: AuthUser; initialStatu
                     Copy
                   </button>
                 </div>
+                </>
               ) : (
                 <p className="mt-1 text-[var(--text-muted)]">
                   Setup was started earlier.{" "}
                   <button type="button" className="font-medium text-[var(--accent)] hover:underline" onClick={beginSetup}>
-                    Show a new key
+                    Show a new QR code
                   </button>
                 </p>
               )}
