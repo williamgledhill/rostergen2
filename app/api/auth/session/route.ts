@@ -39,6 +39,9 @@ export async function POST(request: Request) {
   try {
     const authResult = await authenticateUser(body.data.email, body.data.password, getRequestMeta(request));
     if (!authResult) return jsonError("Invalid credentials", 401);
+    if ("pendingApproval" in authResult) {
+      return jsonError("Your account is waiting for an administrator to approve it.", 403);
+    }
 
     if (authResult.requiresTwoFactor) {
       const response = NextResponse.json({

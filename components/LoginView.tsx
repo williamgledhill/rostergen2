@@ -6,11 +6,14 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { CalendarRange, Eye, EyeOff, LoaderCircle } from "lucide-react";
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const MIN_PASSWORD_LENGTH = 12;
 
 export default function LoginView() {
   const router = useRouter();
   const searchParams = useSearchParams();
 
+  const [mode, setMode] = useState<"signin" | "request">("signin");
+  const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [code, setCode] = useState("");
@@ -20,6 +23,7 @@ export default function LoginView() {
   const [requiresTwoFactor, setRequiresTwoFactor] = useState(false);
   const [twoFactorName, setTwoFactorName] = useState("");
   const [error, setError] = useState("");
+  const [requestSent, setRequestSent] = useState(false);
   const redirectTarget = (() => {
     const next = searchParams.get("next");
     return next && next.startsWith("/") ? next : "/rosters";
@@ -39,10 +43,58 @@ export default function LoginView() {
   }, [redirectTarget, router]);
 
   const isDisabled = loading || submitting;
+  const isRequest = mode === "request";
+
+  function switchMode(next: "signin" | "request") {
+    setMode(next);
+    setError("");
+    setRequestSent(false);
+    setRequiresTwoFactor(false);
+    setCode("");
+    setPassword("");
+  }
+
+  async function handleRequest() {
+    const normalizedEmail = email.trim().toLowerCase();
+    if (!name.trim()) {
+      setError("Enter your name.");
+      return;
+    }
+    if (!EMAIL_REGEX.test(normalizedEmail)) {
+      setError("Enter a valid email address.");
+      return;
+    }
+    if (password.trim().length < MIN_PASSWORD_LENGTH) {
+      setError(`Use a password of at least ${MIN_PASSWORD_LENGTH} characters.`);
+      return;
+    }
+
+    try {
+      setSubmitting(true);
+      const res = await fetch("/api/auth/signup", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name: name.trim(), email: normalizedEmail, password }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data?.error || "Request failed");
+      setRequestSent(true);
+      setPassword("");
+    } catch (err: any) {
+      setError(err?.message || "Could not send your request. Please try again.");
+    } finally {
+      setSubmitting(false);
+    }
+  }
 
   async function handleLogin(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setError("");
+
+    if (isRequest) {
+      await handleRequest();
+      return;
+    }
 
     if (requiresTwoFactor) {
       const normalizedCode = code.trim();
@@ -125,13 +177,14 @@ export default function LoginView() {
           </Link>
 
           <div className="flex flex-wrap items-center justify-end gap-x-2 gap-y-1 text-sm text-[#4b5563]">
-            <span className="hidden sm:inline">Need access?</span>
-            <a
-              href="mailto:admin@rosterplanner.app?subject=Access%20request%20for%20Roster%20Generator"
+            <span className="hidden sm:inline">{isRequest ? "Already have an account?" : "Need access?"}</span>
+            <button
+              type="button"
+              onClick={() => switchMode(isRequest ? "signin" : "request")}
               className="font-medium text-[#111827] underline underline-offset-4 transition hover:text-black"
             >
-              Contact admin
-            </a>
+              {isRequest ? "Sign in" : "Request access"}
+            </button>
           </div>
         </div>
       </header>
@@ -140,17 +193,54 @@ export default function LoginView() {
         <section className="w-full max-w-[360px] sm:max-w-[380px]">
           <div className="text-center">
             <h1 className="text-[1.9rem] font-semibold tracking-[-0.04em] text-[#111827] sm:text-[2.35rem]">
-              {requiresTwoFactor ? "Verify sign in" : "Welcome back"}
+              {isRequest ? "Request access" : requiresTwoFactor ? "Verify sign in" : "Welcome back"}
             </h1>
             <p className="mt-3 text-[0.98rem] leading-7 text-[#6b7280]">
-              {requiresTwoFactor
+              {isRequest
+                ? "An administrator will review your request before you can sign in."
+                : requiresTwoFactor
                 ? `Enter the authenticator code for ${twoFactorName || "your account"}. Recovery codes also work.`
                 : "Sign in to continue to your roster workspace."}
             </p>
           </div>
 
+          {isRequest && requestSent ? (
+            <div className="mt-7 space-y-4 sm:mt-8">
+              <div
+                role="status"
+                className="rounded-[16px] border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800"
+              >
+                Request sent. You can sign in once an administrator approves it.
+              </div>
+              <button
+                type="button"
+                onClick={() => switchMode("signin")}
+                className="w-full text-sm text-[#4b5563] underline underline-offset-4 transition hover:text-[#111827]"
+              >
+                Back to sign in
+              </button>
+            </div>
+          ) : (
           <form className="mt-7 space-y-4 sm:mt-8" onSubmit={handleLogin}>
-            {!requiresTwoFactor && (
+            {isRequest && (
+              <div>
+                <label htmlFor="name" className="sr-only">
+                  Name
+                </label>
+                <input
+                  id="name"
+                  type="text"
+                  autoComplete="name"
+                  value={name}
+                  onChange={(event) => setName(event.target.value)}
+                  disabled={isDisabled}
+                  className="h-[50px] w-full rounded-[14px] border border-[#d5dcf2] bg-white px-4 text-[15px] text-[#111827] outline-none transition placeholder:text-[#8b93a7] focus:border-[rgba(52,77,232,0.55)] focus:ring-2 focus:ring-[rgba(52,77,232,0.18)] sm:h-[52px]"
+                  placeholder="Full name"
+                />
+              </div>
+            )}
+
+            {(isRequest || !requiresTwoFactor) && (
               <>
                 <div>
                   <label htmlFor="email" className="sr-only">
@@ -175,12 +265,12 @@ export default function LoginView() {
                   <input
                     id="password"
                     type={showPassword ? "text" : "password"}
-                    autoComplete="current-password"
+                    autoComplete={isRequest ? "new-password" : "current-password"}
                     value={password}
                     onChange={(event) => setPassword(event.target.value)}
                     disabled={isDisabled}
                     className="h-[50px] w-full rounded-[14px] border border-[#d5dcf2] bg-white px-4 pr-12 text-[15px] text-[#111827] outline-none transition placeholder:text-[#8b93a7] focus:border-[rgba(52,77,232,0.55)] focus:ring-2 focus:ring-[rgba(52,77,232,0.18)] sm:h-[52px]"
-                    placeholder="Password"
+                    placeholder={isRequest ? `Password (at least ${MIN_PASSWORD_LENGTH} characters)` : "Password"}
                   />
                   <button
                     type="button"
@@ -198,7 +288,7 @@ export default function LoginView() {
               </>
             )}
 
-            {requiresTwoFactor && (
+            {!isRequest && requiresTwoFactor && (
               <div>
                 <label htmlFor="code" className="sr-only">
                   Verification code
@@ -225,8 +315,10 @@ export default function LoginView() {
               {submitting ? (
                 <>
                   <LoaderCircle className="h-4 w-4 animate-spin" />
-                  {requiresTwoFactor ? "Verifying" : "Signing in"}
+                  {isRequest ? "Sending" : requiresTwoFactor ? "Verifying" : "Signing in"}
                 </>
+              ) : isRequest ? (
+                "Send request"
               ) : requiresTwoFactor ? (
                 "Verify"
               ) : (
@@ -234,7 +326,7 @@ export default function LoginView() {
               )}
             </button>
 
-            {requiresTwoFactor && (
+            {!isRequest && requiresTwoFactor && (
               <button
                 type="button"
                 className="w-full text-sm text-[#4b5563] underline underline-offset-4 transition hover:text-[#111827]"
@@ -257,6 +349,7 @@ export default function LoginView() {
               </div>
             )}
           </form>
+          )}
         </section>
       </main>
 

@@ -129,15 +129,87 @@ export async function ensureBootstrapUser() {
   return bootstrapPromise;
 }
 
+/**
+ * A request for access is stored as an inactive editor that has never signed in.
+ * An administrator approves it (activates the account) or rejects it (deletes it).
+ */
+function isPendingRequest(user: Pick<AppUser, "isActive" | "lastLoginAt">) {
+  return !user.isActive && !user.lastLoginAt;
+}
+
+export type AccountRequest = {
+  id: string;
+  email: string;
+  name: string;
+  createdAt: string;
+};
+
+/**
+ * Records a request for access. Says nothing about whether the email is already
+ * registered, so the form can't be used to discover who has an account.
+ */
+export async function requestAccount(input: { name: string; email: string; password: string }) {
+  // Make sure the first administrator exists before anyone else is added.
+  await ensureBootstrapUser();
+
+  const email = normalizeEmail(input.email);
+  const existing = await prisma.appUser.findUnique({ where: { email }, select: { id: true } });
+  if (existing) return;
+
+  try {
+    await prisma.appUser.create({
+      data: {
+        email,
+        name: input.name.trim(),
+        role: "EDITOR",
+        passwordHash: await hashPassword(input.password),
+        isActive: false,
+      },
+    });
+  } catch (error) {
+    // Two requests for the same email at once: the first one wins.
+    if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002") return;
+    throw error;
+  }
+}
+
+export async function listAccountRequests(): Promise<AccountRequest[]> {
+  const users = await prisma.appUser.findMany({
+    where: { isActive: false, lastLoginAt: null },
+    select: { id: true, email: true, name: true, createdAt: true },
+    orderBy: { createdAt: "asc" },
+  });
+  return users.map((user) => ({ ...user, createdAt: user.createdAt.toISOString() }));
+}
+
+export async function approveAccountRequest(id: string) {
+  const result = await prisma.appUser.updateMany({
+    where: { id, isActive: false, lastLoginAt: null },
+    data: { isActive: true },
+  });
+  return result.count > 0;
+}
+
+export async function rejectAccountRequest(id: string) {
+  const result = await prisma.appUser.deleteMany({
+    where: { id, isActive: false, lastLoginAt: null },
+  });
+  return result.count > 0;
+}
+
 export async function authenticateUser(email: string, password: string, meta: AuthRequestMeta) {
   await ensureBootstrapUser();
 
   const normalizedEmail = normalizeEmail(email);
   const user = await prisma.appUser.findUnique({ where: { email: normalizedEmail } });
-  if (!user || !user.isActive) return null;
+  if (!user) return null;
 
   const passwordMatches = await verifyPassword(password, user.passwordHash);
   if (!passwordMatches) return null;
+
+  // Only someone who knows the password learns the account is waiting.
+  if (isPendingRequest(user)) return { pendingApproval: true as const };
+  if (!user.isActive) return null;
 
   if (user.totpEnabled) {
     const challengeToken = createOpaqueAuthToken();
