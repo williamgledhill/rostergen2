@@ -1,3 +1,5 @@
+import { getTaskSegmentRows } from "@/lib/taskSegments";
+
 export function getAutofillTemplatePriority(input: {
   mustManned: boolean;
   hasFixedTimes: boolean;
@@ -95,13 +97,16 @@ export function regularDayAppliesToAutofill(input: {
   return regularDays.includes(input.dayKey) || regularTimes.length > 0 || hasDayWindow;
 }
 
+/**
+ * Tasks that can soak up spare time. Must-be-manned tasks count too: cover only
+ * guarantees one person, so spare people may join them like any other floor task.
+ */
 export function isAutofillFillerTemplate(input: {
   hasFixedTimes: boolean;
-  mustManned: boolean;
   minPerEmp: number;
   fixedTimeBlock?: boolean;
 }) {
-  return !input.hasFixedTimes && !input.mustManned && input.minPerEmp <= 0 && !input.fixedTimeBlock;
+  return !input.hasFixedTimes && input.minPerEmp <= 0 && !input.fixedTimeBlock;
 }
 
 export function isAutofillMinimumTemplate(input: {
@@ -175,16 +180,6 @@ export type AutofillTaskFragment = {
 
 function overlapsRange(range: AutofillOccupiedRange, startRow: number, span: number) {
   return startRow < range.startRow + range.span && startRow + span > range.startRow;
-}
-
-function getTaskSegmentRows(task: AutofillTaskFragment) {
-  const totalRows = Math.max(1, task.span);
-  const waitingRows = Math.max(0, Math.round((task.waitingMinutes ?? 0) / 15));
-  const packingRows = Math.max(0, Math.round((task.packingMinutes ?? 0) / 15));
-  const safeWaiting = Math.min(waitingRows, totalRows - 1);
-  const safePacking = Math.min(packingRows, totalRows - safeWaiting - 1);
-  const mainRows = Math.max(1, totalRows - safeWaiting - safePacking);
-  return { waitingRows: safeWaiting, mainRows, packingRows: safePacking };
 }
 
 function toFragment(startRow: number, kinds: Array<"waiting" | "main" | "packing">): AutofillTaskFragment | null {

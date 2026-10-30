@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import * as XLSX from "xlsx";
 import { parseSchoolTourWorkbook } from "../lib/schoolTourImports";
 
-function buildWorkbookBuffer(rows: (string | number)[][]) {
+function buildWorkbookBuffer(rows: (string | number | Date)[][]) {
   const workbook = XLSX.utils.book_new();
   const sheet = XLSX.utils.aoa_to_sheet(rows);
   XLSX.utils.book_append_sheet(workbook, sheet, "Worksheet");
@@ -56,5 +56,18 @@ describe("parseSchoolTourWorkbook", () => {
     ]);
 
     expect(() => parseSchoolTourWorkbook(buffer)).toThrow(/Date, Time, School, and Students/);
+  });
+
+  it("reads text times with seconds, as in the daily runsheet", () => {
+    const buffer = buildWorkbookBuffer([
+      ["Date", "Time", "Program", "School", "Cohort", "Years", "Students", "Teachers"],
+      ["2026-09-29", "9:30:00", "RAM - Guided School Program", "Moreton Bay Boys College", "0/0", 7, 40, 3],
+      ["2026-09-29", "13:30:00", "RAM - Guided School Program", "Dominic College", "0/0", 6, 42, 5],
+    ]);
+
+    expect(parseSchoolTourWorkbook(buffer)).toEqual([
+      { rosterDateId: "2026-09-29", startTime: "09:30", schoolName: "Moreton Bay Boys College", studentCount: 40 },
+      { rosterDateId: "2026-09-29", startTime: "13:30", schoolName: "Dominic College", studentCount: 42 },
+    ]);
   });
 });

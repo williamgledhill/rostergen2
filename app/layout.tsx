@@ -11,8 +11,8 @@ const inter = Inter({
 });
 
 export const metadata = {
-  title: "Roster Planner",
-  description: "Roster planning app with Next.js + Postgres",
+  title: "Roster Generator",
+  description: "Plan daily staff rosters.",
 };
 
 export default async function RootLayout({ children }: { children: React.ReactNode }) {

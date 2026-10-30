@@ -1,112 +1,114 @@
 "use client";
 import React from "react";
+import type { TaskSegmentRows } from "@/lib/taskSegments";
 
 type Props = {
   id: string | number;
-  type: string;
   label: string;
   col: number;
   startRow: number;
   span: number;
   color?: string;
-  waitingMinutes?: number;
-  packingMinutes?: number;
+  segments: TaskSegmentRows;
   selected?: boolean;
-  highlighted?: boolean;
-  isFirstCol?: boolean;
-  isLastCol?: boolean;
-  touchesBottomEdge?: boolean;
+  /** Being dragged to a new position. */
+  dragging?: boolean;
+  /** Label for the lead-in block, e.g. "Waiting for tour". */
+  waitingLabel?: string;
+  drawTop?: boolean;
+  drawLeft?: boolean;
   onSelect?: () => void;
+  onStartMove?: (e: React.MouseEvent) => void;
   onStartResize?: (which: "top" | "bottom", e: React.MouseEvent) => void;
 };
 
+const LINE = "var(--block-line)";
+
 export default function Block({
   id,
-  type,
   label,
   col,
   startRow,
   span,
-  selected,
-  highlighted,
-  isFirstCol,
-  touchesBottomEdge,
-  onSelect,
-  onStartResize,
-  isLastCol,
   color,
-  waitingMinutes,
-  packingMinutes,
+  segments,
+  selected,
+  dragging,
+  waitingLabel = "Waiting for",
+  drawTop = true,
+  drawLeft = true,
+  onSelect,
+  onStartMove,
+  onStartResize,
 }: Props) {
-  const cls = color ? "" : "bg-slate-200";
   const boxShadow = [
-    !isLastCol ? "inset -1px 0 0 rgba(71,85,105,0.98)" : "",
-    !touchesBottomEdge ? "inset 0 -1px 0 rgba(71,85,105,0.98)" : "",
-    selected ? "inset 0 0 0 2px rgba(15,23,42,0.82)" : "",
+    `inset -1px 0 0 ${LINE}`,
+    `inset 0 -1px 0 ${LINE}`,
+    drawTop ? `inset 0 1px 0 ${LINE}` : "",
+    drawLeft ? `inset 1px 0 0 ${LINE}` : "",
+    selected ? "inset 0 0 0 2px var(--accent)" : "",
   ]
     .filter(Boolean)
     .join(", ");
-  const totalRows = Math.max(1, span);
-  const waitingRows = Math.max(0, Math.round((waitingMinutes ?? 0) / 15));
-  const packingRows = Math.max(0, Math.round((packingMinutes ?? 0) / 15));
-  const safeWaiting = Math.min(waitingRows, totalRows - 1);
-  const safePacking = Math.min(packingRows, totalRows - safeWaiting - 1);
-  const mainRows = Math.max(1, totalRows - safeWaiting - safePacking);
-  const segments = [
-    ...(safeWaiting > 0 ? [{ key: "waiting", label: "Waiting for", rows: safeWaiting }] : []),
-    { key: "main", label, rows: mainRows },
-    ...(safePacking > 0 ? [{ key: "packing", label: "Packing up", rows: safePacking }] : []),
+  const parts = [
+    ...(segments.waitingRows > 0 ? [{ key: "waiting", label: waitingLabel, rows: segments.waitingRows }] : []),
+    { key: "main", label, rows: segments.mainRows },
+    ...(segments.packingRows > 0 ? [{ key: "packing", label: "Packing up", rows: segments.packingRows }] : []),
   ];
+
   return (
     <div
       data-id={id}
-      className={`relative ${cls} flex items-center justify-center text-center select-none overflow-hidden`}
+      className={`relative ${color ? "" : "bg-slate-200"} flex select-none items-center justify-center overflow-hidden text-center ${
+        dragging ? "z-20 cursor-grabbing opacity-90 shadow-[var(--shadow-lg)] ring-2 ring-[var(--accent)]" : selected ? "z-10 cursor-grab" : "cursor-grab"
+      }`}
       style={{
         gridColumn: String(col),
         gridRow: `${startRow} / span ${span}`,
         backgroundColor: color || undefined,
         boxShadow,
       }}
-      onClick={(e) => { e.stopPropagation(); onSelect?.(); }}
+      onMouseDown={onStartMove}
+      onClick={(e) => {
+        e.stopPropagation();
+        onSelect?.();
+      }}
     >
-      <div
-        className="pointer-events-none absolute inset-0"
-        style={{ display: "flex", flexDirection: "column" }}
-      >
-        {segments.map((seg, idx) => (
+      <div className="pointer-events-none absolute inset-0 flex flex-col">
+        {parts.map((part, idx) => (
           <div
-            key={seg.key}
-            className="flex items-center justify-center overflow-hidden"
+            key={part.key}
+            className="flex shrink-0 items-start justify-center overflow-hidden pt-px"
             style={{
-              height: `calc(var(--rowh) * ${seg.rows})`,
-              flexShrink: 0,
-              boxShadow:
-                idx < segments.length - 1 ? "inset 0 -1px 0 rgba(71,85,105,0.98)" : undefined,
+              height: `calc(var(--rowh) * ${part.rows})`,
+              boxShadow: idx < parts.length - 1 ? `inset 0 -1px 0 ${LINE}` : undefined,
             }}
           >
             <span
-              className={`block w-full overflow-hidden px-1.5 text-center font-semibold leading-[1.05] ${
-                seg.key === "main"
-                  ? "text-[11px] tracking-[0.02em] whitespace-normal break-words"
-                  : "text-[10px] uppercase tracking-[0.06em] whitespace-normal break-words"
-              }`}
+              className="block w-full overflow-hidden whitespace-normal break-words px-1.5 text-center text-[length:var(--grid-font)] leading-[1.25] text-slate-900"
               style={{
                 display: "-webkit-box",
                 WebkitBoxOrient: "vertical",
-                WebkitLineClamp: seg.rows >= 3 ? 3 : seg.rows >= 2 ? 2 : 1,
+                WebkitLineClamp: Math.max(1, Math.min(3, part.rows)),
               }}
             >
-              {seg.label}
+              {part.label}
             </span>
           </div>
         ))}
       </div>
       {selected && (
         <>
-          <div className="absolute left-2 right-2 h-1 bg-slate-700/80 top-1 rounded cursor-ns-resize"
-               onMouseDown={(e) => onStartResize?.("top", e)} />
-          <div className="absolute left-2 right-2 h-1 bg-slate-700/80 bottom-1 rounded cursor-ns-resize"
-               onMouseDown={(e) => onStartResize?.("bottom", e)} />
+          {(["top", "bottom"] as const).map((edge) => (
+            <div
+              key={edge}
+              className={`absolute inset-x-0 flex h-3 cursor-ns-resize justify-center ${edge === "top" ? "top-0 items-start pt-0.5" : "bottom-0 items-end pb-0.5"}`}
+              onMouseDown={(e) => onStartResize?.(edge, e)}
+              title="Drag to resize"
+            >
+              <span className="h-1.5 w-9 rounded-full bg-[var(--accent)] shadow-sm" />
+            </div>
+          ))}
         </>
       )}
     </div>

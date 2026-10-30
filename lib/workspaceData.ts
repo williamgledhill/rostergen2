@@ -1,7 +1,6 @@
 "use client";
 
 import { formatLocalId } from "@/lib/dateUtils";
-import type { AuthUser } from "@/lib/auth";
 import type { Person } from "@/lib/people";
 import type { RosterFile } from "@/lib/rosters";
 import type { AppSettings } from "@/lib/settingsDefaults";
@@ -98,6 +97,16 @@ export function invalidateWorkspaceResources(keyPrefixes: string[]) {
     }
   }
   dispatchWorkspaceResourceChange(prefixes);
+}
+
+/**
+ * Drops cached entries without telling open views to reload, for when the
+ * view on screen already holds the newest data (e.g. the editor just saved).
+ */
+export function forgetCachedResources(keyPrefixes: string[]) {
+  for (const key of resourceCache.keys()) {
+    if (keyPrefixes.some((prefix) => resourceKeyMatchesPrefix(key, prefix))) resourceCache.delete(key);
+  }
 }
 
 export function upsertCachedPerson(person: Person) {
@@ -206,137 +215,58 @@ export function taskDataKey(id: string) {
   return `task:${id}`;
 }
 
-export function settingsDataKey(user: Pick<AuthUser, "id">) {
+export function settingsDataKey() {
   return "settings";
 }
 
-export function loadUpcomingRostersData() {
-  return loadCachedResource(rosterDataKey(), () => fetchJson<UpcomingPayload>("/api/rosters/upcoming") as Promise<UpcomingPayload>);
+const fetchUpcomingRosters = () => fetchJson<UpcomingPayload>("/api/rosters/upcoming") as Promise<UpcomingPayload>;
+const fetchMonthRosters = (month: string) =>
+  fetchJson<RosterFile[]>(`/api/rosters/month?month=${encodeURIComponent(month)}`) as Promise<RosterFile[]>;
+const fetchPeople = () => fetchJson<Person[]>("/api/people") as Promise<Person[]>;
+const fetchPerson = (id: string) =>
+  fetchJson<Person>(`/api/people?id=${encodeURIComponent(id)}`, { allowNotFound: true });
+const fetchTasks = () => fetchJson<TaskTemplate[]>("/api/task-templates") as Promise<TaskTemplate[]>;
+const fetchTask = (id: string) =>
+  fetchJson<TaskTemplate>(`/api/task-templates?id=${encodeURIComponent(id)}`, { allowNotFound: true });
+
+async function fetchEditorData(dateId: string): Promise<EditorPayload> {
+  const [people, settings, templates, savedRoster] = await Promise.all([
+    fetchPeople(),
+    fetchJson<AppSettings>("/api/settings"),
+    fetchTasks(),
+    fetchJson<RosterFile>(`/api/rosters?date=${encodeURIComponent(dateId)}`, { allowNotFound: true }),
+  ]);
+  return { people: people || [], settings: settings as AppSettings, templates: templates || [], savedRoster };
 }
 
-export function refreshUpcomingRostersData() {
-  return refreshCachedResource(rosterDataKey(), () => fetchJson<UpcomingPayload>("/api/rosters/upcoming") as Promise<UpcomingPayload>);
+async function fetchSettingsData(): Promise<SettingsPayload> {
+  const [settings, mfaStatus] = await Promise.all([
+    fetchJson<AppSettings>("/api/settings"),
+    fetchJson<MfaStatus>("/api/auth/mfa"),
+  ]);
+  return { settings: settings as AppSettings, mfaStatus: mfaStatus as MfaStatus };
 }
 
-export function loadMonthRostersData(month: string) {
-  return loadCachedResource(
-    monthRosterDataKey(month),
-    () => fetchJson<RosterFile[]>(`/api/rosters/month?month=${encodeURIComponent(month)}`) as Promise<RosterFile[]>
-  );
-}
-
-export function refreshMonthRostersData(month: string) {
-  return refreshCachedResource(
-    monthRosterDataKey(month),
-    () => fetchJson<RosterFile[]>(`/api/rosters/month?month=${encodeURIComponent(month)}`) as Promise<RosterFile[]>
-  );
-}
-
-export function loadEditorData(dateId: string) {
-  return loadCachedResource(editorDataKey(dateId), async () => {
-    const [people, settings, templates, savedRoster] = await Promise.all([
-      fetchJson<Person[]>("/api/people"),
-      fetchJson<AppSettings>("/api/settings"),
-      fetchJson<TaskTemplate[]>("/api/task-templates"),
-      fetchJson<RosterFile>(`/api/rosters?date=${encodeURIComponent(dateId)}`, { allowNotFound: true }),
-    ]);
-
-    return {
-      people: people || [],
-      settings: settings as AppSettings,
-      templates: templates || [],
-      savedRoster,
-    };
-  });
-}
-
-export function refreshEditorData(dateId: string) {
-  return refreshCachedResource(editorDataKey(dateId), async () => {
-    const [people, settings, templates, savedRoster] = await Promise.all([
-      fetchJson<Person[]>("/api/people"),
-      fetchJson<AppSettings>("/api/settings"),
-      fetchJson<TaskTemplate[]>("/api/task-templates"),
-      fetchJson<RosterFile>(`/api/rosters?date=${encodeURIComponent(dateId)}`, { allowNotFound: true }),
-    ]);
-
-    return {
-      people: people || [],
-      settings: settings as AppSettings,
-      templates: templates || [],
-      savedRoster,
-    };
-  });
-}
-
-export function loadPeopleData() {
-  return loadCachedResource(peopleDataKey(), () => fetchJson<Person[]>("/api/people") as Promise<Person[]>);
-}
-
-export function refreshPeopleData() {
-  return refreshCachedResource(peopleDataKey(), () => fetchJson<Person[]>("/api/people") as Promise<Person[]>);
-}
-
-export function loadPersonData(id: string) {
-  return loadCachedResource(
-    personDataKey(id),
-    () => fetchJson<Person>(`/api/people?id=${encodeURIComponent(id)}`, { allowNotFound: true }) as Promise<Person | null>
-  );
-}
-
-export function refreshPersonData(id: string) {
-  return refreshCachedResource(
-    personDataKey(id),
-    () => fetchJson<Person>(`/api/people?id=${encodeURIComponent(id)}`, { allowNotFound: true }) as Promise<Person | null>
-  );
-}
-
-export function loadTasksData() {
-  return loadCachedResource(tasksDataKey(), () => fetchJson<TaskTemplate[]>("/api/task-templates") as Promise<TaskTemplate[]>);
-}
-
-export function refreshTasksData() {
-  return refreshCachedResource(tasksDataKey(), () => fetchJson<TaskTemplate[]>("/api/task-templates") as Promise<TaskTemplate[]>);
-}
-
-export function loadTaskData(id: string) {
-  return loadCachedResource(
-    taskDataKey(id),
-    () =>
-      fetchJson<TaskTemplate>(`/api/task-templates?id=${encodeURIComponent(id)}`, {
-        allowNotFound: true,
-      }) as Promise<TaskTemplate | null>
-  );
-}
-
-export function refreshTaskData(id: string) {
-  return refreshCachedResource(
-    taskDataKey(id),
-    () =>
-      fetchJson<TaskTemplate>(`/api/task-templates?id=${encodeURIComponent(id)}`, {
-        allowNotFound: true,
-      }) as Promise<TaskTemplate | null>
-  );
-}
-
-export function loadSettingsData(user: Pick<AuthUser, "id">) {
-  return loadCachedResource(settingsDataKey(user), async () => {
-    const [settings, mfaStatus] = await Promise.all([
-      fetchJson<AppSettings>("/api/settings"),
-      fetchJson<MfaStatus>("/api/auth/mfa"),
-    ]);
-    return { settings: settings as AppSettings, mfaStatus: mfaStatus as MfaStatus };
-  });
-}
-
-export function refreshSettingsData(user: Pick<AuthUser, "id">) {
-  return refreshCachedResource(settingsDataKey(user), async () => {
-    const [settings, mfaStatus] = await Promise.all([
-      fetchJson<AppSettings>("/api/settings"),
-      fetchJson<MfaStatus>("/api/auth/mfa"),
-    ]);
-    return { settings: settings as AppSettings, mfaStatus: mfaStatus as MfaStatus };
-  });
-}
+// load* reuses cached data when present; refresh* always refetches.
+export const loadUpcomingRostersData = () => loadCachedResource(rosterDataKey(), fetchUpcomingRosters);
+export const refreshUpcomingRostersData = () => refreshCachedResource(rosterDataKey(), fetchUpcomingRosters);
+export const loadMonthRostersData = (month: string) =>
+  loadCachedResource(monthRosterDataKey(month), () => fetchMonthRosters(month));
+export const refreshMonthRostersData = (month: string) =>
+  refreshCachedResource(monthRosterDataKey(month), () => fetchMonthRosters(month));
+export const loadEditorData = (dateId: string) => loadCachedResource(editorDataKey(dateId), () => fetchEditorData(dateId));
+export const refreshEditorData = (dateId: string) =>
+  refreshCachedResource(editorDataKey(dateId), () => fetchEditorData(dateId));
+export const loadPeopleData = () => loadCachedResource(peopleDataKey(), fetchPeople);
+export const refreshPeopleData = () => refreshCachedResource(peopleDataKey(), fetchPeople);
+export const loadPersonData = (id: string) => loadCachedResource(personDataKey(id), () => fetchPerson(id));
+export const refreshPersonData = (id: string) => refreshCachedResource(personDataKey(id), () => fetchPerson(id));
+export const loadTasksData = () => loadCachedResource(tasksDataKey(), fetchTasks);
+export const refreshTasksData = () => refreshCachedResource(tasksDataKey(), fetchTasks);
+export const loadTaskData = (id: string) => loadCachedResource(taskDataKey(id), () => fetchTask(id));
+export const refreshTaskData = (id: string) => refreshCachedResource(taskDataKey(id), () => fetchTask(id));
+export const loadSettingsData = () => loadCachedResource(settingsDataKey(), fetchSettingsData);
+export const refreshSettingsData = () => refreshCachedResource(settingsDataKey(), fetchSettingsData);
 
 export function preloadWorkspaceRoute(href: string) {
   if (typeof window === "undefined") return;
@@ -353,7 +283,7 @@ export function preloadWorkspaceRoute(href: string) {
     safeLoad(loadPeopleData());
     return;
   }
-  if (pathname === "/tasks") {
+  if (pathname === "/tasks" || pathname === "/tours") {
     safeLoad(loadTasksData());
     return;
   }
@@ -362,7 +292,7 @@ export function preloadWorkspaceRoute(href: string) {
     return;
   }
   if (pathname === "/settings") {
-    safeLoad(loadSettingsData({ id: "current" }));
+    safeLoad(loadSettingsData());
     return;
   }
 
@@ -384,7 +314,7 @@ export function preloadWorkspaceRoute(href: string) {
     return;
   }
 
-  const taskMatch = pathname.match(/^\/tasks\/([^/]+)$/);
+  const taskMatch = pathname.match(/^\/(?:tasks|tours)\/([^/]+)$/);
   if (taskMatch?.[1]) {
     safeLoad(loadTaskData(decodeURIComponent(taskMatch[1])));
   }

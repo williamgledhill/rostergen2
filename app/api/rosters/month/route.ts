@@ -1,50 +1,21 @@
 import { NextResponse } from "next/server";
+import { jsonError, serverError } from "@/lib/apiHelpers";
+import { requireSession } from "@/lib/apiAuth";
 import { getRostersForMonth } from "@/lib/rosters";
-import { enforceSameOrigin, requireSession } from "@/lib/apiAuth";
-
-function parseMonth(month: string) {
-  if (!/^\d{4}-\d{2}$/.test(month)) return null;
-  const [yStr, mStr] = month.split("-");
-  const year = Number(yStr);
-  const monthIndex = Number(mStr) - 1;
-  if (Number.isNaN(year) || Number.isNaN(monthIndex)) return null;
-  if (monthIndex < 0 || monthIndex > 11) return null;
-  return { year, monthIndex };
-}
-
-export async function POST(req: Request) {
-  const auth = await requireSession();
-  if (!auth.ok) return auth.response;
-
-  const originError = enforceSameOrigin(req);
-  if (originError) return originError;
-
-  try {
-    const body = await req.json();
-    const month = typeof body?.month === "string" ? body.month : null;
-    if (!month) return NextResponse.json({ error: "Missing month" }, { status: 400 });
-    const parsed = parseMonth(month);
-    if (!parsed) return NextResponse.json({ error: "Invalid month" }, { status: 400 });
-    return NextResponse.json({ created: 0 });
-  } catch (err) {
-    console.error(err);
-    return NextResponse.json({ error: "Server error" }, { status: 500 });
-  }
-}
 
 export async function GET(req: Request) {
   const auth = await requireSession();
   if (!auth.ok) return auth.response;
 
+  const month = new URL(req.url).searchParams.get("month");
+  const monthNumber = Number(month?.slice(5));
+  if (!month || !/^\d{4}-\d{2}$/.test(month) || monthNumber < 1 || monthNumber > 12) {
+    return jsonError("Invalid month", 400);
+  }
+
   try {
-    const { searchParams } = new URL(req.url);
-    const month = searchParams.get("month");
-    if (!month) return NextResponse.json({ error: "Missing month" }, { status: 400 });
-    if (!parseMonth(month)) return NextResponse.json({ error: "Invalid month" }, { status: 400 });
-    const rosters = await getRostersForMonth(month, 5000);
-    return NextResponse.json(rosters);
+    return NextResponse.json(await getRostersForMonth(month, 5000));
   } catch (err) {
-    console.error(err);
-    return NextResponse.json({ error: "Server error" }, { status: 500 });
+    return serverError(err);
   }
 }

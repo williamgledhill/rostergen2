@@ -1,191 +1,145 @@
 "use client";
 import React from "react";
-import { Download, Plus, Sparkles, Save, RotateCcw, Undo2, Redo2, Upload } from "lucide-react";
+import { Redo2, RotateCcw, Sparkles, Undo2, Upload, UserPlus, ZoomIn, ZoomOut } from "lucide-react";
 
+export type TopBarActions = {
+  onAutofill: () => void;
+  onUndo: () => void;
+  onRedo: () => void;
+  onAddPerson: () => void;
+  onReset: () => void;
+  onImportSchoolTours: (file: File) => void;
+};
+
+function Divider() {
+  return <span className="mx-1 hidden h-6 w-px bg-[var(--border)] sm:block" aria-hidden="true" />;
+}
+
+/** The editor's action bar: autofill, history, people, saving, export and the day's hours. */
 export default function TopBar({
-  showActions = true,
-  merged = false,
+  actions,
   hours,
   onHoursStartChange,
   onHoursEndChange,
-  onHoursDefault,
-  schoolTourUploadLabel = "Upload school tours",
+  zoom,
 }: {
-  showActions?: boolean;
-  merged?: boolean;
-  hours?: { start: string; end: string };
-  onHoursStartChange?: (value: string) => void;
-  onHoursEndChange?: (value: string) => void;
-  onHoursDefault?: () => void;
-  schoolTourUploadLabel?: string;
+  actions: TopBarActions;
+  hours: { start: string; end: string };
+  onHoursStartChange: (value: string) => void;
+  onHoursEndChange: (value: string) => void;
+  zoom: { canZoomOut: boolean; canZoomIn: boolean; onZoomOut: () => void; onZoomIn: () => void };
 }) {
   const uploadInputRef = React.useRef<HTMLInputElement>(null);
-  const [isDraggingSchoolTours, setIsDraggingSchoolTours] = React.useState(false);
+  const [isDragging, setIsDragging] = React.useState(false);
 
-  function handleAddEmployee(){
-    if(typeof window !== "undefined"){
-      window.dispatchEvent(new CustomEvent("roster:add-employee"));
-    }
+  function importFile(file: File | null | undefined) {
+    if (file) actions.onImportSchoolTours(file);
   }
-  function handleExport(){
-    if(typeof window !== "undefined"){
-      window.dispatchEvent(new Event("roster-export"));
-    }
-  }
-  function handleSave(){
-    if(typeof window !== "undefined"){
-      window.dispatchEvent(new Event("roster-save"));
-    }
-  }
-  function handleAutofill() {
-    if(typeof window !== "undefined"){
-      window.dispatchEvent(new Event("roster-autofill"));
-    }
-  }
-  function handleUndo(){
-    if(typeof window !== "undefined"){
-      window.dispatchEvent(new Event("roster-undo"));
-    }
-  }
-  function handleRedo(){
-    if(typeof window !== "undefined"){
-      window.dispatchEvent(new Event("roster-redo"));
-    }
-  }
-  function handleReset(){
-    if(typeof window !== "undefined"){
-      window.dispatchEvent(new Event("roster-reset"));
-    }
-  }
-  function dispatchSchoolTourFile(file: File | null | undefined) {
-    if (!file || typeof window === "undefined") return;
-    window.dispatchEvent(new CustomEvent("roster:import-school-tours", { detail: { file } }));
-  }
-  function handleSchoolTourButtonClick() {
-    uploadInputRef.current?.click();
-  }
-  function handleSchoolTourInputChange(event: React.ChangeEvent<HTMLInputElement>) {
-    const file = event.target.files?.[0];
-    dispatchSchoolTourFile(file);
-    event.target.value = "";
-  }
-  function handleSchoolTourDragOver(event: React.DragEvent<HTMLButtonElement>) {
-    event.preventDefault();
-    if (!isDraggingSchoolTours) setIsDraggingSchoolTours(true);
-  }
-  function handleSchoolTourDragLeave(event: React.DragEvent<HTMLButtonElement>) {
-    if (event.currentTarget.contains(event.relatedTarget as Node | null)) return;
-    setIsDraggingSchoolTours(false);
-  }
-  function handleSchoolTourDrop(event: React.DragEvent<HTMLButtonElement>) {
-    event.preventDefault();
-    setIsDraggingSchoolTours(false);
-    const file = Array.from(event.dataTransfer.files).find((candidate) =>
-      candidate.name.toLowerCase().endsWith(".xlsx")
-    );
-    dispatchSchoolTourFile(file);
-  }
-
-  const showHoursControls =
-    !!hours &&
-    typeof onHoursStartChange === "function" &&
-    typeof onHoursEndChange === "function";
-  const actionButtons = showActions
-    ? [
-        { key: "autofill", label: "Autofill", icon: Sparkles, onClick: handleAutofill },
-        { key: "undo", label: "Undo", icon: Undo2, onClick: handleUndo, iconOnly: true },
-        { key: "redo", label: "Redo", icon: Redo2, onClick: handleRedo, iconOnly: true },
-        { key: "add", label: "Add person", icon: Plus, onClick: handleAddEmployee },
-        { key: "save", label: "Save", icon: Save, onClick: handleSave },
-        { key: "export", label: "Export", icon: Download, onClick: handleExport },
-        { key: "reset", label: "Reset", icon: RotateCcw, onClick: handleReset },
-      ]
-    : [];
-  const containerClassName = merged
-    ? "relative self-start max-w-full overflow-hidden rounded-[14px] border border-[#d7deea] bg-white"
-    : "relative z-10 self-start max-w-full overflow-hidden rounded-[14px] border border-[#d7deea] bg-white shadow-[0_12px_26px_rgba(15,23,42,0.08)]";
-  const segmentClassName =
-    "inline-flex h-11 shrink-0 items-center justify-center gap-2 border-r border-[#d7deea] px-3 text-[14px] font-semibold text-slate-800 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgba(52,77,232,0.16)] focus-visible:ring-inset";
-  const actionSegmentClassName =
-    `${segmentClassName} bg-white hover:bg-[#f8fafc]`;
-  const iconOnlySegmentClassName =
-    "inline-flex h-11 w-10 shrink-0 items-center justify-center border-r border-[#d7deea] text-slate-800 transition hover:bg-[#f8fafc] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgba(52,77,232,0.16)] focus-visible:ring-inset";
-  const hoursGroupClassName =
-    "flex h-11 shrink-0 items-center gap-1 border-r border-[#d7deea] bg-white px-2";
-  const uploadSegmentClassName = `inline-flex h-11 min-w-[220px] shrink-0 items-center justify-center gap-2 border-r px-4 text-[14px] font-semibold transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgba(52,77,232,0.16)] focus-visible:ring-inset ${
-    isDraggingSchoolTours
-      ? "border-[#4f58ef] bg-[#eef1ff] text-[#3340c7]"
-      : "border-[#d7deea] bg-white text-slate-800 hover:bg-[#f8fafc]"
-  }`;
-  const hoursSpacerClassName =
-    "shrink-0 px-0.5 text-[12px] font-semibold text-slate-700";
-  const hoursInputClassName =
-    "input time-input-no-icon h-8 w-[104px] min-w-[104px] appearance-none rounded-[8px] border border-transparent bg-transparent px-2.5 pr-2.5 text-[13px] font-semibold tabular-nums text-slate-800 shadow-none outline-none transition focus:border-[rgba(52,77,232,0.35)] focus:bg-[#f8fafc] focus:ring-2 focus:ring-[rgba(52,77,232,0.12)]";
-  if (!actionButtons.length && !showHoursControls) return null;
 
   return (
-    <header className={containerClassName}>
+    <div className="card flex flex-wrap items-center gap-2 p-2">
       <input
         ref={uploadInputRef}
         type="file"
         accept=".xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
         className="sr-only"
-        onChange={handleSchoolTourInputChange}
+        onChange={(event) => {
+          importFile(event.target.files?.[0]);
+          event.target.value = "";
+        }}
       />
-      <div className="overflow-x-auto">
-        <div className="flex min-w-max items-stretch">
-          {actionButtons.map((action, index) => {
-            const Icon = action.icon;
-            const isLastAction = index === actionButtons.length - 1;
-            const isFinalSegment = isLastAction && !showHoursControls;
-            return (
-              <button
-                key={action.key}
-                type="button"
-                className={`${action.iconOnly ? iconOnlySegmentClassName : actionSegmentClassName} ${isFinalSegment ? "border-r-0" : ""}`}
-                onClick={action.onClick}
-                aria-label={action.label}
-                title={action.label}
-              >
-                <Icon className="h-4 w-4" />
-                {!action.iconOnly && action.label}
-              </button>
-            );
-          })}
-          <button
-            type="button"
-            className={uploadSegmentClassName}
-            onClick={handleSchoolTourButtonClick}
-            onDragOver={handleSchoolTourDragOver}
-            onDragLeave={handleSchoolTourDragLeave}
-            onDrop={handleSchoolTourDrop}
-            aria-label={schoolTourUploadLabel}
-            title="Upload or drop a school tours Excel file"
-          >
-            <Upload className="h-4 w-4" />
-            <span>{isDraggingSchoolTours ? "Drop school tours" : schoolTourUploadLabel}</span>
-          </button>
-          {showHoursControls && (
-            <div className={`${hoursGroupClassName} border-r-0`}>
-              <input
-                type="time"
-                className={hoursInputClassName}
-                value={hours.start}
-                step={900}
-                onChange={(e) => onHoursStartChange(e.target.value)}
-              />
-              <span className={hoursSpacerClassName}>to</span>
-              <input
-                type="time"
-                className={hoursInputClassName}
-                value={hours.end}
-                step={900}
-                onChange={(e) => onHoursEndChange(e.target.value)}
-              />
-            </div>
-          )}
-        </div>
+
+      <button type="button" className="btn btn-primary" onClick={actions.onAutofill}>
+        <Sparkles />
+        Autofill
+      </button>
+      <div className="flex items-center">
+        <button type="button" className="btn btn-ghost btn-icon" onClick={actions.onUndo} aria-label="Undo" title="Undo">
+          <Undo2 />
+        </button>
+        <button type="button" className="btn btn-ghost btn-icon" onClick={actions.onRedo} aria-label="Redo" title="Redo">
+          <Redo2 />
+        </button>
       </div>
-    </header>
+      <Divider />
+      <button type="button" className="btn btn-ghost" onClick={actions.onAddPerson}>
+        <UserPlus />
+        Add person
+      </button>
+      <button
+        type="button"
+        className={`btn btn-ghost ${isDragging ? "!bg-[var(--accent-soft)] !text-[var(--accent-strong)] ring-2 ring-[var(--accent)]" : ""}`}
+        onClick={() => uploadInputRef.current?.click()}
+        onDragOver={(event) => {
+          event.preventDefault();
+          setIsDragging(true);
+        }}
+        onDragLeave={(event) => {
+          if (!event.currentTarget.contains(event.relatedTarget as Node | null)) setIsDragging(false);
+        }}
+        onDrop={(event) => {
+          event.preventDefault();
+          setIsDragging(false);
+          importFile(Array.from(event.dataTransfer.files).find((file) => file.name.toLowerCase().endsWith(".xlsx")));
+        }}
+        title="Import school tours: upload or drop the daily runsheet"
+        aria-label="Import school tours"
+      >
+        <Upload />
+        {isDragging ? "Drop to import" : "School tours"}
+      </button>
+      <Divider />
+      <div className="flex items-center gap-1.5 px-1">
+        <span className="text-[13px] text-[var(--text-muted)]">Hours</span>
+        <input
+          type="time"
+          className="input time-input-no-icon h-8 w-[92px] px-2 text-[13px] tabular-nums"
+          value={hours.start}
+          step={900}
+          onChange={(e) => onHoursStartChange(e.target.value)}
+          aria-label="Day start time"
+        />
+        <span className="text-[13px] text-[var(--text-muted)]">to</span>
+        <input
+          type="time"
+          className="input time-input-no-icon h-8 w-[92px] px-2 text-[13px] tabular-nums"
+          value={hours.end}
+          step={900}
+          onChange={(e) => onHoursEndChange(e.target.value)}
+          aria-label="Day end time"
+        />
+      </div>
+
+      <Divider />
+      <div className="flex items-center">
+        <button
+          type="button"
+          className="btn btn-ghost btn-icon"
+          onClick={zoom.onZoomOut}
+          disabled={!zoom.canZoomOut}
+          aria-label="Zoom out"
+          title="Zoom out"
+        >
+          <ZoomOut />
+        </button>
+        <button
+          type="button"
+          className="btn btn-ghost btn-icon"
+          onClick={zoom.onZoomIn}
+          disabled={!zoom.canZoomIn}
+          aria-label="Zoom in"
+          title="Zoom in"
+        >
+          <ZoomIn />
+        </button>
+      </div>
+
+      <div className="ml-auto flex items-center gap-2">
+        <button type="button" className="btn btn-ghost" onClick={actions.onReset} title="Clear all tasks and restore the day's usual staff">
+          <RotateCcw />
+          Reset
+        </button>
+      </div>
+    </div>
   );
 }

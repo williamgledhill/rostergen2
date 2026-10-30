@@ -6,6 +6,7 @@ import { seedPeople, type Person } from "./people";
 import { defaultTaskTemplates, type TaskTemplate } from "./taskTemplates";
 import { DEFAULT_SETTINGS, type AppSettings, DAY_KEYS } from "./settingsDefaults";
 import { formatFullDay, parseLocalId } from "./dateUtils";
+import { runtimeSeedEnabled } from "./runtimeSeed";
 
 type SeedRoster = {
   id: string;
@@ -24,8 +25,6 @@ type SeedRoster = {
 
 const DATA_DIR = path.join(process.cwd(), "data");
 const DEFAULT_ANCHOR_DATE = "2026-01-05";
-const runtimeSeedEnabled =
-  process.env.APP_RUNTIME_SEED === "true" || process.env.NODE_ENV !== "production";
 let seedPromise: Promise<void> | null = null;
 
 async function readJsonFile<T>(fileName: string): Promise<T | null> {
@@ -183,6 +182,7 @@ async function seedTaskTemplatesIfNeeded() {
       regularTimes: toInputJson(template.regularTimes || []),
       regularTimesByDay: toInputJson(template.regularTimesByDay || {}),
       regularDayWindows: toInputJson(template.regularDayWindows || {}),
+      extraDayWindows: toInputJson(template.extraDayWindows || {}),
       minPerEmployeePerDay: Number.isFinite(template.minPerEmployeePerDay)
         ? Number(template.minPerEmployeePerDay)
         : 0,
@@ -206,6 +206,9 @@ async function seedTaskTemplatesIfNeeded() {
         ? Number(template.maxConcurrentPerTimeslot)
         : 0,
       schoolTourImportTarget: Boolean(template.schoolTourImportTarget),
+      waitingCanBeCovered: Boolean(template.waitingCanBeCovered),
+      pairedWithTaskId: template.pairedWithTaskId || null,
+      pairedPosition: template.pairedPosition || null,
       enabled: template.enabled !== false,
     })),
     skipDuplicates: true,

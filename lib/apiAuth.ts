@@ -1,5 +1,4 @@
 import { cookies } from "next/headers";
-import { redirect } from "next/navigation";
 import { NextResponse } from "next/server";
 import { getSessionContextFromToken, type AuthRequestMeta, type AuthUser } from "@/lib/auth";
 import { getConfiguredAllowedOrigins, isAllowedRequestOrigin } from "@/lib/requestOrigin";
@@ -31,12 +30,6 @@ export async function requireSession(options?: { adminOnly?: boolean }): Promise
     return { ok: false, response: NextResponse.json({ error: "Forbidden" }, { status: 403 }) };
   }
   return { ok: true, session };
-}
-
-export async function requirePageSession(options?: { adminOnly?: boolean }) {
-  const result = await requireSession(options);
-  if (!result.ok) redirect("/signup");
-  return result.session;
 }
 
 export function enforceSameOrigin(request: Request) {

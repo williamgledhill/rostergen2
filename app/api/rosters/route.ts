@@ -1,14 +1,14 @@
 import { NextResponse } from "next/server";
-import { saveRosterEntry, getRosterById } from "@/lib/rosters";
-import { parseLocalId, formatFullDay } from "@/lib/dateUtils";
-import { enforceSameOrigin, requireSession } from "@/lib/apiAuth";
-import { z } from "zod";
 import { revalidatePath, revalidateTag } from "next/cache";
+import { z } from "zod";
+import { dateIdSchema, jsonError, parseJsonBody, serverError, timeSchema } from "@/lib/apiHelpers";
+import { enforceSameOrigin, requireSession } from "@/lib/apiAuth";
 import { CACHE_TAGS } from "@/lib/cacheTags";
+import { formatFullDay, parseLocalId } from "@/lib/dateUtils";
+import { getRosterById, saveRosterEntry } from "@/lib/rosters";
 
-const timeSchema = z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/);
 const rosterUpsertSchema = z.object({
-  date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+  date: dateIdSchema,
   employees: z.array(z.unknown()).max(500).optional(),
   tasks: z.array(z.unknown()).max(5000).optional(),
   hoursStart: timeSchema.optional(),
@@ -22,38 +22,30 @@ export async function POST(req: Request) {
   const originError = enforceSameOrigin(req);
   if (originError) return originError;
 
+  const body = await parseJsonBody(req, rosterUpsertSchema);
+  if (!body.ok) return body.response;
+  const { date, hoursStart, hoursEnd } = body.data;
+  const parsedDate = parseLocalId(date);
+  if (!parsedDate) return jsonError("Invalid date", 400);
+  if (hoursStart && hoursEnd && hoursStart >= hoursEnd) return jsonError("Invalid hours range", 400);
+
+  const employees = body.data.employees ?? [];
+  const tasks = body.data.tasks ?? [];
+
   try {
-    const parsedBody = rosterUpsertSchema.safeParse(await req.json());
-    if (!parsedBody.success) return NextResponse.json({ error: "Invalid payload" }, { status: 400 });
-
-    const { date } = parsedBody.data;
-    const parsed = parseLocalId(date);
-    if (!parsed) return NextResponse.json({ error: "Invalid date" }, { status: 400 });
-
-    const employees = parsedBody.data.employees ?? [];
-    const tasks = parsedBody.data.tasks ?? [];
-    const hoursStart = parsedBody.data.hoursStart;
-    const hoursEnd = parsedBody.data.hoursEnd;
-    if (hoursStart && hoursEnd && hoursStart >= hoursEnd) {
-      return NextResponse.json({ error: "Invalid hours range" }, { status: 400 });
-    }
-
-    const tours = tasks.filter((t: any) => String(t.type).toLowerCase() === "tour").length;
-    const people = employees.length;
-
     const saved = await saveRosterEntry({
       id: date,
-      title: formatFullDay(parsed),
-      start: parsed,
-      end: parsed,
+      title: formatFullDay(parsedDate),
+      start: parsedDate,
+      end: parsedDate,
       status: "Draft",
       updated: new Date().toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }),
       employees,
       tasks,
       hoursStart,
       hoursEnd,
-      tours,
-      people,
+      tours: tasks.filter((task) => String((task as { type?: unknown })?.type).toLowerCase() === "tour").length,
+      people: employees.length,
     });
 
     revalidateTag(CACHE_TAGS.rosters, "max");
@@ -67,8 +59,7 @@ export async function POST(req: Request) {
       updatedLabel: saved.updated,
     });
   } catch (err) {
-    console.error(err);
-    return NextResponse.json({ error: "Server error" }, { status: 500 });
+    return serverError(err, "Could not save the roster.");
   }
 }
 
@@ -76,17 +67,14 @@ export async function GET(req: Request) {
   const auth = await requireSession();
   if (!auth.ok) return auth.response;
 
+  const date = new URL(req.url).searchParams.get("date");
+  if (!date || !parseLocalId(date)) return jsonError("Invalid date", 400);
+
   try {
-    const { searchParams } = new URL(req.url);
-    const date = searchParams.get("date");
-    if (!date) return NextResponse.json({ error: "Missing date" }, { status: 400 });
-    const parsed = parseLocalId(date);
-    if (!parsed) return NextResponse.json({ error: "Invalid date" }, { status: 400 });
     const roster = await getRosterById(date);
-    if (!roster) return NextResponse.json({ error: "Not found" }, { status: 404 });
+    if (!roster) return jsonError("Not found", 404);
     return NextResponse.json(roster);
   } catch (err) {
-    console.error(err);
-    return NextResponse.json({ error: "Server error" }, { status: 500 });
+    return serverError(err);
   }
 }

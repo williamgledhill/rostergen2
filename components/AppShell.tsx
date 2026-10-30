@@ -1,9 +1,12 @@
 "use client";
-import React, { useState, useCallback, useEffect } from "react";
-import SideNav from "@/components/SideNav";
-import { NavProvider } from "@/components/NavContext";
-import GlobalTopBar from "@/components/GlobalTopBar";
+import React, { useCallback, useEffect, useState } from "react";
 import { usePathname } from "next/navigation";
+import GlobalTopBar from "@/components/GlobalTopBar";
+import { NavProvider } from "@/components/NavContext";
+import SideNav from "@/components/SideNav";
+import { FeedbackProvider } from "@/components/ui/Feedback";
+
+const NAV_COLLAPSED_STORAGE_KEY = "rosterplanner:nav-collapsed";
 
 export default function AppShell({
   children,
@@ -12,24 +15,41 @@ export default function AppShell({
   children: React.ReactNode;
   initialUserName?: string | null;
 }) {
-  const [navOpen, setNavOpen] = useState(false);
+  const [navOpen, setNavOpen] = useState(true);
   const [isMobile, setIsMobile] = useState(false);
-  const toggleNav = useCallback(() => setNavOpen((o) => !o), []);
   const pathname = usePathname();
   const isPublic = pathname === "/" || pathname.startsWith("/signup");
 
   useEffect(() => {
     const mediaQuery = window.matchMedia("(max-width: 767px)");
-    const onChange = () => setIsMobile(mediaQuery.matches);
-    onChange();
-    mediaQuery.addEventListener("change", onChange);
-    return () => mediaQuery.removeEventListener("change", onChange);
+    const sync = () => {
+      setIsMobile(mediaQuery.matches);
+      if (mediaQuery.matches) {
+        setNavOpen(false);
+      } else {
+        try {
+          setNavOpen(window.localStorage.getItem(NAV_COLLAPSED_STORAGE_KEY) !== "true");
+        } catch {
+          setNavOpen(true);
+        }
+      }
+    };
+    sync();
+    mediaQuery.addEventListener("change", sync);
+    return () => mediaQuery.removeEventListener("change", sync);
   }, []);
 
-  useEffect(() => {
-    if (isMobile) {
-      setNavOpen(false);
-    }
+  const toggleNav = useCallback(() => {
+    setNavOpen((open) => {
+      if (!isMobile) {
+        try {
+          window.localStorage.setItem(NAV_COLLAPSED_STORAGE_KEY, String(open));
+        } catch {
+          // Storage can be unavailable; the toggle still works for this visit.
+        }
+      }
+      return !open;
+    });
   }, [isMobile]);
 
   if (isPublic) {
@@ -38,33 +58,23 @@ export default function AppShell({
 
   return (
     <NavProvider value={{ navOpen, toggleNav }}>
-      <div className="relative min-h-screen bg-white">
-        <GlobalTopBar userName={initialUserName ?? null} />
-        {isMobile && navOpen && (
-          <button
-            type="button"
-            className="fixed inset-0 z-40 bg-black/30"
-            aria-label="Close navigation menu"
-            onClick={() => setNavOpen(false)}
-          />
-        )}
-        <div className="flex min-h-[calc(100vh-56px)] bg-white">
-          <SideNav
-            open={navOpen}
-            mobile={isMobile}
-            onNavigate={() => {
-              if (isMobile) setNavOpen(false);
-            }}
-          />
-          <div className="flex min-h-[calc(100vh-56px)] flex-1 flex-col bg-white">
-          <main className="px-2 py-3 sm:px-3 sm:py-4 md:px-6 md:py-5">
-            <div className="w-full space-y-4">
-              {children}
-            </div>
-          </main>
+      <FeedbackProvider>
+        <div className="min-h-screen bg-[var(--canvas)]">
+          <GlobalTopBar userName={initialUserName ?? null} />
+          {isMobile && navOpen && (
+            <button
+              type="button"
+              className="fixed inset-0 top-14 z-40 bg-slate-900/30"
+              aria-label="Close navigation menu"
+              onClick={() => setNavOpen(false)}
+            />
+          )}
+          <div className="flex">
+            <SideNav open={navOpen} mobile={isMobile} onNavigate={() => setNavOpen(false)} />
+            <main className="min-w-0 flex-1 px-4 py-6 sm:px-6 lg:px-8">{children}</main>
           </div>
         </div>
-      </div>
+      </FeedbackProvider>
     </NavProvider>
   );
 }

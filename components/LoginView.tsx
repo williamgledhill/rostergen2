@@ -3,7 +3,7 @@
 import Link from "next/link";
 import React, { useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { Eye, EyeOff, LoaderCircle } from "lucide-react";
+import { CalendarRange, Eye, EyeOff, LoaderCircle } from "lucide-react";
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -111,13 +111,16 @@ export default function LoginView() {
   }
 
   return (
-    <div className="flex min-h-screen flex-col bg-[#fcfbf8]">
+    <div className="flex min-h-screen flex-col bg-[var(--canvas)]">
       <header className="px-4 py-4 sm:px-8 sm:py-6">
         <div className="mx-auto flex w-full max-w-6xl items-center justify-between gap-4">
           <Link
             href="/"
-            className="text-lg font-semibold tracking-[-0.02em] text-[#111827] transition hover:text-black"
+            className="flex items-center gap-2.5 text-[16px] font-semibold tracking-[-0.01em] text-[#111827]"
           >
+            <span className="grid h-8 w-8 place-items-center rounded-[9px] bg-[var(--accent)] text-white">
+              <CalendarRange className="h-[17px] w-[17px]" aria-hidden="true" />
+            </span>
             Roster Generator
           </Link>
 

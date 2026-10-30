@@ -27,25 +27,10 @@ function toValidDate(value: unknown) {
   return parsed;
 }
 
-function monthId(date: Date) {
-  const y = date.getFullYear();
-  const m = String(date.getMonth() + 1).padStart(2, "0");
-  return `${y}-${m}`;
-}
-
-function monthIdFromRosterId(id: string) {
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(id)) return null;
-  return id.slice(0, 7);
-}
-
 function isEmptyRoster(r: RosterFile) {
   const employees = Array.isArray(r.employees) ? r.employees : [];
   const tasks = Array.isArray(r.tasks) ? r.tasks : [];
   return employees.length === 0 && tasks.length === 0;
-}
-
-function formatMonthTitle(date: Date) {
-  return new Intl.DateTimeFormat("en-US", { month: "long", year: "numeric" }).format(date);
 }
 
 function startOfDay(date: Date) {
@@ -160,10 +145,20 @@ function mapRosterRecord(record: any): RosterFile {
       ...(employee.endTime ? { endTime: employee.endTime } : {}),
     }));
 
+  // The task rows only hold grid fields. The full copy of each task in the
+  // roster's JSON keeps extras such as an imported school tour's school name,
+  // start time and student count, so start from that and let the rows override.
+  const savedTasksById = new Map<string, Record<string, unknown>>(
+    (Array.isArray(record.tasks) ? record.tasks : [])
+      .filter((task: unknown) => task && typeof task === "object")
+      .map((task: Record<string, unknown>) => [String(task.id), task])
+  );
+
   const tasks = (record.rosterTasks || [])
     .slice()
     .sort((a: { position: number }, b: { position: number }) => a.position - b.position)
     .map((task: any) => ({
+      ...savedTasksById.get(String(task.externalId)),
       id: task.externalId,
       type: task.type,
       label: task.label,
@@ -230,39 +225,6 @@ function toRosterTaskRows(rosterId: string, tasks: any[]) {
   }));
 }
 
-async function loadRosterList(limit?: number): Promise<RosterFile[]> {
-  await ensureAppPersistenceSeeded();
-  const saved = (await prisma.appRoster.findMany({
-    orderBy: { date: "asc" },
-    ...(typeof limit === "number" ? { take: limit } : {}),
-  })).map(mapRosterRecord);
-  if (typeof limit === "number") return saved.slice(0, limit);
-  return saved;
-}
-
-const buildRosterListCached = unstable_cache(
-  async (limit?: number) => loadRosterList(limit),
-  ["rosters:list"],
-  { tags: [CACHE_TAGS.rosters] }
-);
-
-export async function buildRosterList(limit?: number): Promise<RosterFile[]> {
-  return rehydrateRosters(await buildRosterListCached(limit));
-}
-
-export function formatRange(start: Date, end: Date) {
-  const monthFmt = new Intl.DateTimeFormat("en-US", { month: "short" });
-  const dayFmt = new Intl.DateTimeFormat("en-US", { day: "numeric" });
-  const yearFmt = new Intl.DateTimeFormat("en-US", { year: "numeric" });
-  if (start.toDateString() === end.toDateString()) {
-    return `${monthFmt.format(start)} ${dayFmt.format(start)}, ${yearFmt.format(start)}`;
-  }
-  const sameMonth = start.getMonth() === end.getMonth();
-  return sameMonth
-    ? `${monthFmt.format(start)} ${dayFmt.format(start)} - ${dayFmt.format(end)}, ${yearFmt.format(end)}`
-    : `${monthFmt.format(start)} ${dayFmt.format(start)} - ${monthFmt.format(end)} ${dayFmt.format(end)}, ${yearFmt.format(end)}`;
-}
-
 async function loadRosterById(id: string): Promise<RosterFile | null> {
   await ensureAppPersistenceSeeded();
   const roster = await prisma.appRoster.findUnique({
@@ -271,6 +233,7 @@ async function loadRosterById(id: string): Promise<RosterFile | null> {
       rosterEmployees: true,
       rosterTasks: true,
     },
+    relationLoadStrategy: "join",
   });
   return roster ? mapRosterRecord(roster) : null;
 }
@@ -283,22 +246,6 @@ const getRosterByIdCached = unstable_cache(
 
 export async function getRosterById(id: string): Promise<RosterFile | null> {
   return rehydrateRoster(await getRosterByIdCached(id));
-}
-
-export async function getRosterMonths(limit = 200) {
-  const rosters = (await buildRosterList()).filter((r) => !isEmptyRoster(r));
-  const months = new Map<string, { id: string; label: string; start: Date; rosters: RosterFile[] }>();
-  rosters.forEach((r) => {
-    const id = monthIdFromRosterId(r.id) ?? monthId(r.start);
-    if (!months.has(id)) {
-      const [yStr, mStr] = id.split("-");
-      const start = new Date(Number(yStr), Number(mStr) - 1, 1);
-      months.set(id, { id, label: formatMonthTitle(start), start, rosters: [] });
-    }
-    months.get(id)!.rosters.push(r);
-  });
-  const list = Array.from(months.values()).sort((a, b) => a.start.getTime() - b.start.getTime());
-  return typeof limit === "number" ? list.slice(0, limit) : list;
 }
 
 async function loadRostersForMonth(month: string, limit = 200): Promise<RosterFile[]> {
@@ -401,13 +348,6 @@ export async function getUpcomingRosters(upcomingDays = 7): Promise<RosterFile[]
   return rehydrateRosters(
     await getUpcomingRostersCached(upcomingDays, formatLocalId(startOfDay(new Date())))
   );
-}
-
-export function formatMonthLabel(month: string) {
-  if (!/^\d{4}-\d{2}$/.test(month)) return month;
-  const [y, m] = month.split("-").map(Number);
-  const dt = new Date(y, m - 1, 1);
-  return formatMonthTitle(dt);
 }
 
 export async function saveRosterEntry(entry: RosterFile): Promise<RosterFile> {

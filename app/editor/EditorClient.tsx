@@ -1,38 +1,25 @@
 "use client";
 
-import Grid, { type AutofillNotice } from "@/components/Grid";
-import TopBar from "@/components/TopBar";
-import { X } from "lucide-react";
-import React, { useCallback, useEffect, useMemo, useState } from "react";
-import { AutosaveState, formatAutosaveStatusText, getAutosaveStatusClassName, readDraftRecord } from "@/lib/clientDrafts";
-import { formatFullDay, formatLocalId } from "@/lib/dateUtils";
+import Grid, { DEFAULT_ROSTER_ZOOM, ROSTER_ZOOM_LEVELS, type GridHandle } from "@/components/Grid";
+import TopBar, { type TopBarActions } from "@/components/TopBar";
+import { AlertTriangle, ChevronLeft, ChevronRight, Download, Save, X } from "lucide-react";
+import SaveStatus from "@/components/ui/SaveStatus";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { AutosaveState, readDraftRecord } from "@/lib/clientDrafts";
+import { formatFullDay, formatLocalId, parseLocalId } from "@/lib/dateUtils";
 import { type Person } from "@/lib/people";
-import { buildWorkbookFromHtmlTable, sanitizeExportFileName } from "@/lib/rosterExport";
+import type { AutofillNotice, GridTask, RosterEmployee } from "@/lib/rosterTypes";
 import { DEFAULT_SETTINGS, type AppSettings } from "@/lib/settingsDefaults";
 import { type TaskTemplate } from "@/lib/taskTemplates";
-import { buildEditorDraftStorageKey, persistLastEditorDate } from "@/lib/editorPersistence";
-
-function downloadWorkbook(html: string, fileName: string) {
-  const workbook = buildWorkbookFromHtmlTable(html, fileName);
-  const blob = new Blob([workbook], {
-    type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-  });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement("a");
-  a.href = url;
-  a.download = `${sanitizeExportFileName(fileName)}.xlsx`;
-  document.body.appendChild(a);
-  a.click();
-  setTimeout(() => {
-    URL.revokeObjectURL(url);
-    a.remove();
-  }, 0);
-}
+import { buildEditorDraftStorageKey, buildEditorHref, persistLastEditorDate } from "@/lib/editorPersistence";
+import { navigateWithinSpa } from "@/lib/spaNavigation";
 
 type EditorDraftValue = {
   hoursStart?: string;
   hoursEnd?: string;
 };
+
+const ROSTER_ZOOM_STORAGE_KEY = "rosterplanner:roster-zoom";
 
 function resolveEditorHours(
   rosterDateId: string,
@@ -63,8 +50,48 @@ export default function EditorClient({
   people: Person[];
   settings: AppSettings;
   templates: TaskTemplate[];
-  initialRoster: { employees: any[]; tasks: any[]; hoursStart?: string; hoursEnd?: string; savedAt?: string };
+  initialRoster: {
+    employees: RosterEmployee[];
+    tasks: GridTask[];
+    hoursStart?: string;
+    hoursEnd?: string;
+    savedAt?: string;
+  };
 }) {
+  const gridRef = useRef<GridHandle>(null);
+  const [zoom, setZoom] = useState(DEFAULT_ROSTER_ZOOM);
+
+  useEffect(() => {
+    try {
+      const saved = Number(window.localStorage.getItem(ROSTER_ZOOM_STORAGE_KEY));
+      if (Number.isInteger(saved) && saved >= 0 && saved < ROSTER_ZOOM_LEVELS.length) setZoom(saved);
+    } catch {
+      // Storage unavailable; use the default zoom.
+    }
+  }, []);
+
+  const changeZoom = (delta: number) => {
+    setZoom((current) => {
+      const next = Math.min(ROSTER_ZOOM_LEVELS.length - 1, Math.max(0, current + delta));
+      try {
+        window.localStorage.setItem(ROSTER_ZOOM_STORAGE_KEY, String(next));
+      } catch {
+        // Storage unavailable; the zoom still applies for this visit.
+      }
+      return next;
+    });
+  };
+  const toolbarActions = useMemo<TopBarActions>(
+    () => ({
+      onAutofill: () => gridRef.current?.autofill(),
+      onUndo: () => gridRef.current?.undo(),
+      onRedo: () => gridRef.current?.redo(),
+      onAddPerson: () => gridRef.current?.openEmployeePicker(),
+      onReset: () => gridRef.current?.reset(),
+      onImportSchoolTours: (file) => gridRef.current?.importSchoolTours(file),
+    }),
+    []
+  );
   const rosterDateId = useMemo(() => formatLocalId(selectedDate), [selectedDate]);
   const dayLabel = useMemo(() => formatFullDay(selectedDate), [selectedDate]);
   const dayKey = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"][selectedDate.getDay()];
@@ -104,23 +131,79 @@ export default function EditorClient({
     setAutofillNotice(null);
   }, [rosterDateId]);
 
-  const saveStatusText = useMemo(() => formatAutosaveStatusText(saveState), [saveState]);
-  const saveStatusClassName = useMemo(() => getAutosaveStatusClassName(saveState), [saveState]);
   const handleRestoreDraftHours = useCallback((nextHours: { start: string; end: string }) => {
     setHoursTouched(true);
     setHours(nextHours);
   }, []);
 
+  const goToDate = (date: Date) => {
+    const href = buildEditorHref(formatLocalId(date));
+    if (!navigateWithinSpa(href)) window.location.href = href;
+  };
+  const shiftDay = (offset: number) => {
+    const next = new Date(selectedDate);
+    next.setDate(next.getDate() + offset);
+    goToDate(next);
+  };
+  const isToday = rosterDateId === formatLocalId(new Date());
+
   return (
-    <div className="w-full overflow-x-hidden px-3 py-3">
-      <div className="flex w-full flex-col gap-3">
-        <div className="flex flex-col leading-tight">
-          <h1 className="break-words text-[clamp(1.2rem,5vw,1.5rem)] font-semibold leading-tight">{dayLabel}</h1>
-          <p className="mt-1 text-[14px] text-slate-600">Edit coverage, adjust hours, and export this day&apos;s roster.</p>
-          <p className={`mt-1 text-[12px] font-medium ${saveStatusClassName}`}>{saveStatusText}</p>
+    <div>
+      <div className="mb-5 flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+        <div className="min-w-0">
+          <h1 className="text-[24px] font-semibold leading-tight tracking-[-0.015em]">{dayLabel}</h1>
+          <div className="mt-2">
+            <SaveStatus state={saveState} />
+          </div>
         </div>
+        <div className="flex flex-wrap items-center gap-2">
+          <div className="flex items-center">
+            <button type="button" className="btn btn-icon rounded-r-none" onClick={() => shiftDay(-1)} aria-label="Previous day">
+              <ChevronLeft />
+            </button>
+            <button
+              type="button"
+              className="btn -ml-px rounded-none"
+              onClick={() => goToDate(new Date())}
+              disabled={isToday}
+            >
+              Today
+            </button>
+            <button type="button" className="btn btn-icon -ml-px rounded-l-none" onClick={() => shiftDay(1)} aria-label="Next day">
+              <ChevronRight />
+            </button>
+          </div>
+          <input
+            type="date"
+            className="input"
+            value={rosterDateId}
+            onChange={(event) => {
+              const date = parseLocalId(event.target.value);
+              if (date) goToDate(date);
+            }}
+            aria-label="Go to date"
+          />
+          <button type="button" className="btn" onClick={() => gridRef.current?.exportWorkbook()}>
+            <Download />
+            Export
+          </button>
+          <button type="button" className="btn btn-primary" onClick={() => gridRef.current?.save()}>
+            <Save />
+            Save
+          </button>
+        </div>
+      </div>
+
+      <div className="flex flex-col gap-4">
         <TopBar
+          actions={toolbarActions}
           hours={hours}
+          zoom={{
+            canZoomOut: zoom > 0,
+            canZoomIn: zoom < ROSTER_ZOOM_LEVELS.length - 1,
+            onZoomOut: () => changeZoom(-1),
+            onZoomIn: () => changeZoom(1),
+          }}
           onHoursStartChange={(value) => {
             setHoursTouched(true);
             setHours((prev) => ({ ...prev, start: value }));
@@ -129,12 +212,32 @@ export default function EditorClient({
             setHoursTouched(true);
             setHours((prev) => ({ ...prev, end: value }));
           }}
-          onHoursDefault={() => {
-            setHoursTouched(false);
-            setHours({ start: defaultHoursForDay.start, end: defaultHoursForDay.end });
-          }}
         />
+        {autofillNotice && (
+          <div
+            role="status"
+            className="flex items-start gap-3 rounded-[var(--radius-lg)] border border-amber-200 bg-[var(--warning-soft)] px-4 py-3"
+          >
+            <AlertTriangle className="mt-0.5 h-[18px] w-[18px] shrink-0 text-[var(--warning)]" aria-hidden="true" />
+            <div className="min-w-0 flex-1 space-y-1 text-[13.5px] text-amber-950">
+              <p className="font-medium">Autofill couldn&apos;t place everything</p>
+              {autofillNotice.messages.map((message) => (
+                <p key={message}>{message}</p>
+              ))}
+            </div>
+            <button
+              type="button"
+              className="btn btn-ghost btn-sm btn-icon -mr-1 -mt-0.5"
+              onClick={() => setAutofillNotice(null)}
+              aria-label="Dismiss autofill notice"
+            >
+              <X />
+            </button>
+          </div>
+        )}
         <Grid
+          ref={gridRef}
+          zoom={zoom}
           employees={initialRoster.employees}
           initialTasks={initialRoster.tasks}
           rosterDateId={rosterDateId}
@@ -142,7 +245,6 @@ export default function EditorClient({
           hoursStart={hours.start}
           hoursEnd={hours.end}
           initialSavedAt={initialRoster.savedAt}
-          onExportWorkbook={downloadWorkbook}
           onSaveStateChange={setSaveState}
           onAutofillNoticeChange={setAutofillNotice}
           onRestoreDraftHours={handleRestoreDraftHours}
@@ -150,32 +252,6 @@ export default function EditorClient({
           templates={templates}
         />
       </div>
-      {autofillNotice && (
-        <div className="pointer-events-none fixed inset-x-0 bottom-4 z-50 flex justify-center px-3">
-          <div className="pointer-events-auto w-full max-w-[720px] rounded-[12px] border border-amber-200 bg-white/95 px-4 py-3 shadow-[0_14px_32px_rgba(15,23,42,0.14)] backdrop-blur">
-            <div className="flex items-start justify-between gap-3">
-              <div className="min-w-0">
-                <p className="text-[13px] font-semibold text-slate-900">{autofillNotice.title}</p>
-                <div className="mt-1 space-y-1">
-                  {autofillNotice.messages.map((message) => (
-                    <p key={message} className="text-[13px] leading-5 text-slate-700">
-                      {message}
-                    </p>
-                  ))}
-                </div>
-              </div>
-              <button
-                type="button"
-                className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-[8px] text-slate-500 transition hover:bg-slate-100 hover:text-slate-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-300"
-                onClick={() => setAutofillNotice(null)}
-                aria-label="Dismiss autofill notice"
-              >
-                <X className="h-4 w-4" />
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 }

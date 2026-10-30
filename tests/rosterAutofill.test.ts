@@ -187,14 +187,12 @@ describe("roster autofill preferences", () => {
     expect(
       isAutofillFillerTemplate({
         hasFixedTimes: false,
-        mustManned: false,
         minPerEmp: 1,
       })
     ).toBe(false);
     expect(
       isAutofillFillerTemplate({
         hasFixedTimes: false,
-        mustManned: false,
         minPerEmp: 0,
       })
     ).toBe(true);

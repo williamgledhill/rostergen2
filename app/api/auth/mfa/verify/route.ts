@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
+import { parseJsonBody } from "@/lib/apiHelpers";
 import { confirmTotpSetup } from "@/lib/auth";
 import { enforceSameOrigin, requireSession } from "@/lib/apiAuth";
 
@@ -14,12 +15,10 @@ export async function POST(request: Request) {
   const originError = enforceSameOrigin(request);
   if (originError) return originError;
 
-  const parsed = verifySchema.safeParse(await request.json());
-  if (!parsed.success) {
-    return NextResponse.json({ error: "Invalid payload" }, { status: 400 });
-  }
+  const body = await parseJsonBody(request, verifySchema);
+  if (!body.ok) return body.response;
 
-  const recoveryCodes = await confirmTotpSetup(auth.session.user.id, parsed.data.code);
+  const recoveryCodes = await confirmTotpSetup(auth.session.user.id, body.data.code);
   if (!recoveryCodes) {
     return NextResponse.json({ error: "Invalid verification code" }, { status: 400 });
   }

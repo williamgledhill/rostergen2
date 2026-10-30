@@ -1,6 +1,16 @@
 export const DAY_KEYS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"] as const;
 export type DayKey = (typeof DAY_KEYS)[number];
 
+export const DAY_LABELS: Record<DayKey, string> = {
+  Mon: "Monday",
+  Tue: "Tuesday",
+  Wed: "Wednesday",
+  Thu: "Thursday",
+  Fri: "Friday",
+  Sat: "Saturday",
+  Sun: "Sunday",
+};
+
 export type DayHours = { start: string; end: string };
 export type AppSettings = {
   hoursByDay: Record<DayKey, DayHours>;

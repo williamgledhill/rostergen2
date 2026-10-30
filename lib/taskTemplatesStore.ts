@@ -1,13 +1,12 @@
 import { AppDayOfWeek } from "@prisma/client";
 import { prisma } from "./prisma";
 import { ensureAppPersistenceSeeded } from "./appPersistenceSeed";
-import { defaultTaskTemplates, TaskTemplate, slugifyName } from "./taskTemplates";
+import { defaultTaskTemplates, isTourTemplate, TaskTemplate, slugifyName, TOUR_WAITING_MINUTES } from "./taskTemplates";
 import { unstable_cache } from "next/cache";
 import { CACHE_TAGS } from "./cacheTags";
+import { runtimeSeedEnabled } from "./runtimeSeed";
 
 let defaultTemplateSyncPromise: Promise<void> | null = null;
-const runtimeTemplateSyncEnabled =
-  process.env.APP_RUNTIME_SEED === "true" || process.env.NODE_ENV !== "production";
 
 function applyDefaults(t: TaskTemplate): TaskTemplate {
   const minPerEmployeePerDay = Number.isFinite(t.minPerEmployeePerDay)
@@ -26,13 +25,20 @@ function applyDefaults(t: TaskTemplate): TaskTemplate {
     t.regularDayWindows && typeof t.regularDayWindows === "object" && !Array.isArray(t.regularDayWindows)
       ? t.regularDayWindows
       : {};
+  const extraDayWindows =
+    t.extraDayWindows && typeof t.extraDayWindows === "object" && !Array.isArray(t.extraDayWindows)
+      ? Object.fromEntries(Object.entries(t.extraDayWindows).filter(([, ranges]) => Array.isArray(ranges) && ranges.length))
+      : {};
   const regularTimesByDay =
     t.regularTimesByDay && typeof t.regularTimesByDay === "object" && !Array.isArray(t.regularTimesByDay)
       ? t.regularTimesByDay
       : {};
-  const waitingMinutes = Number.isFinite(t.waitingMinutes)
-    ? Number(t.waitingMinutes)
-    : 0;
+  // Tours always carry the standard waiting lead-in, whatever is stored.
+  const waitingMinutes = isTourTemplate(t)
+    ? TOUR_WAITING_MINUTES
+    : Number.isFinite(t.waitingMinutes)
+      ? Number(t.waitingMinutes)
+      : 0;
   const packingMinutes = Number.isFinite(t.packingMinutes)
     ? Number(t.packingMinutes)
     : 0;
@@ -47,6 +53,7 @@ function applyDefaults(t: TaskTemplate): TaskTemplate {
     typeof t.schoolTourImportTarget === "boolean"
       ? t.schoolTourImportTarget
       : false;
+  const waitingCanBeCovered = typeof t.waitingCanBeCovered === "boolean" ? t.waitingCanBeCovered : false;
   return {
     ...t,
     color: t.color || "#e2e8f0",
@@ -65,6 +72,7 @@ function applyDefaults(t: TaskTemplate): TaskTemplate {
     regularTimes: Array.isArray(t.regularTimes) ? t.regularTimes : [],
     regularTimesByDay,
     regularDayWindows,
+    extraDayWindows,
     minPerEmployeePerDay,
     maxPerEmployeePerDay,
     durationMinutes,
@@ -74,6 +82,9 @@ function applyDefaults(t: TaskTemplate): TaskTemplate {
     limitPerDay,
     maxConcurrentPerTimeslot,
     schoolTourImportTarget,
+    waitingCanBeCovered,
+    pairedWithTaskId: typeof t.pairedWithTaskId === "string" && t.pairedWithTaskId ? t.pairedWithTaskId : "",
+    pairedPosition: t.pairedPosition === "before" ? "before" : "after",
     enabled,
   };
 }
@@ -94,6 +105,7 @@ function toTemplateCreateInput(template: TaskTemplate) {
     regularTimes: template.regularTimes || [],
     regularTimesByDay: template.regularTimesByDay || {},
     regularDayWindows: template.regularDayWindows || {},
+    extraDayWindows: template.extraDayWindows || {},
     minPerEmployeePerDay: Number.isFinite(template.minPerEmployeePerDay)
       ? Number(template.minPerEmployeePerDay)
       : 0,
@@ -111,6 +123,9 @@ function toTemplateCreateInput(template: TaskTemplate) {
       ? Number(template.maxConcurrentPerTimeslot)
       : 0,
     schoolTourImportTarget: Boolean(template.schoolTourImportTarget),
+    waitingCanBeCovered: Boolean(template.waitingCanBeCovered),
+    pairedWithTaskId: template.pairedWithTaskId || null,
+    pairedPosition: template.pairedPosition || null,
     enabled: template.enabled !== false,
   };
 }
@@ -156,7 +171,7 @@ function toRelationRows(templateId: string, template: Partial<TaskTemplate>) {
 }
 
 async function ensureDefaultTaskTemplatesSynced() {
-  if (!runtimeTemplateSyncEnabled) return;
+  if (!runtimeSeedEnabled) return;
   if (defaultTemplateSyncPromise) return defaultTemplateSyncPromise;
 
   defaultTemplateSyncPromise = (async () => {
@@ -216,6 +231,7 @@ function mapLegacyTemplate(record: any): TaskTemplate {
       record.regularDayWindows && typeof record.regularDayWindows === "object"
         ? record.regularDayWindows
         : {},
+    extraDayWindows: record.extraDayWindows ?? {},
     minPerEmployeePerDay: record.minPerEmployeePerDay,
     maxPerEmployeePerDay: record.maxPerEmployeePerDay,
     durationMinutes: record.durationMinutes,
@@ -225,6 +241,9 @@ function mapLegacyTemplate(record: any): TaskTemplate {
     limitPerDay: record.limitPerDay,
     maxConcurrentPerTimeslot: record.maxConcurrentPerTimeslot,
     schoolTourImportTarget: record.schoolTourImportTarget,
+    waitingCanBeCovered: record.waitingCanBeCovered,
+    pairedWithTaskId: record.pairedWithTaskId || "",
+    pairedPosition: record.pairedPosition || undefined,
     enabled: record.enabled,
   });
 }
@@ -275,6 +294,7 @@ function mapTemplate(record: any): TaskTemplate {
     regularTimes,
     regularTimesByDay,
     regularDayWindows,
+    extraDayWindows: record.extraDayWindows ?? {},
     minPerEmployeePerDay: record.minPerEmployeePerDay,
     maxPerEmployeePerDay: record.maxPerEmployeePerDay,
     durationMinutes: record.durationMinutes,
@@ -284,6 +304,9 @@ function mapTemplate(record: any): TaskTemplate {
     limitPerDay: record.limitPerDay,
     maxConcurrentPerTimeslot: record.maxConcurrentPerTimeslot,
     schoolTourImportTarget: record.schoolTourImportTarget,
+    waitingCanBeCovered: record.waitingCanBeCovered,
+    pairedWithTaskId: record.pairedWithTaskId || "",
+    pairedPosition: record.pairedPosition || undefined,
     enabled: record.enabled,
   });
 }
@@ -298,6 +321,7 @@ async function loadTaskTemplates(): Promise<TaskTemplate[]> {
       timeSlots: true,
       dayWindows: true,
     },
+    relationLoadStrategy: "join",
   });
   return templates.map(mapTemplate);
 }
@@ -320,6 +344,7 @@ async function loadTaskTemplateById(id: string): Promise<TaskTemplate | null> {
       timeSlots: true,
       dayWindows: true,
     },
+    relationLoadStrategy: "join",
   });
   return template ? mapTemplate(template) : null;
 }
@@ -366,15 +391,17 @@ export async function addTaskTemplate(input: {
       regularTimes: [],
       regularTimesByDay: {},
       regularDayWindows: {},
+      extraDayWindows: {},
       minPerEmployeePerDay: 0,
       maxPerEmployeePerDay: 0,
       durationMinutes: 0,
       maxConsecutiveMinutes: 0,
-      waitingMinutes: 0,
+      waitingMinutes: isTourTemplate(input) ? TOUR_WAITING_MINUTES : 0,
       packingMinutes: 0,
       limitPerDay: 0,
       maxConcurrentPerTimeslot: 0,
       schoolTourImportTarget: false,
+      waitingCanBeCovered: false,
       enabled: true,
     },
   });
@@ -423,6 +450,7 @@ export async function updateTaskTemplate(
         ...(input.regularDayWindows !== undefined
           ? { regularDayWindows: input.regularDayWindows || {} }
           : {}),
+        ...(input.extraDayWindows !== undefined ? { extraDayWindows: input.extraDayWindows || {} } : {}),
         ...(input.minPerEmployeePerDay !== undefined
           ? { minPerEmployeePerDay: input.minPerEmployeePerDay }
           : {}),
@@ -433,7 +461,11 @@ export async function updateTaskTemplate(
         ...(input.maxConsecutiveMinutes !== undefined
           ? { maxConsecutiveMinutes: input.maxConsecutiveMinutes }
           : {}),
-        ...(input.waitingMinutes !== undefined ? { waitingMinutes: input.waitingMinutes } : {}),
+        ...(isTourTemplate({ category: input.category ?? existingTemplate.category })
+          ? { waitingMinutes: TOUR_WAITING_MINUTES }
+          : input.waitingMinutes !== undefined
+            ? { waitingMinutes: input.waitingMinutes }
+            : {}),
         ...(input.packingMinutes !== undefined ? { packingMinutes: input.packingMinutes } : {}),
         ...(input.limitPerDay !== undefined ? { limitPerDay: input.limitPerDay } : {}),
         ...(input.maxConcurrentPerTimeslot !== undefined
@@ -442,6 +474,11 @@ export async function updateTaskTemplate(
         ...(input.schoolTourImportTarget !== undefined
           ? { schoolTourImportTarget: input.schoolTourImportTarget }
           : {}),
+        ...(input.waitingCanBeCovered !== undefined ? { waitingCanBeCovered: input.waitingCanBeCovered } : {}),
+        ...(input.pairedWithTaskId !== undefined
+          ? { pairedWithTaskId: input.pairedWithTaskId && input.pairedWithTaskId !== id ? input.pairedWithTaskId : null }
+          : {}),
+        ...(input.pairedPosition !== undefined ? { pairedPosition: input.pairedPosition } : {}),
         ...(input.enabled !== undefined ? { enabled: input.enabled } : {}),
       },
     });

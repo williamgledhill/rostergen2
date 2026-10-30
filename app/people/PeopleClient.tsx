@@ -2,212 +2,262 @@
 
 import React, { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Plus, X } from "lucide-react";
-import { ALL_DAYS, type DayKey, type Person, defaultSchedule } from "@/lib/people";
+import { ChevronRight, Plus } from "lucide-react";
+import Dialog from "@/components/ui/Dialog";
+import { useFeedback } from "@/components/ui/Feedback";
+import PageHeader from "@/components/ui/PageHeader";
+import { ALL_DAYS, type DayKey, type DaySchedule, type Person, defaultSchedule } from "@/lib/people";
+import { DAY_LABELS } from "@/lib/settingsDefaults";
 import { navigateWithinSpa } from "@/lib/spaNavigation";
 import { preloadWorkspaceRoute, upsertCachedPerson } from "@/lib/workspaceData";
 
+function weeksDiffer(person: Person) {
+  const fortnight = person.fortnight;
+  if (!fortnight) return false;
+  return ALL_DAYS.some((day) => {
+    const a = fortnight.weekA[day];
+    const b = fortnight.weekB[day];
+    return a.enabled !== b.enabled || a.start !== b.start || a.end !== b.end;
+  });
+}
+
+function WorkingDays({ person }: { person: Person }) {
+  const weekA = person.fortnight?.weekA ?? person.schedule;
+  const weekB = person.fortnight?.weekB ?? person.schedule;
+  return (
+    <div className="flex items-center gap-1" aria-label="Working days">
+      {ALL_DAYS.map((day) => {
+        const inA = weekA[day]?.enabled;
+        const inB = weekB[day]?.enabled;
+        const title = `${DAY_LABELS[day]}: ${inA && inB ? "working" : inA || inB ? "alternate weeks" : "off"}`;
+        return (
+          <span
+            key={day}
+            title={title}
+            className={`grid h-6 w-6 place-items-center rounded-[6px] text-[11px] font-semibold ${
+              inA && inB
+                ? "bg-[var(--accent)] text-white"
+                : inA || inB
+                  ? "text-[#1e2a78] ring-1 ring-inset ring-[var(--accent)]"
+                  : "bg-[var(--surface-muted)] text-[var(--text-faint)]"
+            }`}
+            // Days worked only in one week of the fortnight are half filled on the diagonal.
+            style={
+              inA !== inB
+                ? { background: "linear-gradient(135deg, #8595f2 0 50%, var(--accent-soft) 50% 100%)" }
+                : undefined
+            }
+          >
+            {day[0]}
+            <span className="sr-only">{title}</span>
+          </span>
+        );
+      })}
+    </div>
+  );
+}
+
+const emptyForm = (): Person => ({ id: "", name: "", schedule: defaultSchedule([]) });
+
 export default function PeopleClient({ initialPeople }: { initialPeople: Person[] }) {
   const [people, setPeople] = useState<Person[]>(initialPeople);
-  const [modalOpen, setModalOpen] = useState(false);
-  const [form, setForm] = useState<Person>({ id: "", name: "", email: "", schedule: defaultSchedule([]) });
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [form, setForm] = useState<Person>(emptyForm);
+  const [saving, setSaving] = useState(false);
   const router = useRouter();
+  const { notify } = useFeedback();
 
   useEffect(() => {
     setPeople(initialPeople);
   }, [initialPeople]);
 
-  const dayRows: { key: DayKey; label: string }[] = [
-    { key: "Mon", label: "Monday" },
-    { key: "Tue", label: "Tuesday" },
-    { key: "Wed", label: "Wednesday" },
-    { key: "Thu", label: "Thursday" },
-    { key: "Fri", label: "Friday" },
-    { key: "Sat", label: "Saturday" },
-    { key: "Sun", label: "Sunday" },
-  ];
+  const openPerson = (id: string) => {
+    const href = `/people/${id}`;
+    if (!navigateWithinSpa(href)) router.push(href);
+  };
 
-  const summaries = people.map((p) => {
-    const fortnightDiff = p.fortnight
-      ? ALL_DAYS.some((day) => {
-          const a = p.fortnight!.weekA[day];
-          const b = p.fortnight!.weekB[day];
-          return a.enabled !== b.enabled || a.start !== b.start || a.end !== b.end;
-        })
-      : false;
-    const activeDays = ALL_DAYS.filter((d) => p.schedule[d]?.enabled);
-    return {
-      id: p.id,
-      name: p.name,
-      days: fortnightDiff ? "Fortnight pattern" : activeDays.length ? activeDays.join(", ") : "No default days",
-    };
-  });
-
-  function updateDay(day: DayKey, patch: Partial<{ enabled: boolean; start: string; end: string }>) {
-    setForm((prev) => ({
-      ...prev,
-      schedule: {
-        ...prev.schedule,
-        [day]: { ...prev.schedule[day], ...patch },
-      },
-    }));
+  function updateDay(day: DayKey, patch: Partial<DaySchedule>) {
+    setForm((prev) => ({ ...prev, schedule: { ...prev.schedule, [day]: { ...prev.schedule[day], ...patch } } }));
   }
 
-  async function handleSave() {
+  async function handleSave(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
     const payload: Person = {
       ...form,
       id: form.id || Date.now().toString(),
       name: form.name.trim(),
-      email: form.email?.trim() || "",
     };
     if (!payload.name) return;
+    setSaving(true);
     try {
       const res = await fetch("/api/people", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
       });
-      if (!res.ok) throw new Error("Failed to save");
-      const saved = await res.json();
-      setPeople((prev) => {
-        const idx = prev.findIndex((p) => p.id === saved.id);
-        let next: Person[];
-        if (idx >= 0) {
-          next = [...prev];
-          next[idx] = saved;
-        } else {
-          next = [...prev, saved];
-        }
-        return next;
-      });
+      if (!res.ok) throw new Error((await res.json().catch(() => ({})))?.error || "Failed to save");
+      const saved = (await res.json()) as Person;
+      setPeople((prev) =>
+        prev.some((p) => p.id === saved.id) ? prev.map((p) => (p.id === saved.id ? saved : p)) : [...prev, saved]
+      );
       upsertCachedPerson(saved);
-      setModalOpen(false);
-      setForm({ id: "", name: "", email: "", schedule: defaultSchedule([]) });
+      setDialogOpen(false);
+      notify({ tone: "success", title: `${saved.name} added` });
     } catch (err) {
-      console.error(err);
-      alert("Failed to save employee");
+      notify({ tone: "error", title: "Couldn't add this person", message: err instanceof Error ? err.message : undefined });
+    } finally {
+      setSaving(false);
     }
   }
 
   return (
-    <div className="w-full py-3 px-3">
-      <div className="space-y-3 flex flex-col items-start w-full">
-        <div className="flex items-center justify-between w-full">
-          <div>
-            <h1 className="text-2xl font-semibold">People</h1>
-            <p className="text-slate-600 text-[14px]">Manage employees and their default working hours.</p>
-          </div>
+    <div className="mx-auto max-w-6xl">
+      <PageHeader
+        title="People"
+        description="Everyone who can be rostered, and the days they usually work."
+        actions={
           <button
-            className="btn btn-primary px-4 py-2"
-            style={{ borderRadius: "6px" }}
+            type="button"
+            className="btn btn-primary"
             onClick={() => {
-              setForm({ id: "", name: "", email: "", schedule: defaultSchedule([]) });
-              setModalOpen(true);
+              setForm(emptyForm());
+              setDialogOpen(true);
             }}
           >
-            <Plus className="w-4 h-4 text-white" strokeWidth={2.3} />
-            <span className="text-[14px] font-medium">Add employee</span>
+            <Plus />
+            Add person
           </button>
-        </div>
+        }
+      />
 
-        <div className="w-full overflow-hidden rounded-lg border border-[var(--border)] bg-white">
-          <div className="overflow-x-auto">
-            <table className="w-full table-fixed border-collapse text-[15px]">
-              <colgroup>
-                <col className="w-[42%]" />
-                <col />
-              </colgroup>
-              <thead className="text-[15px] text-slate-900">
-                <tr className="border-b border-[#E6EAF0]">
-                  <th className="px-4 py-4 text-left font-bold tracking-[0.01em]">Employee</th>
-                  <th className="px-4 py-4 text-left font-bold tracking-[0.01em]">Default days</th>
+      <div className="card overflow-hidden">
+        <div className="overflow-x-auto">
+          <table className="data-table">
+            <thead>
+              <tr>
+                <th>Name</th>
+                <th>Usual days</th>
+                <th aria-hidden="true" />
+              </tr>
+            </thead>
+            <tbody>
+              {people.map((person) => (
+                <tr
+                  key={person.id}
+                  className="is-clickable"
+                  onMouseEnter={() => preloadWorkspaceRoute(`/people/${person.id}`)}
+                  onClick={() => openPerson(person.id)}
+                >
+                  <td className="font-medium">
+                    <button
+                      type="button"
+                      className="text-left hover:underline"
+                      onClick={(event) => {
+                        event.stopPropagation();
+                        openPerson(person.id);
+                      }}
+                    >
+                      {person.name}
+                    </button>
+                    {weeksDiffer(person) && <span className="badge ml-2">Fortnightly</span>}
+                  </td>
+                  <td>
+                    <WorkingDays person={person} />
+                  </td>
+                  <td className="w-10 text-[var(--text-faint)]">
+                    <ChevronRight className="h-4 w-4" aria-hidden="true" />
+                  </td>
                 </tr>
-              </thead>
-              <tbody className="[&_tr:last-child]:border-b-0">
-                {summaries.map((p) => (
-                  <tr
-                    key={p.id}
-                    className="border-b border-[#E6EAF0] hover:bg-[#f8fafc] cursor-pointer"
-                    onMouseEnter={() => {
-                      const href = `/people/${p.id}`;
-                      preloadWorkspaceRoute(href);
-                      router.prefetch(href);
-                    }}
-                    onClick={() => {
-                      const href = `/people/${p.id}`;
-                      if (!navigateWithinSpa(href)) router.push(href);
-                    }}
-                  >
-                    <td className="align-middle px-4 py-4">
-                      <div className="inline-flex items-center gap-2 text-[15px] font-medium text-slate-700">
-                        <span className="block truncate">{p.name}</span>
-                      </div>
-                    </td>
-                    <td className="align-middle px-4 py-4 text-[15px] font-medium text-slate-700">
-                      <span className="block truncate">{p.days || ""}</span>
-                    </td>
-                  </tr>
-                ))}
-                {summaries.length === 0 && (
-                  <tr>
-                    <td colSpan={2} className="py-8 text-center text-[15px] text-slate-600">No people yet.</td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
-          </div>
-          <div className="border-t border-[#E6EAF0] px-4 py-3 text-sm text-slate-600">{summaries.length} employee{summaries.length === 1 ? "" : "s"}</div>
+              ))}
+              {people.length === 0 && (
+                <tr>
+                  <td colSpan={3} className="py-10 text-center text-[var(--text-muted)]">
+                    No people yet. Add someone to start rostering.
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
         </div>
+        <div className="border-t border-[var(--border)] px-5 py-3 text-[13px] text-[var(--text-muted)]">
+          {people.length} {people.length === 1 ? "person" : "people"}
+        </div>
+      </div>
 
-        {modalOpen && (
-          <div className="fixed inset-0 z-[2147483647] bg-black/40 flex items-center justify-center" onClick={() => setModalOpen(false)}>
-            <div className="bg-white rounded-[8px] w-full max-w-xl shadow-xl border border-[var(--border)] overflow-hidden mx-4" onClick={(e) => e.stopPropagation()}>
-              <div className="flex items-center justify-between px-6 py-4">
-                <div>
-                  <h2 className="text-xl font-semibold">Add employee</h2>
-                  <p className="text-sm text-slate-600">Enter details for a new employee.</p>
-                </div>
-                <button className="p-2 text-slate-500 hover:text-slate-700 rounded-lg hover:bg-[#f5f7fa] transition" onClick={() => setModalOpen(false)} aria-label="Close">
-                  <X className="w-4 h-4" />
-                </button>
-              </div>
-              <div className="px-6 pb-5 space-y-6 text-[14px]" style={{ color: "#1A1B25" }}>
-                <div className="space-y-4">
-                  <div>
-                    <label className="block text-sm font-semibold mb-1" style={{ color: "#1A1B25" }}>Name</label>
-                    <p className="text-xs text-slate-500 mb-1">Employee display name; appears on rosters.</p>
-                    <input className="input w-full text-[14px]" style={{ color: "#1A1B25" }} value={form.name} onChange={(e) => setForm((prev) => ({ ...prev, name: e.target.value }))} />
+      <Dialog
+        open={dialogOpen}
+        onClose={() => !saving && setDialogOpen(false)}
+        title="Add person"
+        description="You can set up a fortnightly pattern after adding them."
+        as="form"
+        onSubmit={handleSave}
+        footer={
+          <>
+            <button type="button" className="btn" onClick={() => setDialogOpen(false)} disabled={saving}>
+              Cancel
+            </button>
+            <button type="submit" className="btn btn-primary" disabled={saving || !form.name.trim()}>
+              {saving ? "Adding…" : "Add person"}
+            </button>
+          </>
+        }
+      >
+        <div className="space-y-4">
+          <div>
+            <label className="field-label" htmlFor="person-name">
+              Name
+            </label>
+            <input
+              id="person-name"
+              className="input w-full"
+              value={form.name}
+              autoFocus
+              onChange={(e) => setForm((prev) => ({ ...prev, name: e.target.value }))}
+            />
+          </div>
+          <div>
+            <p className="field-label">Usual hours</p>
+            <div className="divide-y divide-[var(--border)] rounded-[var(--radius-md)] border border-[var(--border)]">
+              {ALL_DAYS.map((day) => {
+                const schedule = form.schedule[day];
+                return (
+                  <div key={day} className="grid grid-cols-[1fr_auto] items-center gap-3 px-3 py-2 sm:grid-cols-[140px_1fr]">
+                    <label className="flex items-center gap-2.5 text-[14px]">
+                      <input
+                        type="checkbox"
+                        checked={schedule.enabled}
+                        onChange={(e) => updateDay(day, { enabled: e.target.checked })}
+                      />
+                      {DAY_LABELS[day]}
+                    </label>
+                    {schedule.enabled ? (
+                      <div className="flex items-center gap-2">
+                        <input
+                          type="time"
+                          className="input h-8 w-[118px] text-[13px]"
+                          value={schedule.start}
+                          onChange={(e) => updateDay(day, { start: e.target.value })}
+                          aria-label={`${DAY_LABELS[day]} start time`}
+                        />
+                        <span className="text-[13px] text-[var(--text-muted)]">to</span>
+                        <input
+                          type="time"
+                          className="input h-8 w-[118px] text-[13px]"
+                          value={schedule.end}
+                          onChange={(e) => updateDay(day, { end: e.target.value })}
+                          aria-label={`${DAY_LABELS[day]} end time`}
+                        />
+                      </div>
+                    ) : (
+                      <span className="text-[13px] text-[var(--text-faint)]">Not working</span>
+                    )}
                   </div>
-                  <div>
-                    <label className="block text-sm font-semibold mb-1" style={{ color: "#1A1B25" }}>Email</label>
-                    <input className="input w-full text-[14px]" style={{ color: "#1A1B25" }} type="email" value={form.email ?? ""} onChange={(e) => setForm((prev) => ({ ...prev, email: e.target.value }))} />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-semibold mb-1" style={{ color: "#1A1B25" }}>Standard work roster</label>
-                    <p className="text-xs text-slate-500 mb-2">Used by roster generator</p>
-                    <div className="border border-[var(--border)] rounded-md divide-y divide-[var(--border)]">
-                      {dayRows.map((day) => (
-                        <div key={day.key} className="grid grid-cols-[120px,1fr,1fr] items-center gap-3 px-3 py-3">
-                          <label className="flex items-center gap-2 text-sm font-semibold" style={{ color: "#1A1B25" }}>
-                            <input type="checkbox" className="h-4 w-4" aria-label={`Enable ${day.label}`} checked={!!form.schedule[day.key]?.enabled} onChange={(e) => updateDay(day.key, { enabled: e.target.checked })} style={{ accentColor: "rgb(103, 93, 255)" }} />
-                            <span>{day.label}</span>
-                          </label>
-                          <input type="time" className="input text-[14px]" style={{ color: "#1A1B25" }} value={form.schedule[day.key]?.start || ""} onChange={(e) => updateDay(day.key, { start: e.target.value })} disabled={!form.schedule[day.key]?.enabled} aria-label={`${day.label} start time`} />
-                          <input type="time" className="input text-[14px]" style={{ color: "#1A1B25" }} value={form.schedule[day.key]?.end || ""} onChange={(e) => updateDay(day.key, { end: e.target.value })} disabled={!form.schedule[day.key]?.enabled} aria-label={`${day.label} end time`} />
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-              </div>
-              <div className="px-6 py-4 flex items-center justify-end gap-3 bg-white">
-                <button className="btn h-[30px] justify-center text-black/80 hover:text-black" style={{ width: "65px", boxShadow: "inset 0 0 0 1px #CFCFCF", borderRadius: "6px", border: "none", background: "white" }} onClick={() => setModalOpen(false)}>Cancel</button>
-                <button className="btn btn-primary px-4 h-[30px]" style={{ borderRadius: "6px" }} onClick={handleSave}>Add employee</button>
-              </div>
+                );
+              })}
             </div>
           </div>
-        )}
-      </div>
+        </div>
+      </Dialog>
     </div>
   );
 }

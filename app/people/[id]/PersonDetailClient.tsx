@@ -1,125 +1,105 @@
 "use client";
 
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useMemo } from "react";
 import { useRouter } from "next/navigation";
-import { ArrowLeft, Copy, PencilLine, Save, Trash2 } from "lucide-react";
-import { buildDraftStorageKey, formatAutosaveStatusText, getAutosaveStatusClassName, removeDraftRecord } from "@/lib/clientDrafts";
-import { navigateWithinSpa } from "@/lib/spaNavigation";
-import { deleteCachedPerson, upsertCachedPerson } from "@/lib/workspaceData";
+import { Copy, Save, Trash2 } from "lucide-react";
+import { useFeedback } from "@/components/ui/Feedback";
+import PageHeader from "@/components/ui/PageHeader";
+import SaveStatus from "@/components/ui/SaveStatus";
+import SpaLink from "@/components/ui/SpaLink";
+import { buildDraftStorageKey, removeDraftRecord } from "@/lib/clientDrafts";
 import {
   ALL_DAYS,
+  ensureFortnightSchedule,
+  getFortnightWeekKey,
   type DayKey,
   type DaySchedule,
   type FortnightSchedule,
   type Person,
-  ensureFortnightSchedule,
 } from "@/lib/people";
+import { DAY_LABELS } from "@/lib/settingsDefaults";
+import { navigateWithinSpa } from "@/lib/spaNavigation";
 import { usePersistedAutosave } from "@/lib/usePersistedAutosave";
-
-const DAY_ROWS: { key: DayKey; label: string }[] = [
-  { key: "Mon", label: "Monday" },
-  { key: "Tue", label: "Tuesday" },
-  { key: "Wed", label: "Wednesday" },
-  { key: "Thu", label: "Thursday" },
-  { key: "Fri", label: "Friday" },
-  { key: "Sat", label: "Saturday" },
-  { key: "Sun", label: "Sunday" },
-];
+import { deleteCachedPerson, upsertCachedPerson } from "@/lib/workspaceData";
 
 type PersonEditor = Omit<Person, "fortnight"> & { fortnight: FortnightSchedule };
 type WeekKey = "weekA" | "weekB";
-type WeekOption = { key: WeekKey; label: string };
 
-const WEEK_OPTIONS: WeekOption[] = [
+const WEEKS: Array<{ key: WeekKey; label: string }> = [
   { key: "weekA", label: "Week A" },
   { key: "weekB", label: "Week B" },
 ];
 
-function formatTitle(name: string) {
-  return `${name}'s default hours`;
-}
-
 function cloneWeek(week: Record<DayKey, DaySchedule>) {
-  const next = {} as Record<DayKey, DaySchedule>;
-  ALL_DAYS.forEach((day) => {
-    next[day] = { ...week[day] };
-  });
-  return next;
+  return Object.fromEntries(ALL_DAYS.map((day) => [day, { ...week[day] }])) as Record<DayKey, DaySchedule>;
 }
 
 function toEditorPerson(raw: Person): PersonEditor {
   const fortnight = ensureFortnightSchedule(raw);
-  return {
-    ...raw,
-    schedule: cloneWeek(fortnight.weekA),
-    fortnight,
-  };
+  return { ...raw, schedule: cloneWeek(fortnight.weekA), fortnight };
 }
 
-function WeekDayEditor({
-  label,
+function DayCell({
   schedule,
-  onToggle,
-  onChangeStart,
-  onChangeEnd,
+  weekLabel,
+  label,
+  onChange,
 }: {
-  label: string;
   schedule: DaySchedule;
-  onToggle: () => void;
-  onChangeStart: (value: string) => void;
-  onChangeEnd: (value: string) => void;
+  weekLabel: string;
+  label: string;
+  onChange: (patch: Partial<DaySchedule>) => void;
 }) {
   return (
-    <div className="rounded-[10px] border border-[var(--border)] bg-[var(--surface-subtle)] px-2 py-2">
-      <div className="mb-1.5 flex items-center justify-between gap-2">
-        <label className="inline-flex items-center gap-2 text-[12px] font-semibold text-slate-700">
-          <input type="checkbox" checked={schedule.enabled} onChange={onToggle} />
-          {label}
-        </label>
-        <span className={`text-[11px] font-semibold ${schedule.enabled ? "text-emerald-700" : "text-slate-500"}`}>
-          {schedule.enabled ? "Working" : "Off"}
-        </span>
-      </div>
-
-      <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-1.5">
+    <div className="flex min-h-9 flex-wrap items-center gap-x-3 gap-y-2">
+      <label className="flex items-center gap-2 text-[13px]">
         <input
-          type="time"
-          className="input time-input-no-icon h-8 w-full min-w-0 px-2 text-[13px]"
-          value={schedule.start}
-          onChange={(event) => onChangeStart(event.target.value)}
-          disabled={!schedule.enabled}
+          type="checkbox"
+          checked={schedule.enabled}
+          onChange={() => onChange({ enabled: !schedule.enabled })}
+          aria-label={`${label} working`}
         />
-        <span className="text-xs text-slate-500">to</span>
-        <input
-          type="time"
-          className="input time-input-no-icon h-8 w-full min-w-0 px-2 text-[13px]"
-          value={schedule.end}
-          onChange={(event) => onChangeEnd(event.target.value)}
-          disabled={!schedule.enabled}
-        />
-      </div>
+        <span className="w-14 font-medium sm:hidden">{weekLabel}</span>
+        {!schedule.enabled && <span className="text-[var(--text-faint)]">Off</span>}
+      </label>
+      {schedule.enabled && (
+        <div className="flex items-center gap-1.5">
+          <input
+            type="time"
+            className="input time-input-no-icon h-8 w-[92px] px-2 text-[13px]"
+            value={schedule.start}
+            onChange={(event) => onChange({ start: event.target.value })}
+            aria-label={`${label} start`}
+          />
+          <span className="text-[12px] text-[var(--text-muted)]">to</span>
+          <input
+            type="time"
+            className="input time-input-no-icon h-8 w-[92px] px-2 text-[13px]"
+            value={schedule.end}
+            onChange={(event) => onChange({ end: event.target.value })}
+            aria-label={`${label} end`}
+          />
+        </div>
+      )}
     </div>
   );
 }
 
 export default function PersonDetailClient({ id, initialPerson }: { id: string; initialPerson: Person | null }) {
-  const initialEditorPerson = useMemo(
-    () => (initialPerson ? toEditorPerson(initialPerson) : null),
-    [initialPerson]
-  );
-  const {
-    value: person,
-    setValue: setPerson,
-    saveState,
-    saveNow,
-  } = usePersistedAutosave<PersonEditor | null>({
+  const router = useRouter();
+  const { confirm, notify } = useFeedback();
+  const initialEditorPerson = useMemo(() => (initialPerson ? toEditorPerson(initialPerson) : null), [initialPerson]);
+  const { value: person, setValue: setPerson, saveState, saveNow } = usePersistedAutosave<PersonEditor | null>({
     storageKey: buildDraftStorageKey("person", id),
     initialValue: initialEditorPerson,
     getSignature: (value) => JSON.stringify(value),
+    // An empty name can't be saved; wait until one is typed.
+    canSaveValue: (value) => !!value?.name.trim(),
     save: async (value, { keepalive }) => {
       if (!value) return;
       const payload: Person = {
         ...value,
+        name: value.name.trim(),
         schedule: cloneWeek(value.fortnight.weekA),
         fortnight: value.fortnight,
       };
@@ -132,201 +112,171 @@ export default function PersonDetailClient({ id, initialPerson }: { id: string; 
       if (!res.ok) throw new Error("Save failed");
       const saved = (await res.json()) as Person;
       upsertCachedPerson(saved);
-      return {
-        value: toEditorPerson(saved),
-        savedAt: new Date().toISOString(),
-      };
+      return { value: toEditorPerson(saved), savedAt: new Date().toISOString() };
     },
   });
-  const [notice, setNotice] = useState("");
-  const router = useRouter();
 
-  useEffect(() => {
-    setNotice("");
-  }, [id, initialPerson]);
+  const goToPeople = () => {
+    if (!navigateWithinSpa("/people")) router.push("/people");
+  };
+
+  function update(patch: Partial<PersonEditor>) {
+    setPerson((prev) => (prev ? { ...prev, ...patch } : prev));
+  }
 
   function updateDay(week: WeekKey, day: DayKey, patch: Partial<DaySchedule>) {
     setPerson((prev) => {
       if (!prev) return prev;
-      const current = prev.fortnight[week][day];
-      const nextDay = { ...current, ...patch };
+      const weekSchedule = prev.fortnight[week];
       return {
         ...prev,
-        fortnight: {
-          ...prev.fortnight,
-          [week]: {
-            ...prev.fortnight[week],
-            [day]: nextDay,
-          },
-        },
+        fortnight: { ...prev.fortnight, [week]: { ...weekSchedule, [day]: { ...weekSchedule[day], ...patch } } },
       };
     });
-    setNotice("");
   }
 
   function copyWeek(from: WeekKey, to: WeekKey) {
-    setPerson((prev) => {
-      if (!prev) return prev;
-      return {
-        ...prev,
-        fortnight: {
-          ...prev.fortnight,
-          [to]: cloneWeek(prev.fortnight[from]),
-        },
-      };
-    });
-    setNotice(`${from === "weekA" ? "Week A" : "Week B"} copied to ${to === "weekA" ? "Week A" : "Week B"}.`);
+    setPerson((prev) => (prev ? { ...prev, fortnight: { ...prev.fortnight, [to]: cloneWeek(prev.fortnight[from]) } } : prev));
+    notify({ tone: "success", title: `${from === "weekA" ? "Week A" : "Week B"} copied to ${to === "weekA" ? "Week A" : "Week B"}` });
   }
 
   async function removePerson() {
-    if (!confirm("Delete this employee?")) return;
+    const confirmed = await confirm({
+      title: `Delete ${person?.name || "this person"}?`,
+      message: "They'll be removed from People. Rosters already saved keep their name.",
+      confirmLabel: "Delete",
+      tone: "danger",
+    });
+    if (!confirmed) return;
     try {
-      const res = await fetch(`/api/people?id=${id}`, { method: "DELETE" });
+      const res = await fetch(`/api/people?id=${encodeURIComponent(id)}`, { method: "DELETE" });
       if (!res.ok) throw new Error("Delete failed");
       removeDraftRecord(buildDraftStorageKey("person", id));
       deleteCachedPerson(id);
-      if (!navigateWithinSpa("/people")) router.push("/people");
-    } catch (err) {
-      console.error(err);
-      setNotice("Failed to delete.");
+      notify({ tone: "success", title: `${person?.name ?? "Person"} deleted` });
+      goToPeople();
+    } catch {
+      notify({ tone: "error", title: "Couldn't delete this person", message: "Please try again." });
     }
-  }
-
-  function renamePerson() {
-    const name = prompt("Rename employee", person?.name ?? "");
-    if (!name || !person) return;
-    const trimmed = name.trim();
-    if (!trimmed) return;
-    setPerson((prev) => (prev ? { ...prev, name: trimmed } : prev));
-    setNotice("");
   }
 
   if (!person) {
     return (
-      <div className="w-full px-1 py-2 sm:px-2 sm:py-3 md:px-3 md:py-4">
-        <div className="card p-4">
-          <p className="text-slate-700">Employee not found.</p>
-          <button className="btn mt-3" onClick={() => {
-            if (!navigateWithinSpa("/people")) router.push("/people");
-          }}>
-            Back to people
-          </button>
-        </div>
+      <div className="card max-w-xl p-6">
+        <h1 className="text-[18px] font-semibold">Person not found</h1>
+        <p className="mt-1 text-[14px] text-[var(--text-muted)]">They may have been deleted.</p>
+        <SpaLink href="/people" className="btn mt-4">
+          Back to people
+        </SpaLink>
       </div>
     );
   }
 
-  const saveStatusText = formatAutosaveStatusText(saveState);
-  const saveStatusClassName = getAutosaveStatusClassName(saveState);
+  const currentWeek = getFortnightWeekKey(new Date(), person.fortnight.anchorDate) === "weekA" ? "Week A" : "Week B";
 
   return (
-    <div className="w-full px-1 py-2 sm:px-2 sm:py-3 md:px-3 md:py-4">
-      <div className="space-y-4">
-        <div className="flex w-full flex-col gap-2">
-          <div className="flex flex-col leading-tight">
-            <h1 className="break-words text-[clamp(1.2rem,5vw,1.95rem)] font-semibold leading-tight">{formatTitle(person.name)}</h1>
-            <p className="text-sm text-slate-600">Adjust a fortnight schedule for {person.name}.</p>
-            <p className={`mt-1 text-[12px] font-medium ${saveStatusClassName}`}>{saveStatusText}</p>
-          </div>
-          <div className="flex flex-wrap items-center gap-2">
-            <button className="btn" onClick={() => {
-              if (!navigateWithinSpa("/people")) router.push("/people");
-            }}>
-              <ArrowLeft className="h-4 w-4" />
-              Back
-            </button>
-            <button className="btn" onClick={renamePerson}>
-              <PencilLine className="h-4 w-4" />
-              Rename
-            </button>
-            <button
-              className="inline-flex h-[34px] items-center justify-center gap-2 rounded-[var(--radius-md)] border border-red-300 bg-white px-3 text-[13px] font-medium text-red-700 transition hover:bg-red-600 hover:text-white"
-              onClick={removePerson}
-            >
-              <Trash2 className="h-4 w-4" />
+    <div className="mx-auto max-w-5xl">
+      <PageHeader
+        breadcrumb={{ label: "People", href: "/people" }}
+        title={person.name.trim() || "Unnamed person"}
+        meta={<SaveStatus state={saveState} />}
+        actions={
+          <>
+            <button type="button" className="btn btn-danger" onClick={removePerson}>
+              <Trash2 />
               Delete
             </button>
-            <button className="btn btn-primary" onClick={() => void saveNow({ mode: "manual" })} disabled={saveState.state === "saving"}>
-              <Save className="h-4 w-4" />
-              {saveState.state === "saving" ? "Saving..." : "Save"}
+            <button
+              type="button"
+              className="btn btn-primary"
+              onClick={() => void saveNow({ mode: "manual" })}
+              disabled={saveState.state === "saving" || !person.name.trim()}
+            >
+              <Save />
+              Save
             </button>
-          </div>
-          {notice && <p className="mt-2 text-sm text-slate-600">{notice}</p>}
-        </div>
+          </>
+        }
+      />
 
-        <div className="card overflow-hidden">
-          <div className="border-b border-[var(--border)] bg-[var(--surface-subtle)] px-4 py-3">
-            <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
-              <div>
-                <h2 className="text-lg font-semibold">Fortnight Schedule</h2>
-                <p className="text-sm text-slate-600">Set both weeks in one view. Weeks alternate every 7 days.</p>
-              </div>
-              <div className="flex flex-wrap items-center gap-2">
-                <label className="text-xs font-semibold uppercase tracking-[0.1em] text-slate-500">Cycle start</label>
-                <input
-                  type="date"
-                  className="input h-9 w-[150px] text-[13px]"
-                  value={person.fortnight.anchorDate}
-                  onChange={(event) => {
-                    const value = event.target.value;
-                    setPerson((prev) =>
-                      prev
-                        ? {
-                            ...prev,
-                            fortnight: {
-                              ...prev.fortnight,
-                              anchorDate: value,
-                            },
-                          }
-                        : prev
-                    );
-                    setNotice("");
-                  }}
-                />
-                <button className="btn h-9 whitespace-nowrap" onClick={() => copyWeek("weekA", "weekB")}>
-                  <Copy className="h-4 w-4" />
-                  Copy A to B
-                </button>
-                <button className="btn h-9 whitespace-nowrap" onClick={() => copyWeek("weekB", "weekA")}>
-                  <Copy className="h-4 w-4" />
-                  Copy B to A
-                </button>
-              </div>
+      <div className="space-y-6">
+        <section className="card">
+          <div className="card-header">
+            <h2 className="card-title">Details</h2>
+          </div>
+          <div className="p-5">
+            <label className="field-label" htmlFor="person-name">
+              Name
+            </label>
+            <input
+              id="person-name"
+              className="input w-full max-w-md"
+              value={person.name}
+              onChange={(event) => update({ name: event.target.value })}
+            />
+            {!person.name.trim() && <p className="field-hint !text-[var(--danger)]">Enter a name to save changes.</p>}
+          </div>
+        </section>
+
+        <section className="card">
+          <div className="card-header">
+            <div>
+              <h2 className="card-title">Working pattern</h2>
+              <p className="card-description">
+                Weeks A and B alternate. Make them the same for a weekly pattern. This week is{" "}
+                <span className="font-medium text-[var(--text)]">{currentWeek}</span>.
+              </p>
+            </div>
+            <div className="flex flex-wrap items-center gap-2">
+              <label className="text-[13px] text-[var(--text-muted)]" htmlFor="cycle-start">
+                Week A starts
+              </label>
+              <input
+                id="cycle-start"
+                type="date"
+                className="input h-8 w-[150px] text-[13px]"
+                value={person.fortnight.anchorDate}
+                onChange={(event) => update({ fortnight: { ...person.fortnight, anchorDate: event.target.value } })}
+              />
+              <button type="button" className="btn btn-sm" onClick={() => copyWeek("weekA", "weekB")}>
+                <Copy />A to B
+              </button>
+              <button type="button" className="btn btn-sm" onClick={() => copyWeek("weekB", "weekA")}>
+                <Copy />B to A
+              </button>
             </div>
           </div>
 
-          <div className="p-3 sm:p-4">
-            <div className="hidden grid-cols-[130px_1fr_1fr] gap-2 px-1 pb-1 text-xs font-semibold uppercase tracking-[0.08em] text-slate-700 md:grid">
-              <div>Day</div>
-              {WEEK_OPTIONS.map((week) => (
-                <div key={week.key}>{week.label}</div>
-              ))}
-            </div>
-
-            <div className="space-y-2">
-              {DAY_ROWS.map(({ key, label }) => (
-                <div key={key} className="rounded-[10px] border border-[var(--border)] bg-white px-2 py-2 sm:px-3">
-                  <div className="grid gap-2 md:grid-cols-[130px_1fr_1fr] md:items-center">
-                    <div className="px-1 text-[15px] font-normal text-slate-700">{label}</div>
-                    {WEEK_OPTIONS.map((week) => {
-                      const sched = person.fortnight[week.key][key];
-                      return (
-                        <WeekDayEditor
-                          key={`${key}-${week.key}`}
-                          label={week.label}
-                          schedule={sched}
-                          onToggle={() => updateDay(week.key, key, { enabled: !sched.enabled })}
-                          onChangeStart={(value) => updateDay(week.key, key, { start: value })}
-                          onChangeEnd={(value) => updateDay(week.key, key, { end: value })}
+          <div className="overflow-x-auto">
+            <table className="data-table">
+              <thead className="hidden sm:table-header-group">
+                <tr>
+                  <th className="w-[140px]">Day</th>
+                  {WEEKS.map((week) => (
+                    <th key={week.key}>{week.label}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {ALL_DAYS.map((day) => (
+                  <tr key={day} className="flex flex-col gap-2 py-3 sm:table-row sm:py-0">
+                    <td className="!border-b-0 !py-0 font-medium sm:!border-b sm:!py-3">{DAY_LABELS[day]}</td>
+                    {WEEKS.map((week) => (
+                      <td key={week.key} className="!border-b-0 !py-0 sm:!border-b sm:!py-2.5">
+                        <DayCell
+                          weekLabel={week.label}
+                          label={`${week.label} ${DAY_LABELS[day]}`}
+                          schedule={person.fortnight[week.key][day]}
+                          onChange={(patch) => updateDay(week.key, day, patch)}
                         />
-                      );
-                    })}
-                  </div>
-                </div>
-              ))}
-            </div>
+                      </td>
+                    ))}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </div>
-        </div>
+        </section>
       </div>
     </div>
   );

@@ -1,46 +1,39 @@
 "use client";
-import React, { useEffect, useMemo, useRef, useState } from "react";
-import Link from "next/link";
+import React, { useEffect, useRef, useState } from "react";
+import { CalendarRange, LogOut, Menu, ShieldCheck } from "lucide-react";
 import { useNav } from "@/components/NavContext";
-import { navigateWithinSpa, shouldHandleSpaClick, useSpaLocation } from "@/lib/spaNavigation";
-import { preloadWorkspaceRoute } from "@/lib/workspaceData";
+import SpaLink from "@/components/ui/SpaLink";
 
 function getInitials(name?: string | null) {
-  if (typeof name !== "string" || !name.trim()) return "RG";
-  return (
-    name
-      .trim()
-      .split(/\s+/)
-      .slice(0, 2)
-      .map((part) => part[0]?.toUpperCase() || "")
-      .join("") || "RG"
-  );
+  const initials = (name ?? "")
+    .trim()
+    .split(/\s+/)
+    .slice(0, 2)
+    .map((part) => part[0]?.toUpperCase() || "")
+    .join("");
+  return initials || "RP";
 }
 
 export default function GlobalTopBar({ userName }: { userName?: string | null }) {
-  const { pathname } = useSpaLocation();
   const { toggleNav } = useNav();
   const [profileOpen, setProfileOpen] = useState(false);
   const profileRef = useRef<HTMLDivElement>(null);
-  const pageTitle = useMemo(() => {
-    if (pathname.startsWith("/rosters")) return "Rosters";
-    if (pathname.startsWith("/editor")) return "Roster Editor";
-    if (pathname.startsWith("/people")) return "People";
-    if (pathname.startsWith("/tasks")) return "Tasks";
-    if (pathname.startsWith("/settings")) return "Settings";
-    return "Roster Planner";
-  }, [pathname]);
-  const initials = useMemo(() => getInitials(userName), [userName]);
 
   useEffect(() => {
-    const onClick = (e: MouseEvent) => {
-      if (!profileRef.current) return;
-      if (profileRef.current.contains(e.target as Node)) return;
-      setProfileOpen(false);
+    if (!profileOpen) return;
+    const onMouseDown = (e: MouseEvent) => {
+      if (!profileRef.current?.contains(e.target as Node)) setProfileOpen(false);
     };
-    document.addEventListener("mousedown", onClick);
-    return () => document.removeEventListener("mousedown", onClick);
-  }, []);
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setProfileOpen(false);
+    };
+    document.addEventListener("mousedown", onMouseDown);
+    document.addEventListener("keydown", onKeyDown);
+    return () => {
+      document.removeEventListener("mousedown", onMouseDown);
+      document.removeEventListener("keydown", onKeyDown);
+    };
+  }, [profileOpen]);
 
   async function handleLogout() {
     try {
@@ -51,56 +44,58 @@ export default function GlobalTopBar({ userName }: { userName?: string | null })
   }
 
   return (
-    <header className="sticky inset-x-0 top-0 z-50 h-14 w-full bg-[var(--accent)] px-4">
-      <div className="relative mx-auto flex h-full w-full items-center justify-center">
+    <header className="sticky inset-x-0 top-0 z-50 flex h-14 w-full items-center justify-between gap-3 border-b border-[var(--border)] bg-white px-3 sm:px-4">
+      <div className="flex min-w-0 items-center gap-2">
+        <button type="button" className="btn btn-ghost btn-icon" onClick={toggleNav} aria-label="Toggle navigation">
+          <Menu className="!h-5 !w-5" />
+        </button>
+        <SpaLink href="/rosters" className="flex min-w-0 items-center gap-2.5 rounded-md px-1 py-1">
+          <span className="grid h-8 w-8 shrink-0 place-items-center rounded-[9px] bg-[var(--accent)] text-white">
+            <CalendarRange className="h-[17px] w-[17px]" aria-hidden="true" />
+          </span>
+          <span className="truncate text-[15px] font-semibold tracking-[-0.01em]">Roster Generator</span>
+        </SpaLink>
+      </div>
+
+      <div className="relative" ref={profileRef}>
         <button
           type="button"
-          className="absolute left-0 flex h-10 w-10 items-center justify-center text-white transition hover:text-white/85 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/35"
-          onClick={toggleNav}
-          aria-label="Toggle navigation"
+          className="flex items-center gap-2 rounded-full py-1 pl-1 pr-1 transition hover:bg-[var(--surface-muted)] sm:pr-3"
+          onClick={() => setProfileOpen((open) => !open)}
+          aria-label="Account menu"
+          aria-expanded={profileOpen}
+          aria-haspopup="menu"
         >
-          <span className="flex flex-col gap-1" aria-hidden="true">
-            <span className="block h-[2px] w-5 rounded-full bg-current" />
-            <span className="block h-[2px] w-5 rounded-full bg-current" />
-            <span className="block h-[2px] w-5 rounded-full bg-current" />
+          <span className="grid h-8 w-8 place-items-center rounded-full bg-[var(--accent-soft)] text-[12px] font-semibold text-[var(--accent-strong)]">
+            {getInitials(userName)}
           </span>
+          <span className="hidden max-w-[160px] truncate text-[13.5px] font-medium sm:block">{userName ?? "Account"}</span>
         </button>
-        <span className="text-[16px] font-semibold tracking-[0.01em] text-white">{pageTitle}</span>
-        <div className="absolute right-0" ref={profileRef}>
-          <button
-            className="grid h-9 w-9 place-items-center overflow-hidden rounded-full border border-white/60 bg-white text-[12px] font-semibold text-[var(--accent)]"
-            onClick={() => setProfileOpen((open) => !open)}
-            aria-label="Profile menu"
-            aria-expanded={profileOpen}
+        {profileOpen && (
+          <div
+            role="menu"
+            className="dialog-enter absolute right-0 mt-2 w-52 overflow-hidden rounded-[var(--radius-lg)] border border-[var(--border)] bg-white py-1 shadow-[var(--shadow-lg)]"
           >
-            <span aria-hidden="true">{initials}</span>
-            <span className="sr-only">Profile</span>
-          </button>
-          {profileOpen && (
-            <div className="absolute right-0 mt-2 w-40 rounded-md border border-[var(--border)] bg-white shadow-lg z-50">
-              <Link
-                className="block w-full px-3 py-2 text-left text-sm text-slate-700 hover:bg-[#f5f7fa]"
-                href="/settings#security"
-                onMouseEnter={() => preloadWorkspaceRoute("/settings")}
-                onFocus={() => preloadWorkspaceRoute("/settings")}
-                onClick={(event) => {
-                  if (shouldHandleSpaClick(event) && navigateWithinSpa("/settings#security")) {
-                    event.preventDefault();
-                    setProfileOpen(false);
-                  }
-                }}
-              >
-                Security
-              </Link>
-              <button
-                className="w-full text-left px-3 py-2 text-sm text-slate-700 hover:bg-[#f5f7fa]"
-                onClick={handleLogout}
-              >
-                Log out
-              </button>
-            </div>
-          )}
-        </div>
+            <SpaLink
+              role="menuitem"
+              href="/settings#security"
+              className="flex items-center gap-2.5 px-3 py-2 text-[13.5px] hover:bg-[var(--surface-subtle)]"
+              onNavigate={() => setProfileOpen(false)}
+            >
+              <ShieldCheck className="h-4 w-4 text-[var(--text-muted)]" />
+              Security
+            </SpaLink>
+            <button
+              role="menuitem"
+              type="button"
+              className="flex w-full items-center gap-2.5 px-3 py-2 text-left text-[13.5px] hover:bg-[var(--surface-subtle)]"
+              onClick={handleLogout}
+            >
+              <LogOut className="h-4 w-4 text-[var(--text-muted)]" />
+              Log out
+            </button>
+          </div>
+        )}
       </div>
     </header>
   );

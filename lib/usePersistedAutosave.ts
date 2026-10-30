@@ -42,8 +42,16 @@ export function usePersistedAutosave<T>(options: {
     initialSavedAt ? { state: "saved", savedAt: initialSavedAt } : { state: "idle" }
   );
 
+  // Callers usually pass inline functions; keeping them in refs stops a new
+  // function on every render from re-running the effects below in a loop.
   const getSignatureRef = useRef(getSignature);
   const saveRef = useRef(save);
+  const canSaveValueRef = useRef(canSaveValue);
+  canSaveValueRef.current = canSaveValue;
+  const isSaveable = useCallback(
+    (candidate: T) => canSave && (typeof canSaveValueRef.current !== "function" || canSaveValueRef.current(candidate)),
+    [canSave]
+  );
   const valueRef = useRef(value);
   const saveStateRef = useRef(saveState);
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -86,7 +94,7 @@ export function usePersistedAutosave<T>(options: {
       clearAutosaveTimer();
 
       const snapshot = valueRef.current;
-      if (!canSave || (typeof canSaveValue === "function" && !canSaveValue(snapshot))) return;
+      if (!isSaveable(snapshot)) return;
       const snapshotSignature = computeSignature(snapshot);
       if (snapshotSignature === lastSavedSignatureRef.current) return;
 
@@ -155,7 +163,7 @@ export function usePersistedAutosave<T>(options: {
         }
       }
     },
-    [canSave, canSaveValue, clearAutosaveTimer, computeSignature, persistDraft]
+    [isSaveable, clearAutosaveTimer, computeSignature, persistDraft]
   );
 
   useEffect(() => {
@@ -201,14 +209,16 @@ export function usePersistedAutosave<T>(options: {
     persistDraft(value, lastSavedSignatureRef.current, saveStateRef.current.savedAt);
     if (currentSignature === lastSavedSignatureRef.current) return;
 
-    const nextDirtyState: AutosaveState = {
-      state: "dirty",
-      mode: "autosave",
-      savedAt: saveStateRef.current.savedAt,
-    };
-    saveStateRef.current = nextDirtyState;
-    setSaveState(nextDirtyState);
-    if (!canSave || (typeof canSaveValue === "function" && !canSaveValue(value))) {
+    if (saveStateRef.current.state !== "dirty") {
+      const nextDirtyState: AutosaveState = {
+        state: "dirty",
+        mode: "autosave",
+        savedAt: saveStateRef.current.savedAt,
+      };
+      saveStateRef.current = nextDirtyState;
+      setSaveState(nextDirtyState);
+    }
+    if (!isSaveable(value)) {
       clearAutosaveTimer();
       return;
     }
@@ -218,7 +228,7 @@ export function usePersistedAutosave<T>(options: {
     }, autosaveDelayMs);
 
     return clearAutosaveTimer;
-  }, [autosaveDelayMs, canSave, canSaveValue, clearAutosaveTimer, currentSignature, persistDraft, saveNow, value]);
+  }, [autosaveDelayMs, isSaveable, clearAutosaveTimer, currentSignature, persistDraft, saveNow, value]);
 
   useEffect(() => {
     const flushAutosave = () => {

@@ -2,8 +2,21 @@
 
 import React, { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Plus, X } from "lucide-react";
+import { ChevronRight, Plus } from "lucide-react";
+import Dialog from "@/components/ui/Dialog";
+import PageHeader from "@/components/ui/PageHeader";
+import { DAY_KEYS } from "@/lib/settingsDefaults";
 import { navigateWithinSpa } from "@/lib/spaNavigation";
+import {
+  TASK_TEMPLATE_DELETED_STORAGE_KEY,
+  TASK_TEMPLATE_REFRESH_EVENT,
+  TASK_TEMPLATE_REFRESH_STORAGE_KEY,
+  TOUR_CATEGORY,
+  TOUR_WAITING_MINUTES,
+  isFloorTemplate,
+  isTourTemplate,
+  type TaskTemplate,
+} from "@/lib/taskTemplates";
 import {
   invalidateWorkspaceResource,
   notifyWorkspaceResourcesChanged,
@@ -12,12 +25,6 @@ import {
   tasksDataKey,
   writeCachedResource,
 } from "@/lib/workspaceData";
-import {
-  TASK_TEMPLATE_DELETED_STORAGE_KEY,
-  TASK_TEMPLATE_REFRESH_EVENT,
-  TASK_TEMPLATE_REFRESH_STORAGE_KEY,
-  type TaskTemplate,
-} from "@/lib/taskTemplates";
 
 const DEFAULT_TASK_COLOR = "#BFDBFE";
 
@@ -25,9 +32,131 @@ function isHexColor(value: string) {
   return /^#[0-9a-fA-F]{6}$/.test(value);
 }
 
-export default function TasksClient({ initialTasks }: { initialTasks: TaskTemplate[] }) {
+function describeDays(days: string[] = []) {
+  if (days.length === 7) return "Every day";
+  if (days.length === 5 && DAY_KEYS.slice(0, 5).every((day) => days.includes(day))) return "Weekdays";
+  if (days.length === 2 && days.includes("Sat") && days.includes("Sun")) return "Weekends";
+  return DAY_KEYS.filter((day) => days.includes(day)).join(", ");
+}
+
+/** A few words on the rules that matter most when scanning the list. */
+function describeTask(task: TaskTemplate, nameById: Map<string, string>) {
+  const parts: string[] = [];
+  const pairedName = task.pairedWithTaskId ? nameById.get(task.pairedWithTaskId) : undefined;
+  if (pairedName) parts.push(`${task.pairedPosition === "before" ? "Before" : "After"} ${pairedName}`);
+  if (task.attendedByAll) parts.push("Everyone attends");
+  else if (task.mustManned) parts.push("Must be manned");
+  if ((task.durationMinutes ?? 0) > 0) parts.push(`${task.durationMinutes} min`);
+  const timeCount =
+    (task.regularTimes?.length ?? 0) +
+    Object.values(task.regularTimesByDay ?? {}).reduce((sum, times) => sum + (times?.length ?? 0), 0);
+  if (timeCount > 0) parts.push("Set times");
+  if ((task.minPerEmployeePerDay ?? 0) > 0) parts.push(`${task.minPerEmployeePerDay}× per person`);
+  if (isFloorTemplate(task)) {
+    parts.push("Floor task");
+    if ((task.maxConcurrentPerTimeslot ?? 0) > 0) parts.push(`max ${task.maxConcurrentPerTimeslot} at once`);
+    parts.push(`${(task.maxConsecutiveMinutes ?? 0) > 0 ? task.maxConsecutiveMinutes : 60} min in one go`);
+  }
+  const days = describeDays(task.regularDays);
+  if (days) parts.push(days);
+  return parts;
+}
+
+function TaskTable({
+  tasks,
+  nameById,
+  noun,
+  emptyText,
+  onOpen,
+}: {
+  tasks: TaskTemplate[];
+  nameById: Map<string, string>;
+  noun: "task" | "tour";
+  emptyText: string;
+  onOpen: (id: string) => void;
+}) {
+  return (
+    <div className="card overflow-hidden">
+      <div className="overflow-x-auto">
+        <table className="data-table">
+          <thead>
+            <tr>
+              <th>Name</th>
+              <th className="hidden sm:table-cell">Rules</th>
+              <th aria-hidden="true" />
+            </tr>
+          </thead>
+          <tbody>
+            {tasks.map((task) => (
+              <tr
+                key={task.id}
+                className="is-clickable"
+                onMouseEnter={() => preloadWorkspaceRoute(taskHref(task))}
+                onClick={() => onOpen(task.id)}
+              >
+                <td className="w-[40%]">
+                  <div className="flex items-center gap-3">
+                    <span
+                      className="h-4 w-4 shrink-0 rounded-[5px] ring-1 ring-inset ring-black/10"
+                      style={{ backgroundColor: task.color || "#fff" }}
+                      aria-hidden="true"
+                    />
+                    <button
+                      type="button"
+                      className="text-left font-medium hover:underline"
+                      onClick={(event) => {
+                        event.stopPropagation();
+                        onOpen(task.id);
+                      }}
+                    >
+                      {task.name}
+                    </button>
+                    {task.enabled === false && <span className="badge">Off</span>}
+                  </div>
+                </td>
+                <td className="hidden text-[13px] text-[var(--text-muted)] sm:table-cell">
+                  {describeTask(task, nameById).join(" · ") || "—"}
+                </td>
+                <td className="w-10 text-[var(--text-faint)]">
+                  <ChevronRight className="h-4 w-4" aria-hidden="true" />
+                </td>
+              </tr>
+            ))}
+            {tasks.length === 0 && (
+              <tr>
+                <td colSpan={3} className="py-10 text-center text-[var(--text-muted)]">
+                  {emptyText}
+                </td>
+              </tr>
+            )}
+          </tbody>
+        </table>
+      </div>
+      <div className="border-t border-[var(--border)] px-5 py-3 text-[13px] text-[var(--text-muted)]">
+        {tasks.length} {noun}
+        {tasks.length === 1 ? "" : "s"}
+      </div>
+    </div>
+  );
+}
+
+/** Link to a task's or tour's own page. */
+export function taskHref(task: Pick<TaskTemplate, "id" | "category">) {
+  return `${isTourTemplate(task) ? "/tours" : "/tasks"}/${task.id}`;
+}
+
+/** The Tasks page, or with kind "tour" the Tours page. */
+export default function TasksClient({
+  initialTasks,
+  kind = "task",
+}: {
+  initialTasks: TaskTemplate[];
+  kind?: "task" | "tour";
+}) {
+  const isTourPage = kind === "tour";
   const [tasks, setTasks] = useState<TaskTemplate[]>(initialTasks);
-  const [modalOpen, setModalOpen] = useState(false);
+  const [dialogKind, setDialogKind] = useState<"task" | "tour" | null>(null);
+
   const [newTaskName, setNewTaskName] = useState("");
   const [newTaskColor, setNewTaskColor] = useState(DEFAULT_TASK_COLOR);
   const [createError, setCreateError] = useState("");
@@ -39,7 +168,6 @@ export default function TasksClient({ initialTasks }: { initialTasks: TaskTempla
   }, [initialTasks]);
 
   const removePendingDeletedTask = useCallback(() => {
-    if (typeof window === "undefined") return;
     try {
       const deletedId = window.sessionStorage.getItem(TASK_TEMPLATE_DELETED_STORAGE_KEY);
       if (!deletedId) return;
@@ -77,7 +205,6 @@ export default function TasksClient({ initialTasks }: { initialTasks: TaskTempla
     const handleStorage = (event: StorageEvent) => {
       if (event.key === TASK_TEMPLATE_REFRESH_STORAGE_KEY) handleRefresh();
     };
-
     window.addEventListener(TASK_TEMPLATE_REFRESH_EVENT, handleRefresh);
     window.addEventListener("storage", handleStorage);
     return () => {
@@ -86,24 +213,22 @@ export default function TasksClient({ initialTasks }: { initialTasks: TaskTempla
     };
   }, [refreshTasks, removePendingDeletedTask]);
 
-  function openTaskCreator() {
+  const openTask = (id: string) => {
+    const href = `${isTourPage ? "/tours" : "/tasks"}/${id}`;
+    if (!navigateWithinSpa(href)) router.push(href);
+  };
+
+  function openCreator(kind: "task" | "tour") {
     setNewTaskName("");
     setNewTaskColor(DEFAULT_TASK_COLOR);
     setCreateError("");
-    setModalOpen(true);
+    setDialogKind(kind);
   }
 
-  function closeTaskCreator() {
-    if (isCreating) return;
-    setModalOpen(false);
-    setCreateError("");
-  }
-
-  async function createTask(event?: React.FormEvent<HTMLFormElement>) {
-    event?.preventDefault();
-    const trimmed = newTaskName.trim();
-    if (!trimmed) return;
-    const trimmedColor = newTaskColor.trim();
+  async function createTask(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const name = newTaskName.trim();
+    if (!name) return;
 
     try {
       setIsCreating(true);
@@ -111,7 +236,11 @@ export default function TasksClient({ initialTasks }: { initialTasks: TaskTempla
       const res = await fetch("/api/task-templates", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name: trimmed, color: trimmedColor }),
+        body: JSON.stringify({
+          name,
+          color: newTaskColor.trim(),
+          ...(dialogKind === "tour" ? { category: TOUR_CATEGORY } : {}),
+        }),
       });
       if (!res.ok) throw new Error("Failed to add template");
       const created = (await res.json()) as TaskTemplate;
@@ -129,168 +258,97 @@ export default function TasksClient({ initialTasks }: { initialTasks: TaskTempla
       } catch (error) {
         console.error(error);
       }
-      const href = `/tasks/${created.id}`;
-      if (!navigateWithinSpa(href)) router.push(href);
-      setModalOpen(false);
+      setDialogKind(null);
+      openTask(created.id);
     } catch (err) {
       console.error(err);
-      setCreateError("Failed to add task template.");
+      setCreateError("Couldn't add the task. Please try again.");
     } finally {
       setIsCreating(false);
     }
   }
 
   return (
-    <div className="w-full py-3 px-3">
-      <div className="space-y-3 flex flex-col items-start w-full">
-        <div className="flex items-center justify-between w-full">
-          <div>
-            <h1 className="text-2xl font-semibold">Tasks</h1>
-            <p className="text-slate-600 text-[14px]">Manage reusable task templates for roster planning.</p>
-          </div>
-          <button className="btn btn-primary px-4 py-2" style={{ borderRadius: "6px" }} onClick={openTaskCreator}>
-            <Plus className="w-4 h-4 text-white" strokeWidth={2.3} />
-            <span className="text-[14px] font-medium">Add task</span>
+    <div className="mx-auto max-w-6xl">
+      <PageHeader
+        title={isTourPage ? "Tours" : "Tasks"}
+        description={
+          isTourPage
+            ? `Tours run at set times. Every tour starts with a ${TOUR_WAITING_MINUTES}-minute “Waiting for” block.`
+            : "The jobs that go on a roster, and the rules autofill follows for each."
+        }
+        actions={
+          <button type="button" className="btn btn-primary" onClick={() => openCreator(kind)}>
+            <Plus />
+            {isTourPage ? "Add tour" : "Add task"}
           </button>
-        </div>
+        }
+      />
 
-        <div className="w-full overflow-hidden rounded-lg border border-[var(--border)] bg-white">
-          <div className="overflow-x-auto">
-            <table className="w-full table-fixed border-collapse text-[15px]">
-              <colgroup>
-                <col />
-              </colgroup>
-              <thead className="text-[15px] text-slate-900">
-                <tr className="border-b border-[#E6EAF0]">
-                  <th className="px-4 py-4 text-left font-bold tracking-[0.01em]">Task</th>
-                </tr>
-              </thead>
-              <tbody className="[&_tr:last-child]:border-b-0">
-                {tasks.map((t) => (
-                  <tr
-                    key={t.id}
-                    className="border-b border-[#E6EAF0] hover:bg-[#f8fafc] cursor-pointer"
-                    onMouseEnter={() => {
-                      const href = `/tasks/${t.id}`;
-                      preloadWorkspaceRoute(href);
-                      router.prefetch(href);
-                    }}
-                    onClick={() => {
-                      const href = `/tasks/${t.id}`;
-                      if (!navigateWithinSpa(href)) router.push(href);
-                    }}
-                  >
-                    <td className="align-middle px-4 py-4">
-                      <span className="flex min-w-0 items-center gap-3 text-[15px] font-medium text-slate-700">
-                        <span
-                          className="inline-block h-5 w-5 rounded-full border border-slate-400"
-                          style={{ backgroundColor: t.color || "#fff" }}
-                          aria-label={`Colour ${t.color || "default"}`}
-                          title={t.color || "default"}
-                        />
-                        <span className="truncate">{t.name}</span>
-                      </span>
-                    </td>
-                  </tr>
-                ))}
-                {tasks.length === 0 && (
-                  <tr>
-                    <td colSpan={1} className="py-8 text-center text-[15px] text-slate-600">No tasks yet. Add one to get started.</td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
+      <TaskTable
+        tasks={tasks.filter((task) => isTourTemplate(task) === isTourPage)}
+        nameById={new Map(tasks.map((task) => [task.id, task.name]))}
+        noun={kind}
+        emptyText={isTourPage ? "No tours yet." : "No tasks yet."}
+        onOpen={openTask}
+      />
+
+      <Dialog
+        open={dialogKind !== null}
+        onClose={() => !isCreating && setDialogKind(null)}
+        size="sm"
+        title={dialogKind === "tour" ? "Add tour" : "Add task"}
+        description="You can set when it happens and how autofill uses it next."
+        as="form"
+        onSubmit={createTask}
+        footer={
+          <>
+            <button type="button" className="btn" onClick={() => setDialogKind(null)} disabled={isCreating}>
+              Cancel
+            </button>
+            <button type="submit" className="btn btn-primary" disabled={isCreating || !newTaskName.trim()}>
+              {isCreating ? "Adding…" : dialogKind === "tour" ? "Add tour" : "Add task"}
+            </button>
+          </>
+        }
+      >
+        <div className="space-y-4">
+          <div>
+            <label className="field-label" htmlFor="new-task-name">
+              Name
+            </label>
+            <input
+              id="new-task-name"
+              className="input w-full"
+              value={newTaskName}
+              onChange={(event) => setNewTaskName(event.target.value)}
+              autoFocus
+            />
           </div>
-          <div className="border-t border-[#E6EAF0] px-4 py-3 text-sm text-slate-600">{tasks.length} task{tasks.length === 1 ? "" : "s"}</div>
-        </div>
-
-        {modalOpen && (
-          <div className="fixed inset-0 z-[2147483647] flex items-center justify-center bg-black/40 px-4" onClick={closeTaskCreator}>
-            <form
-              className="w-full max-w-xl overflow-hidden rounded-[8px] border border-[var(--border)] bg-white shadow-xl"
-              onClick={(event) => event.stopPropagation()}
-              onSubmit={createTask}
-            >
-              <div className="flex items-center justify-between px-6 py-4">
-                <div>
-                  <h2 className="text-xl font-semibold">Add task</h2>
-                  <p className="text-sm text-slate-600">Create a reusable task template.</p>
-                </div>
-                <button
-                  type="button"
-                  className="rounded-lg p-2 text-slate-500 transition hover:bg-[#f5f7fa] hover:text-slate-700"
-                  onClick={closeTaskCreator}
-                  aria-label="Close"
-                  disabled={isCreating}
-                >
-                  <X className="h-4 w-4" />
-                </button>
-              </div>
-
-              <div className="space-y-5 px-6 pb-5 text-[14px]" style={{ color: "#1A1B25" }}>
-                <div>
-                  <label className="mb-1 block text-sm font-semibold" htmlFor="new-task-name" style={{ color: "#1A1B25" }}>
-                    Name
-                  </label>
-                  <input
-                    id="new-task-name"
-                    className="input w-full text-[14px]"
-                    style={{ color: "#1A1B25" }}
-                    value={newTaskName}
-                    onChange={(event) => setNewTaskName(event.target.value)}
-                    autoFocus
-                  />
-                </div>
-
-                <div>
-                  <label className="mb-1 block text-sm font-semibold" htmlFor="new-task-color" style={{ color: "#1A1B25" }}>
-                    Colour
-                  </label>
-                  <div className="flex items-center gap-3">
-                    <input
-                      type="color"
-                      value={isHexColor(newTaskColor) ? newTaskColor : DEFAULT_TASK_COLOR}
-                      onChange={(event) => setNewTaskColor(event.target.value)}
-                      aria-label="Pick task colour"
-                      className="h-10 w-12 cursor-pointer rounded-md border border-[var(--border)] bg-white p-1"
-                    />
-                    <input
-                      id="new-task-color"
-                      className="input min-w-0 flex-1 text-[14px]"
-                      style={{ color: "#1A1B25" }}
-                      value={newTaskColor}
-                      onChange={(event) => setNewTaskColor(event.target.value)}
-                      placeholder="#BFDBFE"
-                    />
-                    <span
-                      className="h-8 w-8 shrink-0 rounded-full border border-slate-300"
-                      style={{ backgroundColor: newTaskColor || "#fff" }}
-                      aria-hidden="true"
-                    />
-                  </div>
-                </div>
-
-                {createError && <p className="text-sm text-red-600">{createError}</p>}
-              </div>
-
-              <div className="flex items-center justify-end gap-3 bg-white px-6 py-4">
-                <button
-                  type="button"
-                  className="btn h-[30px] justify-center text-black/80 hover:text-black"
-                  style={{ width: "65px", boxShadow: "inset 0 0 0 1px #CFCFCF", borderRadius: "6px", border: "none", background: "white" }}
-                  onClick={closeTaskCreator}
-                  disabled={isCreating}
-                >
-                  Cancel
-                </button>
-                <button className="btn btn-primary h-[30px] px-4" style={{ borderRadius: "6px" }} type="submit" disabled={isCreating || !newTaskName.trim()}>
-                  {isCreating ? "Creating..." : "Create"}
-                </button>
-              </div>
-            </form>
+          <div>
+            <label className="field-label" htmlFor="new-task-color">
+              Colour
+            </label>
+            <div className="flex items-center gap-2">
+              <input
+                type="color"
+                value={isHexColor(newTaskColor) ? newTaskColor : DEFAULT_TASK_COLOR}
+                onChange={(event) => setNewTaskColor(event.target.value)}
+                aria-label="Pick task colour"
+                className="h-9 w-11 cursor-pointer rounded-[var(--radius-md)] border border-[var(--border-strong)] bg-white p-1"
+              />
+              <input
+                id="new-task-color"
+                className="input min-w-0 flex-1 font-mono text-[13px]"
+                value={newTaskColor}
+                onChange={(event) => setNewTaskColor(event.target.value)}
+                placeholder="#BFDBFE"
+              />
+            </div>
           </div>
-        )}
-      </div>
+          {createError && <p className="text-[13px] text-[var(--danger)]">{createError}</p>}
+        </div>
+      </Dialog>
     </div>
   );
 }

@@ -1,5 +1,8 @@
 generator client {
-  provider = "prisma-client-js"
+  provider        = "prisma-client-js"
+  // Loads related records in one query instead of one per relation, which matters
+  // because every round trip to the database is slow.
+  previewFeatures = ["relationJoins"]
 }
 
 datasource db {
@@ -92,6 +95,7 @@ model AppTaskTemplate {
   regularTimes           Json?
   regularTimesByDay      Json?
   regularDayWindows      Json?
+  extraDayWindows        Json?
   minPerEmployeePerDay   Int      @default(0)
   maxPerEmployeePerDay   Int      @default(0)
   durationMinutes        Int      @default(0)
@@ -101,6 +105,9 @@ model AppTaskTemplate {
   limitPerDay            Int      @default(0)
   maxConcurrentPerTimeslot Int    @default(0)
   schoolTourImportTarget Boolean  @default(false)
+  waitingCanBeCovered    Boolean  @default(false)
+  pairedWithTaskId       String?
+  pairedPosition         String?
   enabled                Boolean  @default(true)
   createdAt              DateTime @default(now())
   updatedAt              DateTime @updatedAt

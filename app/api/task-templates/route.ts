@@ -1,14 +1,19 @@
 import { NextResponse } from "next/server";
-import { addTaskTemplate, deleteTaskTemplate, getTaskTemplateById, getTaskTemplates, updateTaskTemplate } from "@/lib/taskTemplatesStore";
-import { enforceSameOrigin, requireSession } from "@/lib/apiAuth";
-import { z } from "zod";
 import { revalidatePath, revalidateTag } from "next/cache";
+import { z } from "zod";
+import { jsonError, parseJsonBody, serverError, timeSchema } from "@/lib/apiHelpers";
+import { enforceSameOrigin, requireSession } from "@/lib/apiAuth";
 import { CACHE_TAGS } from "@/lib/cacheTags";
+import { DAY_KEYS } from "@/lib/settingsDefaults";
+import {
+  addTaskTemplate,
+  deleteTaskTemplate,
+  getTaskTemplateById,
+  getTaskTemplates,
+  updateTaskTemplate,
+} from "@/lib/taskTemplatesStore";
 
-const DAY_KEYS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"] as const;
 const dayKeySet = new Set<string>(DAY_KEYS);
-const dayKeySchema = z.enum(DAY_KEYS);
-const timeSchema = z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/);
 const timeOrEmptySchema = z.union([z.literal(""), timeSchema]);
 const boundedNumberSchema = z.coerce.number().int().min(0).max(10000);
 
@@ -30,16 +35,14 @@ const updateTemplateSchema = z.object({
   attendedByAll: z.boolean().optional(),
   autogenStart: timeOrEmptySchema.optional(),
   autogenEnd: timeOrEmptySchema.optional(),
-  regularDays: z.array(dayKeySchema).max(7).optional(),
+  regularDays: z.array(z.enum(DAY_KEYS)).max(7).optional(),
   regularTimes: z.array(timeSchema).max(96).optional(),
   regularTimesByDay: z.record(z.array(timeSchema).max(96)).optional(),
   regularDayWindows: z
-    .record(
-      z.object({
-        start: timeOrEmptySchema.optional(),
-        end: timeOrEmptySchema.optional(),
-      })
-    )
+    .record(z.object({ start: timeOrEmptySchema.optional(), end: timeOrEmptySchema.optional() }))
+    .optional(),
+  extraDayWindows: z
+    .record(z.array(z.object({ start: timeOrEmptySchema.optional(), end: timeOrEmptySchema.optional() })).max(24))
     .optional(),
   minPerEmployeePerDay: boundedNumberSchema.optional(),
   maxPerEmployeePerDay: boundedNumberSchema.optional(),
@@ -50,26 +53,36 @@ const updateTemplateSchema = z.object({
   limitPerDay: boundedNumberSchema.optional(),
   maxConcurrentPerTimeslot: boundedNumberSchema.optional(),
   schoolTourImportTarget: z.boolean().optional(),
+  waitingCanBeCovered: z.boolean().optional(),
+  pairedWithTaskId: z.string().max(200).optional(),
+  pairedPosition: z.enum(["before", "after"]).optional(),
   enabled: z.boolean().optional(),
 });
 
+/** Drops entries whose keys aren't weekday keys. */
 function filterDayKeyedRecord<T>(input: Record<string, T> | undefined) {
   if (!input) return undefined;
   return Object.fromEntries(Object.entries(input).filter(([day]) => dayKeySet.has(day)));
+}
+
+function revalidateTemplates() {
+  revalidateTag(CACHE_TAGS.tasks, "max");
+  revalidatePath("/editor");
+  revalidatePath("/tasks");
 }
 
 export async function GET(request: Request) {
   const auth = await requireSession();
   if (!auth.ok) return auth.response;
 
-  const { searchParams } = new URL(request.url);
-  const id = searchParams.get("id");
-  if (id) {
+  try {
+    const id = new URL(request.url).searchParams.get("id");
+    if (!id) return NextResponse.json(await getTaskTemplates());
     const template = await getTaskTemplateById(id);
-    if (!template) return NextResponse.json({ error: "Not found" }, { status: 404 });
-    return NextResponse.json(template);
+    return template ? NextResponse.json(template) : jsonError("Not found", 404);
+  } catch (err) {
+    return serverError(err);
   }
-  return NextResponse.json(await getTaskTemplates());
 }
 
 export async function POST(request: Request) {
@@ -79,23 +92,15 @@ export async function POST(request: Request) {
   const originError = enforceSameOrigin(request);
   if (originError) return originError;
 
+  const body = await parseJsonBody(request, createTemplateSchema);
+  if (!body.ok) return body.response;
+
   try {
-    const parsed = createTemplateSchema.safeParse(await request.json());
-    if (!parsed.success) {
-      return NextResponse.json({ error: "Invalid payload" }, { status: 400 });
-    }
-    const created = await addTaskTemplate({
-      name: parsed.data.name,
-      description: parsed.data.description,
-      category: parsed.data.category,
-      color: parsed.data.color,
-    });
-    revalidateTag(CACHE_TAGS.tasks, "max");
-    revalidatePath("/editor");
-    revalidatePath("/tasks");
+    const created = await addTaskTemplate(body.data);
+    revalidateTemplates();
     return NextResponse.json(created, { status: 201 });
-  } catch (err: any) {
-    return NextResponse.json({ error: err?.message || "Failed to add template" }, { status: 500 });
+  } catch (err) {
+    return serverError(err, "Could not add the task.");
   }
 }
 
@@ -106,45 +111,22 @@ export async function PUT(request: Request) {
   const originError = enforceSameOrigin(request);
   if (originError) return originError;
 
+  const body = await parseJsonBody(request, updateTemplateSchema);
+  if (!body.ok) return body.response;
+  const { id, regularTimesByDay, regularDayWindows, extraDayWindows, ...fields } = body.data;
+
   try {
-    const parsed = updateTemplateSchema.safeParse(await request.json());
-    if (!parsed.success) {
-      return NextResponse.json({ error: "Invalid payload" }, { status: 400 });
-    }
-    const id = parsed.data.id;
-    const payload = {
-      name: parsed.data.name,
-      description: parsed.data.description,
-      category: parsed.data.category,
-      color: parsed.data.color,
-      mustManned: parsed.data.mustManned,
-      overwriteExistingTasks: parsed.data.overwriteExistingTasks,
-      attendedByAll: parsed.data.attendedByAll,
-      autogenStart: parsed.data.autogenStart,
-      autogenEnd: parsed.data.autogenEnd,
-      regularDays: parsed.data.regularDays,
-      regularTimes: parsed.data.regularTimes,
-      regularTimesByDay: filterDayKeyedRecord(parsed.data.regularTimesByDay),
-      regularDayWindows: filterDayKeyedRecord(parsed.data.regularDayWindows),
-      minPerEmployeePerDay: parsed.data.minPerEmployeePerDay,
-      maxPerEmployeePerDay: parsed.data.maxPerEmployeePerDay,
-      durationMinutes: parsed.data.durationMinutes,
-      maxConsecutiveMinutes: parsed.data.maxConsecutiveMinutes,
-      waitingMinutes: parsed.data.waitingMinutes,
-      packingMinutes: parsed.data.packingMinutes,
-      limitPerDay: parsed.data.limitPerDay,
-      maxConcurrentPerTimeslot: parsed.data.maxConcurrentPerTimeslot,
-      schoolTourImportTarget: parsed.data.schoolTourImportTarget,
-      enabled: parsed.data.enabled,
-    };
-    const updated = await updateTaskTemplate(id, payload);
-    if (!updated) return NextResponse.json({ error: "Template not found" }, { status: 404 });
-    revalidateTag(CACHE_TAGS.tasks, "max");
-    revalidatePath("/editor");
-    revalidatePath("/tasks");
+    const updated = await updateTaskTemplate(id, {
+      ...fields,
+      regularTimesByDay: filterDayKeyedRecord(regularTimesByDay),
+      regularDayWindows: filterDayKeyedRecord(regularDayWindows),
+      extraDayWindows: filterDayKeyedRecord(extraDayWindows),
+    });
+    if (!updated) return jsonError("Template not found", 404);
+    revalidateTemplates();
     return NextResponse.json(updated);
-  } catch (err: any) {
-    return NextResponse.json({ error: err?.message || "Failed to update template" }, { status: 500 });
+  } catch (err) {
+    return serverError(err, "Could not save the task.");
   }
 }
 
@@ -155,19 +137,15 @@ export async function DELETE(request: Request) {
   const originError = enforceSameOrigin(request);
   if (originError) return originError;
 
+  const id = new URL(request.url).searchParams.get("id");
+  if (!id) return jsonError("id is required", 400);
+
   try {
-    const { searchParams } = new URL(request.url);
-    const id = searchParams.get("id");
-    if (!id) {
-      return NextResponse.json({ error: "id is required" }, { status: 400 });
-    }
     const deleted = await deleteTaskTemplate(id);
-    if (!deleted) return NextResponse.json({ error: "Template not found" }, { status: 404 });
-    revalidateTag(CACHE_TAGS.tasks, "max");
-    revalidatePath("/editor");
-    revalidatePath("/tasks");
+    if (!deleted) return jsonError("Template not found", 404);
+    revalidateTemplates();
     return NextResponse.json({ ok: true });
-  } catch (err: any) {
-    return NextResponse.json({ error: err?.message || "Failed to delete template" }, { status: 500 });
+  } catch (err) {
+    return serverError(err, "Could not delete the task.");
   }
 }

@@ -65,7 +65,7 @@ function parseExcelTime(value: unknown) {
 
   if (typeof value === "string") {
     const trimmed = value.trim();
-    const match = trimmed.match(/^(\d{1,2}):(\d{2})(?:\s*([AaPp][Mm]))?$/);
+    const match = trimmed.match(/^(\d{1,2}):(\d{2})(?::\d{2})?(?:\s*([AaPp][Mm]))?$/);
     if (!match) return null;
     let hours = Number(match[1]);
     const minutes = Number(match[2]);

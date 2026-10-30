@@ -1,85 +1,94 @@
 "use client";
 
-import { useMemo } from "react";
-import Link from "next/link";
+import React, { useMemo } from "react";
 import { useRouter } from "next/navigation";
-import type { RosterFile } from "@/lib/rosters";
+import { ChevronRight } from "lucide-react";
+import SpaLink from "@/components/ui/SpaLink";
+import { formatLocalId } from "@/lib/dateUtils";
 import { buildEditorHref } from "@/lib/editorPersistence";
-import { navigateWithinSpa, shouldHandleSpaClick } from "@/lib/spaNavigation";
+import type { RosterFile } from "@/lib/rosters";
+import { navigateWithinSpa } from "@/lib/spaNavigation";
 import { preloadWorkspaceRoute } from "@/lib/workspaceData";
 
-type Props = {
-  rosters: RosterFile[];
-  footer?: React.ReactNode;
-};
+function isBlank(roster: RosterFile) {
+  return !roster.people && !(roster.tasks?.length ?? 0) && !(roster.employees?.length ?? 0);
+}
 
-export default function RosterTable({ rosters, footer }: Props) {
-  const today = useMemo(() => new Date(), []);
+const countOrDash = (count: number) => (count > 0 ? count : <span className="text-[var(--text-faint)]">—</span>);
+
+export default function RosterTable({ rosters, footer }: { rosters: RosterFile[]; footer?: React.ReactNode }) {
   const router = useRouter();
+  const todayId = useMemo(() => formatLocalId(new Date()), []);
 
-  function handleRowClick(id: string) {
+  const open = (id: string) => {
     const href = buildEditorHref(id);
     if (!navigateWithinSpa(href)) router.push(href);
-  }
+  };
 
   return (
-    <div className="w-full overflow-hidden rounded-lg border border-[var(--border)] bg-white">
+    <div className="card overflow-hidden">
       <div className="overflow-x-auto">
-        <table className="w-full border-collapse text-[15px]">
-          <thead className="text-[15px] text-slate-900">
-            <tr className="border-b border-[#E6EAF0]">
-              <th className="px-4 py-4 text-left font-bold tracking-[0.01em]">Roster</th>
-              <th className="px-4 py-4 text-left font-bold tracking-[0.01em]">Tours</th>
-              <th className="px-4 py-4 text-left font-bold tracking-[0.01em]">People</th>
-              <th className="px-4 py-4 text-left font-bold tracking-[0.01em]">Updated</th>
+        <table className="data-table">
+          <thead>
+            <tr>
+              <th>Day</th>
+              <th>Status</th>
+              <th className="hidden text-right sm:table-cell">People</th>
+              <th className="hidden text-right sm:table-cell">Tours</th>
+              <th className="hidden md:table-cell">Last updated</th>
+              <th aria-hidden="true" />
             </tr>
           </thead>
-          <tbody className="[&_tr:last-child]:border-b-0">
-            {rosters.map((r) => {
-              const startDate = r.start instanceof Date ? r.start : new Date(r.start);
-              const isCurrent = today.toDateString() === startDate.toDateString();
-              const rowStyles = isCurrent ? "bg-amber-50" : "";
+          <tbody>
+            {rosters.map((roster) => {
+              const blank = isBlank(roster);
+              const isToday = roster.id === todayId;
               return (
                 <tr
-                  key={r.id}
-                  className={`group border-b border-[#E6EAF0] hover:bg-[#f8fafc] cursor-pointer ${rowStyles}`}
-                  onMouseEnter={() => {
-                    const href = buildEditorHref(r.id);
-                    preloadWorkspaceRoute(href);
-                    router.prefetch(href);
-                  }}
-                  onClick={() => handleRowClick(r.id)}
+                  key={roster.id}
+                  className="is-clickable"
+                  onMouseEnter={() => preloadWorkspaceRoute(buildEditorHref(roster.id))}
+                  onClick={() => open(roster.id)}
                 >
-                  <td className="align-middle px-4 py-4">
-                    <Link
-                      href={buildEditorHref(r.id)}
-                      className="block truncate text-[15px] font-medium text-slate-700 hover:underline group-hover:underline"
-                      onClick={(event) => {
-                        event.stopPropagation();
-                        const href = buildEditorHref(r.id);
-                        if (shouldHandleSpaClick(event) && navigateWithinSpa(href)) {
-                          event.preventDefault();
-                        }
-                      }}
+                  <td className="sm:whitespace-nowrap">
+                    <SpaLink
+                      href={buildEditorHref(roster.id)}
+                      className="font-medium hover:underline"
+                      onClick={(event) => event.stopPropagation()}
                     >
-                      {r.title}
-                    </Link>
+                      {roster.title}
+                    </SpaLink>
+                    {isToday && <span className="badge badge-accent ml-2">Today</span>}
                   </td>
-                  <td className="align-middle px-4 py-4 text-[15px] font-medium text-slate-700">{r.tours} tours</td>
-                  <td className="align-middle px-4 py-4 text-[15px] font-medium text-slate-700">{r.people} people</td>
-                  <td className="align-middle px-4 py-4 text-[15px] font-medium text-slate-600">{r.updated}</td>
+                  <td>
+                    {blank ? (
+                      <span className="badge">Not started</span>
+                    ) : roster.status === "Published" ? (
+                      <span className="badge badge-success">Published</span>
+                    ) : (
+                      <span className="badge badge-warning">Draft</span>
+                    )}
+                  </td>
+                  <td className="hidden text-right tabular-nums sm:table-cell">{countOrDash(roster.people)}</td>
+                  <td className="hidden text-right tabular-nums sm:table-cell">{countOrDash(roster.tours)}</td>
+                  <td className="hidden whitespace-nowrap text-[var(--text-muted)] md:table-cell">{roster.updated === "-" ? "—" : roster.updated}</td>
+                  <td className="w-10 text-[var(--text-faint)]">
+                    <ChevronRight className="h-4 w-4" aria-hidden="true" />
+                  </td>
                 </tr>
               );
             })}
             {rosters.length === 0 && (
               <tr>
-                <td colSpan={4} className="py-8 text-center text-[15px] text-slate-600">No rosters yet.</td>
+                <td colSpan={6} className="py-10 text-center text-[var(--text-muted)]">
+                  No rosters yet.
+                </td>
               </tr>
             )}
           </tbody>
         </table>
       </div>
-      <div className="border-t border-[#E6EAF0] px-4 py-3 text-sm text-slate-600">
+      <div className="border-t border-[var(--border)] px-5 py-3 text-[13px] text-[var(--text-muted)]">
         {footer ?? `${rosters.length} roster${rosters.length === 1 ? "" : "s"}`}
       </div>
     </div>

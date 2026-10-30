@@ -14,6 +14,7 @@
     "@prisma/client": "5.19.1",
     "clsx": "^2.1.1",
     "dayjs": "1.11.13",
+    "exceljs": "^4.4.0",
     "lucide-react": "^0.552.0",
     "next": "16.1.7",
     "react": "^19.2.0",

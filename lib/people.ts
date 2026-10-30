@@ -1,6 +1,8 @@
+import { DAY_KEYS, type DayKey } from "./settingsDefaults";
+
+export type { DayKey };
 export type DaySchedule = { enabled: boolean; start: string; end: string };
-export const ALL_DAYS = ["Mon","Tue","Wed","Thu","Fri","Sat","Sun"] as const;
-export type DayKey = typeof ALL_DAYS[number];
+export const ALL_DAYS = DAY_KEYS;
 export type WeeklySchedule = Record<DayKey, DaySchedule>;
 export type FortnightWeekKey = "weekA" | "weekB";
 export type FortnightSchedule = {
@@ -115,30 +117,3 @@ export const seedPeople: Person[] = [
     fortnight: defaultFortnightSchedule(["Tue","Thu","Sat"]),
   },
 ];
-
-const isServer = typeof window === "undefined";
-let serverStore: any = null;
-if (isServer) {
-  try {
-    // eslint-disable-next-line @typescript-eslint/no-var-requires
-    serverStore = require("./peopleStore");
-  } catch {
-    serverStore = null;
-  }
-}
-
-export const getPeople = isServer
-  ? ((serverStore?.getPeople as (() => Person[]) | undefined) ?? (() => seedPeople))
-  : () => seedPeople;
-
-export const getPerson = isServer
-  ? ((serverStore?.getPerson as ((id: string) => Person | null) | undefined) ?? ((id: string) => seedPeople.find(p => p.id === id) ?? null))
-  : (id: string) => seedPeople.find(p => p.id === id) ?? null;
-
-export const upsertPerson = isServer
-  ? ((serverStore?.upsertPerson as ((p: Person) => Person) | undefined) ?? ((p: Person) => p))
-  : (p: Person) => p;
-
-export const deletePerson = isServer
-  ? ((serverStore?.deletePerson as ((id: string) => void) | undefined) ?? ((_id: string) => {}))
-  : (_id: string) => {};

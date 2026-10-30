@@ -204,12 +204,26 @@ export async function completeTwoFactorLogin(challengeToken: string, code: strin
   return result;
 }
 
-export async function getSessionContextFromToken(rawToken?: string | null) {
-  if (!rawToken) return null;
+type SessionContextResult = {
+  sessionId: string;
+  user: AuthUser;
+  expiresAt: Date;
+  mfaSatisfiedAt: Date | null;
+} | null;
 
+/**
+ * Every page and API request checks the session. The database is far away, so a
+ * confirmed session is remembered briefly, and simultaneous requests share one
+ * lookup. Signing out clears it straight away.
+ */
+const SESSION_CACHE_MS = 60_000;
+const sessionCache = new Map<string, { value: Promise<SessionContextResult>; cachedAt: number }>();
+
+async function lookupSession(tokenHash: string): Promise<SessionContextResult> {
   const session = await prisma.appSession.findUnique({
-    where: { tokenHash: hashAuthToken(rawToken) },
+    where: { tokenHash },
     include: { user: true },
+    relationLoadStrategy: "join",
   });
 
   if (!session || session.revokedAt || session.expiresAt <= new Date() || !session.user.isActive) {
@@ -224,8 +238,29 @@ export async function getSessionContextFromToken(rawToken?: string | null) {
   };
 }
 
+export async function getSessionContextFromToken(rawToken?: string | null) {
+  if (!rawToken) return null;
+  const tokenHash = hashAuthToken(rawToken);
+  const now = Date.now();
+  const cached = sessionCache.get(tokenHash);
+  if (cached && now - cached.cachedAt < SESSION_CACHE_MS) {
+    const context = await cached.value;
+    if (!context || context.expiresAt > new Date()) return context;
+  }
+
+  const value = lookupSession(tokenHash);
+  sessionCache.set(tokenHash, { value, cachedAt: now });
+  value.catch(() => sessionCache.delete(tokenHash));
+  // Keep the cache small: drop entries that are past their time.
+  if (sessionCache.size > 500) {
+    for (const [key, entry] of sessionCache) if (now - entry.cachedAt >= SESSION_CACHE_MS) sessionCache.delete(key);
+  }
+  return value;
+}
+
 export async function revokeSession(rawToken?: string | null) {
   if (!rawToken) return;
+  sessionCache.delete(hashAuthToken(rawToken));
   await prisma.appSession.updateMany({
     where: {
       tokenHash: hashAuthToken(rawToken),

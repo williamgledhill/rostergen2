@@ -162,6 +162,7 @@ async function loadPeople(): Promise<Person[]> {
   const people = await prisma.appPerson.findMany({
     orderBy: { name: "asc" },
     include: { daySchedules: true },
+    relationLoadStrategy: "join",
   });
   return people.map(mapPerson);
 }
@@ -179,6 +180,7 @@ async function loadPerson(id: string): Promise<Person | null> {
   const person = await prisma.appPerson.findUnique({
     where: { id },
     include: { daySchedules: true },
+    relationLoadStrategy: "join",
   });
   return person ? mapPerson(person) : null;
 }

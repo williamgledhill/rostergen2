@@ -1,6 +1,7 @@
 import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
 import { z } from "zod";
+import { parseJsonBody } from "@/lib/apiHelpers";
 import { completeTwoFactorLogin } from "@/lib/auth";
 import { enforceSameOrigin, getRequestMeta } from "@/lib/apiAuth";
 import {
@@ -24,12 +25,10 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Two-factor challenge missing" }, { status: 401 });
   }
 
-  const parsed = verifySchema.safeParse(await request.json());
-  if (!parsed.success) {
-    return NextResponse.json({ error: "Invalid payload" }, { status: 400 });
-  }
+  const body = await parseJsonBody(request, verifySchema);
+  if (!body.ok) return body.response;
 
-  const result = await completeTwoFactorLogin(challengeToken, parsed.data.code, getRequestMeta(request));
+  const result = await completeTwoFactorLogin(challengeToken, body.data.code, getRequestMeta(request));
   if (!result) {
     return NextResponse.json({ error: "Invalid verification code" }, { status: 401 });
   }

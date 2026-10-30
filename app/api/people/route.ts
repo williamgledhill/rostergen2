@@ -1,22 +1,22 @@
 import { NextResponse } from "next/server";
-import { enforceSameOrigin, requireSession } from "@/lib/apiAuth";
-import { ALL_DAYS } from "@/lib/people";
-import { z } from "zod";
-import type { Person } from "@/lib/people";
 import { revalidatePath, revalidateTag } from "next/cache";
+import { z } from "zod";
+import { dateIdSchema, jsonError, parseJsonBody, serverError, timeSchema } from "@/lib/apiHelpers";
+import { enforceSameOrigin, requireSession } from "@/lib/apiAuth";
 import { CACHE_TAGS } from "@/lib/cacheTags";
+import { ALL_DAYS, type WeeklySchedule } from "@/lib/people";
+import { deletePerson, getPeople, getPerson, upsertPerson } from "@/lib/peopleStore";
 
-const timeSchema = z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/);
 const dayScheduleSchema = z.object({
   enabled: z.boolean(),
   start: timeSchema,
   end: timeSchema,
 });
 const weeklyScheduleSchema = z.object(
-  ALL_DAYS.reduce(
-    (shape, day) => ({ ...shape, [day]: dayScheduleSchema }),
-    {} as Record<string, typeof dayScheduleSchema>
-  )
+  Object.fromEntries(ALL_DAYS.map((day) => [day, dayScheduleSchema])) as Record<
+    (typeof ALL_DAYS)[number],
+    typeof dayScheduleSchema
+  >
 );
 const personPayloadSchema = z.object({
   id: z.string().trim().min(1).max(120),
@@ -25,26 +25,31 @@ const personPayloadSchema = z.object({
   schedule: weeklyScheduleSchema,
   fortnight: z
     .object({
-      anchorDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+      anchorDate: dateIdSchema,
       weekA: weeklyScheduleSchema,
       weekB: weeklyScheduleSchema,
     })
     .optional(),
 });
 
+function revalidatePeople() {
+  revalidateTag(CACHE_TAGS.people, "max");
+  revalidatePath("/editor");
+  revalidatePath("/people");
+}
+
 export async function GET(req: Request) {
   const auth = await requireSession();
   if (!auth.ok) return auth.response;
 
-  const { getPeople, getPerson } = await import("../../../lib/peopleStore");
-  const { searchParams } = new URL(req.url);
-  const id = searchParams.get("id");
-  if (id) {
+  try {
+    const id = new URL(req.url).searchParams.get("id");
+    if (!id) return NextResponse.json(await getPeople());
     const person = await getPerson(id);
-    if (!person) return NextResponse.json({ error: "Not found" }, { status: 404 });
-    return NextResponse.json(person);
+    return person ? NextResponse.json(person) : jsonError("Not found", 404);
+  } catch (err) {
+    return serverError(err);
   }
-  return NextResponse.json(await getPeople());
 }
 
 export async function POST(req: Request) {
@@ -54,34 +59,28 @@ export async function POST(req: Request) {
   const originError = enforceSameOrigin(req);
   if (originError) return originError;
 
+  const body = await parseJsonBody(req, personPayloadSchema);
+  if (!body.ok) return body.response;
+  const { id, name, email, schedule, fortnight } = body.data;
+
   try {
-    const { upsertPerson } = await import("../../../lib/peopleStore");
-    const parsed = personPayloadSchema.safeParse(await req.json());
-    if (!parsed.success) {
-      return NextResponse.json({ error: "Invalid payload" }, { status: 400 });
-    }
-    const payload = parsed.data;
-    const personToSave: Person = {
-      id: payload.id,
-      name: payload.name,
-      email: payload.email,
-      schedule: payload.schedule as Person["schedule"],
-      fortnight: payload.fortnight
+    const person = await upsertPerson({
+      id,
+      name,
+      email,
+      schedule: schedule as WeeklySchedule,
+      fortnight: fortnight
         ? {
-            anchorDate: payload.fortnight.anchorDate,
-            weekA: payload.fortnight.weekA as Person["schedule"],
-            weekB: payload.fortnight.weekB as Person["schedule"],
+            anchorDate: fortnight.anchorDate,
+            weekA: fortnight.weekA as WeeklySchedule,
+            weekB: fortnight.weekB as WeeklySchedule,
           }
         : undefined,
-    };
-    const person = await upsertPerson(personToSave);
-    revalidateTag(CACHE_TAGS.people, "max");
-    revalidatePath("/editor");
-    revalidatePath("/people");
+    });
+    revalidatePeople();
     return NextResponse.json(person);
   } catch (err) {
-    console.error(err);
-    return NextResponse.json({ error: "Server error" }, { status: 500 });
+    return serverError(err, "Could not save this person.");
   }
 }
 
@@ -92,18 +91,14 @@ export async function DELETE(req: Request) {
   const originError = enforceSameOrigin(req);
   if (originError) return originError;
 
+  const id = new URL(req.url).searchParams.get("id");
+  if (!id) return jsonError("Missing id", 400);
+
   try {
-    const { deletePerson } = await import("../../../lib/peopleStore");
-    const { searchParams } = new URL(req.url);
-    const id = searchParams.get("id");
-    if (!id) return NextResponse.json({ error: "Missing id" }, { status: 400 });
     await deletePerson(id);
-    revalidateTag(CACHE_TAGS.people, "max");
-    revalidatePath("/editor");
-    revalidatePath("/people");
+    revalidatePeople();
     return NextResponse.json({ ok: true });
   } catch (err) {
-    console.error(err);
-    return NextResponse.json({ error: "Server error" }, { status: 500 });
+    return serverError(err, "Could not delete this person.");
   }
 }

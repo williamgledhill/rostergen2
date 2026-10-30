@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
+import { parseJsonBody } from "@/lib/apiHelpers";
 import { disableTotp } from "@/lib/auth";
 import { enforceSameOrigin, requireSession } from "@/lib/apiAuth";
 
@@ -15,12 +16,10 @@ export async function POST(request: Request) {
   const originError = enforceSameOrigin(request);
   if (originError) return originError;
 
-  const parsed = disableSchema.safeParse(await request.json());
-  if (!parsed.success) {
-    return NextResponse.json({ error: "Invalid payload" }, { status: 400 });
-  }
+  const body = await parseJsonBody(request, disableSchema);
+  if (!body.ok) return body.response;
 
-  const disabled = await disableTotp(auth.session.user.id, parsed.data.password, parsed.data.code);
+  const disabled = await disableTotp(auth.session.user.id, body.data.password, body.data.code);
   if (!disabled) {
     return NextResponse.json({ error: "Password or verification code is invalid" }, { status: 400 });
   }
