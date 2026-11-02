@@ -209,6 +209,7 @@ async function seedTaskTemplatesIfNeeded() {
       waitingCanBeCovered: Boolean(template.waitingCanBeCovered),
       pairedWithTaskId: template.pairedWithTaskId || null,
       pairedPosition: template.pairedPosition || null,
+      qualifiedPersonIds: toInputJson(template.qualifiedPersonIds || []),
       enabled: template.enabled !== false,
     })),
     skipDuplicates: true,

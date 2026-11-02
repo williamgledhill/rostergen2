@@ -1,5 +1,6 @@
 "use client";
 import React from "react";
+import { Lock } from "lucide-react";
 import type { TaskSegmentRows } from "@/lib/taskSegments";
 
 type Props = {
@@ -11,6 +12,8 @@ type Props = {
   color?: string;
   segments: TaskSegmentRows;
   selected?: boolean;
+  /** Autofill leaves it where it is, and it can't be moved, resized or deleted. */
+  locked?: boolean;
   /** Being dragged to a new position. */
   dragging?: boolean;
   /** Label for the lead-in block, e.g. "Waiting for tour". */
@@ -18,6 +21,7 @@ type Props = {
   drawTop?: boolean;
   drawLeft?: boolean;
   onSelect?: () => void;
+  onToggleLock?: () => void;
   onStartMove?: (e: React.MouseEvent) => void;
   onStartResize?: (which: "top" | "bottom", e: React.MouseEvent) => void;
 };
@@ -33,11 +37,13 @@ export default function Block({
   color,
   segments,
   selected,
+  locked,
   dragging,
   waitingLabel = "Waiting for",
   drawTop = true,
   drawLeft = true,
   onSelect,
+  onToggleLock,
   onStartMove,
   onStartResize,
 }: Props) {
@@ -60,8 +66,11 @@ export default function Block({
     <div
       data-id={id}
       className={`relative ${color ? "" : "bg-slate-200"} flex select-none items-center justify-center overflow-hidden text-center ${
-        dragging ? "z-20 cursor-grabbing opacity-90 shadow-[var(--shadow-lg)] ring-2 ring-[var(--accent)]" : selected ? "z-10 cursor-grab" : "cursor-grab"
+        dragging
+          ? "z-20 cursor-grabbing opacity-90 shadow-[var(--shadow-lg)] ring-2 ring-[var(--accent)]"
+          : `${selected ? "z-10 " : ""}${locked ? "cursor-default" : "cursor-grab"}`
       }`}
+      title={locked ? `${label} is locked. Double-click to unlock.` : "Double-click to lock"}
       style={{
         gridColumn: String(col),
         gridRow: `${startRow} / span ${span}`,
@@ -72,6 +81,10 @@ export default function Block({
       onClick={(e) => {
         e.stopPropagation();
         onSelect?.();
+      }}
+      onDoubleClick={(e) => {
+        e.stopPropagation();
+        onToggleLock?.();
       }}
     >
       <div className="pointer-events-none absolute inset-0 flex flex-col">
@@ -97,7 +110,15 @@ export default function Block({
           </div>
         ))}
       </div>
-      {selected && (
+      {locked && (
+        <span
+          className="pointer-events-none absolute right-0.5 top-0.5 grid h-4 w-4 place-items-center rounded-full bg-white/85 text-slate-700 shadow-sm"
+          aria-label="Locked"
+        >
+          <Lock className="h-2.5 w-2.5" strokeWidth={2.5} />
+        </span>
+      )}
+      {selected && !locked && (
         <>
           {(["top", "bottom"] as const).map((edge) => (
             <div

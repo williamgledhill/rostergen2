@@ -3,9 +3,12 @@ import {
   buildRosterSaveSignature,
   consumeOverlappedTasks,
   encodeSchoolToursAsTasks,
+  lockedBoundsAround,
   mergeAdjacentTasks,
   mergeMissingEmployees,
+  overlapsLockedTask,
   splitGridTasksAndSchoolTours,
+  toggleTaskLock,
 } from "@/lib/rosterGrid";
 import { createRosterTimeline } from "@/lib/rosterTimeline";
 import type { GridTask } from "@/lib/rosterTypes";
@@ -115,5 +118,32 @@ describe("mergeAdjacentTasks", () => {
     ];
     const merged = mergeAdjacentTasks(tasks, (task) => task.type !== "lunch");
     expect(merged.map((t) => t.id)).toEqual(["a", "b", "d", "e", "c"]);
+  });
+});
+
+describe("locked blocks", () => {
+  const tasks: GridTask[] = [
+    { id: "a", type: "desk", label: "Desk", col: 2, startRow: 2, span: 4, locked: true },
+    { id: "b", type: "desk", label: "Desk", col: 2, startRow: 6, span: 2 },
+    { id: "c", type: "desk", label: "Desk", col: 2, startRow: 10, span: 2, isLocked: true },
+    { id: "d", type: "desk", label: "Desk", col: 3, startRow: 4, span: 2, locked: true },
+  ];
+
+  it("finds the locked blocks either side in the same column", () => {
+    expect(lockedBoundsAround(tasks, 2, 6, 8, "b")).toEqual({ min: 6, max: 10 });
+    expect(lockedBoundsAround(tasks, 4, 6, 8)).toEqual({ min: -Infinity, max: Infinity });
+  });
+
+  it("spots a move onto a locked block", () => {
+    expect(overlapsLockedTask(tasks, { ...tasks[1], startRow: 5 })).toBe(true);
+    expect(overlapsLockedTask(tasks, { ...tasks[1], startRow: 7 })).toBe(false);
+    expect(overlapsLockedTask(tasks, { ...tasks[1], col: 3, startRow: 4 })).toBe(true);
+  });
+
+  it("toggles the lock and clears the old lock flags", () => {
+    expect(toggleTaskLock(tasks, "b")[1].locked).toBe(true);
+    const unlocked = toggleTaskLock(tasks, "c")[2];
+    expect(unlocked.locked).toBe(false);
+    expect("isLocked" in unlocked).toBe(false);
   });
 });

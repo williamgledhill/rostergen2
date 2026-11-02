@@ -1,10 +1,11 @@
-import { NextResponse } from "next/server";
+import { NextResponse, after } from "next/server";
 import { revalidatePath, revalidateTag } from "next/cache";
 import { z } from "zod";
 import { dateIdSchema, jsonError, parseJsonBody, serverError, timeSchema } from "@/lib/apiHelpers";
 import { enforceSameOrigin, requireSession } from "@/lib/apiAuth";
 import { CACHE_TAGS } from "@/lib/cacheTags";
 import { formatFullDay, parseLocalId } from "@/lib/dateUtils";
+import { ensureRecentAutomaticBackup } from "@/lib/backups";
 import { getRosterById, saveRosterEntry } from "@/lib/rosters";
 
 const rosterUpsertSchema = z.object({
@@ -52,6 +53,8 @@ export async function POST(req: Request) {
     revalidatePath("/editor");
     revalidatePath("/rosters");
     revalidatePath(`/rosters/months/${date.slice(0, 7)}`);
+    // Once a day, after a save has been answered, keep a copy of everything.
+    after(() => ensureRecentAutomaticBackup().catch((err) => console.error("Automatic backup failed", err)));
 
     return NextResponse.json({
       ok: true,

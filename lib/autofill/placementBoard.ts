@@ -1,5 +1,5 @@
 import { clipTaskAroundBlockedRange } from "@/lib/rosterAutofill";
-import type { GridTask } from "@/lib/rosterTypes";
+import { isTaskLocked, type GridTask } from "@/lib/rosterTypes";
 
 export type RowRange = { startRow: number; span: number };
 
@@ -50,6 +50,14 @@ export class PlacementBoard {
     const counts = this.countsByTemplate.get(templateId)!;
     counts.set(empId, (counts.get(empId) ?? 0) + 1);
     this.totalsByTemplate.set(templateId, this.getTotal(templateId) + 1);
+    return placed;
+  }
+
+  /** Puts a task that already exists (such as a locked block) on the board, keeping its id. */
+  addExisting(task: GridTask, countAs: { templateId: string; empId: EmployeeId }) {
+    const { id, ...rest } = task;
+    const placed = this.add(rest, countAs);
+    placed.id = id;
     return placed;
   }
 
@@ -169,6 +177,10 @@ export class PlacementBoard {
   clipColumnAround(col: number, blockedRange: RowRange) {
     const nextTasks: GridTask[] = [];
     for (const task of this.column(col)) {
+      if (isTaskLocked(task)) {
+        nextTasks.push(task);
+        continue;
+      }
       const fragments = clipTaskAroundBlockedRange(
         {
           startRow: task.startRow,

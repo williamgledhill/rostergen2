@@ -22,7 +22,8 @@ import {
   type TaskTemplate,
 } from "@/lib/taskTemplates";
 import { usePersistedAutosave } from "@/lib/usePersistedAutosave";
-import { invalidateWorkspaceResource, loadTasksData, taskDataKey, writeCachedResource } from "@/lib/workspaceData";
+import type { Person } from "@/lib/people";
+import { invalidateWorkspaceResource, loadPeopleData, loadTasksData, taskDataKey, writeCachedResource } from "@/lib/workspaceData";
 
 const DEFAULT_FIXED_MINUTES = 60;
 /** Matches autofill's rotation for tasks without a fixed time. */
@@ -191,6 +192,28 @@ export default function TaskDetailClient({ id, initialTask }: { id: string; init
     };
   }, [id]);
 
+  const [people, setPeople] = useState<Person[] | null>(null);
+  useEffect(() => {
+    let cancelled = false;
+    loadPeopleData()
+      .then((list) => {
+        if (!cancelled) setPeople(list ?? []);
+      })
+      .catch(() => {
+        if (!cancelled) setPeople([]);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+  const [personToAdd, setPersonToAdd] = useState("");
+
+  function setQualifiedPeople(change: (ids: string[]) => string[]) {
+    setTask((current) =>
+      current ? { ...current, qualifiedPersonIds: Array.from(new Set(change(current.qualifiedPersonIds ?? []))) } : current
+    );
+  }
+
   function updateTask(patch: Partial<TaskTemplate>) {
     setTask((current) => (current ? { ...current, ...patch } : current));
   }
@@ -343,6 +366,15 @@ export default function TaskDetailClient({ id, initialTask }: { id: string; init
 
   const isTour = isTourTemplate(task);
   const timesByDay: TimesByDay = asRecord(task.regularTimesByDay);
+  const kindLabel = isTour ? "tour" : "task";
+  const qualifiedIds = task.qualifiedPersonIds ?? [];
+  const restricted = qualifiedIds.length > 0;
+  const peopleById = new Map((people ?? []).map((person) => [person.id, person]));
+  const qualifiedPeople = qualifiedIds
+    .map((personId) => peopleById.get(personId))
+    .filter((person): person is Person => !!person)
+    .sort((a, b) => a.name.localeCompare(b.name));
+  const addablePeople = (people ?? []).filter((person) => !qualifiedIds.includes(person.id));
 
   return (
     <div className="mx-auto max-w-4xl">
@@ -666,6 +698,93 @@ export default function TaskDetailClient({ id, initialTask }: { id: string; init
               />
             </div>
           </RuleGroup>
+        </section>
+
+        <section className="card">
+          <div className="card-header">
+            <div>
+              <h2 className="card-title">Who can do this</h2>
+              <p className="card-description">
+                Autofill only gives this {kindLabel} to the people listed. Leave the list empty if anyone can do it.
+              </p>
+            </div>
+            <span className="badge">{restricted ? `${qualifiedPeople.length} ${qualifiedPeople.length === 1 ? "person" : "people"}` : "Anyone"}</span>
+          </div>
+          <div className="space-y-3 p-5">
+            {people === null ? (
+              <p className="text-[14px] text-[var(--text-muted)]">Loading people…</p>
+            ) : (
+              <>
+                {qualifiedPeople.length > 0 ? (
+                  <div className="flex flex-wrap gap-2">
+                    {qualifiedPeople.map((person) => (
+                      <span
+                        key={person.id}
+                        className="inline-flex h-8 items-center gap-1 rounded-[var(--radius-md)] border border-[var(--border)] bg-[var(--surface-subtle)] pl-2.5 pr-1 text-[13px] font-medium"
+                      >
+                        {person.name}
+                        <button
+                          type="button"
+                          className="grid h-6 w-6 place-items-center rounded text-[var(--text-muted)] hover:bg-white hover:text-[var(--text)]"
+                          onClick={() => setQualifiedPeople((ids) => ids.filter((entry) => entry !== person.id))}
+                          aria-label={`Remove ${person.name}`}
+                        >
+                          <X className="h-3.5 w-3.5" />
+                        </button>
+                      </span>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-[14px] text-[var(--text-muted)]">
+                    {restricted
+                      ? `Nobody on the list works here any more, so autofill won't place this ${kindLabel}.`
+                      : `Anyone can do this ${kindLabel}.`}
+                  </p>
+                )}
+                {addablePeople.length > 0 && (
+                  <form
+                    className="flex flex-wrap items-center gap-2"
+                    onSubmit={(event) => {
+                      event.preventDefault();
+                      if (!personToAdd) return;
+                      setQualifiedPeople((ids) => [...ids, personToAdd]);
+                      setPersonToAdd("");
+                    }}
+                  >
+                    <select
+                      className="input min-w-[200px]"
+                      value={personToAdd}
+                      onChange={(event) => setPersonToAdd(event.target.value)}
+                      aria-label={`Person who can do this ${kindLabel}`}
+                    >
+                      <option value="">Choose a person</option>
+                      {addablePeople.map((person) => (
+                        <option key={person.id} value={person.id}>
+                          {person.name}
+                        </option>
+                      ))}
+                    </select>
+                    <button type="submit" className="btn btn-sm" disabled={!personToAdd}>
+                      <Plus />
+                      Add
+                    </button>
+                    <button
+                      type="button"
+                      className="btn btn-sm"
+                      onClick={() => setQualifiedPeople((ids) => [...ids, ...addablePeople.map((person) => person.id)])}
+                    >
+                      Add everyone
+                    </button>
+                  </form>
+                )}
+                {restricted && (
+                  <button type="button" className="btn btn-sm" onClick={() => setQualifiedPeople(() => [])}>
+                    Let anyone do it
+                  </button>
+                )}
+              </>
+            )}
+          </div>
         </section>
 
         <section className="card">

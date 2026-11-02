@@ -6,6 +6,7 @@ import { enforceSameOrigin, requireSession } from "@/lib/apiAuth";
 import { CACHE_TAGS } from "@/lib/cacheTags";
 import { ALL_DAYS, type WeeklySchedule } from "@/lib/people";
 import { deletePerson, getPeople, getPerson, upsertPerson } from "@/lib/peopleStore";
+import { removePersonFromQualifiedLists } from "@/lib/taskTemplatesStore";
 
 const dayScheduleSchema = z.object({
   enabled: z.boolean(),
@@ -96,7 +97,9 @@ export async function DELETE(req: Request) {
 
   try {
     await deletePerson(id);
+    await removePersonFromQualifiedLists(id);
     revalidatePeople();
+    revalidateTag(CACHE_TAGS.tasks, "max");
     return NextResponse.json({ ok: true });
   } catch (err) {
     return serverError(err, "Could not delete this person.");

@@ -10,6 +10,7 @@ import {
   ChangePasswordSection,
   UsersSection,
 } from "./AccountSections";
+import { BackupsSection } from "./BackupsSection";
 import PageHeader from "@/components/ui/PageHeader";
 import SaveStatus from "@/components/ui/SaveStatus";
 import type { AuthUser } from "@/lib/auth";
@@ -269,7 +270,7 @@ export default function SettingsClient({
     <div className="mx-auto max-w-4xl">
       <PageHeader
         title="Settings"
-        description={isAdmin ? "Roster defaults, users and account security." : "Roster defaults and account security."}
+        description={isAdmin ? "Roster defaults, users, backups and account security." : "Roster defaults and account security."}
         meta={isAdmin ? <SaveStatus state={saveState} /> : undefined}
         actions={
           isAdmin && (
@@ -354,6 +355,7 @@ export default function SettingsClient({
         <ChangePasswordSection />
         <SecuritySection user={initialSessionUser} initialStatus={initialMfaStatus} />
 
+        {isAdmin && <BackupsSection />}
         {isAdmin && <AuditLogSection />}
       </div>
     </div>

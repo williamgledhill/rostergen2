@@ -13,13 +13,14 @@ import { MIN_ROW, clampNumber, parseTimeToMinutes, type RosterTimeline } from "@
 import {
   FIRST_EMPLOYEE_COL,
   createId as defaultCreateId,
+  isTaskLocked,
   type AutofillNotice,
   type GridTask,
   type RosterEmployee,
   type SchoolTourEntry,
 } from "@/lib/rosterTypes";
 import { SLOT_MINUTES, getTaskSegmentRows } from "@/lib/taskSegments";
-import { isTourTemplate, type TaskTemplate } from "@/lib/taskTemplates";
+import { isQualifiedFor, isTourTemplate, type TaskTemplate } from "@/lib/taskTemplates";
 import { PlacementBoard, rangesOverlap, type RowRange } from "./placementBoard";
 import { buildTemplateMeta, templateAppliesOnDay, windowEndAt, type RowWindow, type TemplateMeta } from "./templateMeta";
 
@@ -32,6 +33,8 @@ export type AutofillInput = {
   timeline: RosterTimeline;
   /** Rotates tie-breaks so pressing Autofill again gives a different, equally valid roster. */
   variant: number;
+  /** Blocks the user locked: they stay exactly where they are and everything else is placed around them. */
+  lockedTasks?: GridTask[];
   createId?: () => string;
 };
 
@@ -197,6 +200,17 @@ export function generateAutofillRoster(input: AutofillInput): AutofillResult {
     return endRow > startRow ? { startRow, endRow } : null;
   };
 
+  // Roster employees are usually saved people, but older rosters may only match by name.
+  const personIdByEmp = new Map(
+    employees.map((emp) => {
+      const person = peopleById.get(String(emp.id)) || peopleByName.get(String(emp.name || "").toLowerCase());
+      return [emp.id, String(person?.id ?? emp.id)];
+    })
+  );
+  /** Only the people listed on a task (if any are) may be given it. */
+  const isQualified = (meta: TemplateMeta, empId: EmployeeId) =>
+    isQualifiedFor(meta.template, personIdByEmp.get(empId) ?? empId);
+
   /** Rows the employee is working, or null when they are off. */
   const getEmployeeWindow = (emp: RosterEmployee) => {
     if (!employeeWindows.has(emp.id)) employeeWindows.set(emp.id, resolveEmployeeWindow(emp));
@@ -213,12 +227,16 @@ export function generateAutofillRoster(input: AutofillInput): AutofillResult {
    * along with room for any tasks that go with the template.
    */
   const isFree = (emp: RosterEmployee, range: RowRange, meta?: TemplateMeta): boolean =>
+    (!meta || isQualified(meta, emp.id)) &&
     isWithinShift(emp, range) &&
     board.isRangeFree(colOf(emp), range) &&
-    (!meta || getPairedRanges(meta, range).every((paired) => isFree(emp, paired.range)));
+    (!meta ||
+      getPairedRanges(meta, range)
+        .filter((paired) => isQualified(paired.meta, emp.id))
+        .every((paired) => isFree(emp, paired.range)));
 
-  const getEligibleEmployeesForRow = (row: number, span: number) =>
-    employees.filter((emp) => isWithinShift(emp, { startRow: row, span }));
+  const getEligibleEmployeesForRow = (meta: TemplateMeta, row: number, span: number) =>
+    employees.filter((emp) => isQualified(meta, emp.id) && isWithinShift(emp, { startRow: row, span }));
 
   // ---- Template limits ----
 
@@ -407,7 +425,7 @@ export function generateAutofillRoster(input: AutofillInput): AutofillResult {
 
     const paired = getPairedRanges(meta, { startRow, span })
       .filter(({ range }) => range.startRow >= MIN_ROW && range.startRow + range.span <= maxRowEx)
-      .filter(({ range }) => board.isRangeFree(col, range))
+      .filter(({ meta: pairedMeta, range }) => isQualified(pairedMeta, empId) && board.isRangeFree(col, range))
       .map(({ meta: pairedMeta, range }) => ({
         meta: pairedMeta,
         task: placeTask(pairedMeta, col, range.startRow, range.span, empId),
@@ -487,12 +505,12 @@ export function generateAutofillRoster(input: AutofillInput): AutofillResult {
    */
   const coverFromTourWaiting = (meta: TemplateMeta, row: number) => {
     for (const emp of [...employees].sort(compareRotation)) {
-      if (!isWithinShift(emp, { startRow: row, span: 1 })) continue;
+      if (!isQualified(meta, emp.id) || !isWithinShift(emp, { startRow: row, span: 1 })) continue;
       if (board.getEmpCount(meta.id, emp.id) >= meta.maxPerEmp) continue;
       const col = colOf(emp);
       const tour = board.column(col).find((task) => {
         const template = templateById.get(task.type);
-        if (!template?.waitingCanBeCovered) return false;
+        if (!template?.waitingCanBeCovered || isTaskLocked(task)) return false;
         const { waitingRows } = getTaskSegmentRows(task);
         return row >= task.startRow && row < task.startRow + waitingRows;
       });
@@ -535,6 +553,7 @@ export function generateAutofillRoster(input: AutofillInput): AutofillResult {
     const occupiedRanges = board.column(colOf(emp)).map((task) => ({ startRow: task.startRow, span: task.span }));
 
     return futureMinimumMetas.map((futureMeta) => {
+      if (!isQualified(futureMeta, emp.id)) return Number.POSITIVE_INFINITY;
       if (board.getEmpCount(futureMeta.id, emp.id) >= futureMeta.minPerEmp) return Number.POSITIVE_INFINITY;
       if (!futureMeta.window) return 0;
       const overlapWindow = {
@@ -713,7 +732,18 @@ export function generateAutofillRoster(input: AutofillInput): AutofillResult {
   const schoolTourTemplate = templates.find((template) => template.schoolTourImportTarget) || null;
   const schoolTourMeta = schoolTourTemplate ? buildTemplateMeta(schoolTourTemplate, dayKey, timeline) : null;
 
-  if (!templatesToSchedule.length) return { tasks: [] };
+  // ---- Locked blocks ----
+  // They go on the board first, exactly as they are, and count towards each
+  // task's limits, so the rest of the day is planned around them.
+
+  const employeeByCol = new Map(employees.map((emp) => [colOf(emp), emp]));
+  const lockedTasks = (input.lockedTasks ?? []).filter((task) => isTaskLocked(task) && employeeByCol.has(task.col));
+  for (const task of lockedTasks) {
+    const emp = employeeByCol.get(task.col)!;
+    board.addExisting({ ...task, employeeId: emp.id }, { templateId: task.type, empId: emp.id });
+  }
+
+  if (!templatesToSchedule.length) return { tasks: [...board.generated] };
 
   const unmetMinimums: string[] = [];
   const protectedTaskFailures: string[] = [];
@@ -732,6 +762,8 @@ export function generateAutofillRoster(input: AutofillInput): AutofillResult {
     if (!span || startRow < MIN_ROW || startRow + span > maxRowEx) return failed();
     const range = { startRow, span };
     const protectedRange = getProtectedRangeForMeta(meta, startRow, span);
+    // The user already locked this tour in place.
+    if (lockedTasks.some((task) => task.type === meta.id && task.label === tourLabel)) return;
 
     const picked = employees
       .filter((emp) => {
@@ -822,10 +854,10 @@ export function generateAutofillRoster(input: AutofillInput): AutofillResult {
 
   // ---- Pass 3: minimums, cover and other scheduled tasks ----
 
-  /** Whether the employee's shift overlaps the template's window by enough to fit one block. */
+  /** Whether the employee can do the task and their shift overlaps its window by enough to fit one block. */
   const shiftCanFit = (meta: TemplateMeta, emp: RosterEmployee) => {
     const window = getEmployeeWindow(emp);
-    if (!window) return false;
+    if (!window || !isQualified(meta, emp.id)) return false;
     const overlap =
       Math.min(window.endRow, meta.window?.endRow ?? window.endRow) - Math.max(window.startRow, meta.window?.startRow ?? window.startRow);
     return overlap >= (meta.allowShrink ? meta.minSpan : meta.span);
@@ -1053,7 +1085,9 @@ export function generateAutofillRoster(input: AutofillInput): AutofillResult {
     const col = colOf(emp);
     const range = { startRow: row, span };
     const blockedRange = getProtectedRangeForMeta(meta, row, span);
-    if (exceedsConsecutiveLimit(meta, col, range)) return false;
+    if (!isQualified(meta, emp.id) || exceedsConsecutiveLimit(meta, col, range)) return false;
+    // Nothing is placed over a locked block, not even a task that takes priority.
+    if (board.column(col).some((task) => isTaskLocked(task) && rangesOverlap(range, task))) return false;
     if (meta.overwriteExistingTasks) {
       if (hasProtectedMinimumConflict(col, blockedRange)) return false;
       if (meta.protectsTourWindow && getProtectedTaskConflict(col, blockedRange)) return false;
@@ -1084,7 +1118,7 @@ export function generateAutofillRoster(input: AutofillInput): AutofillResult {
       if (placementsMade >= desiredPlacements) break;
       const span = spanAt(meta, row);
       if (!span) continue;
-      const attendees = getEligibleEmployeesForRow(row, span);
+      const attendees = getEligibleEmployeesForRow(meta, row, span);
       if (!attendees.length) continue;
       if (!meta.overwriteExistingTasks && attendees.some((emp) => !isFree(emp, { startRow: row, span }, meta))) continue;
       attendees.forEach((emp) => placeFinalTask(meta, emp, row, span));
@@ -1103,7 +1137,7 @@ export function generateAutofillRoster(input: AutofillInput): AutofillResult {
       if (!span) continue;
       const range = { startRow: row, span };
 
-      const sortedEmployees = getEligibleEmployeesForRow(row, span)
+      const sortedEmployees = getEligibleEmployeesForRow(meta, row, span)
         .filter((emp) => board.getEmpCount(meta.id, emp.id) < meta.maxPerEmp)
         .sort((a, b) => {
           if (isTourMeta(meta)) {
@@ -1153,6 +1187,7 @@ export function generateAutofillRoster(input: AutofillInput): AutofillResult {
   ) => {
     const col = colOf(emp);
     return fillTemplates.flatMap((meta) => {
+      if (!isQualified(meta, emp.id)) return [];
       if (board.getTotal(meta.id) >= meta.limitPerDay) return [];
       const rangeEnd = windowEndAt(meta, row);
       if (rangeEnd === null) return [];

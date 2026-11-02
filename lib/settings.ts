@@ -12,7 +12,7 @@ function isValidTime(value: unknown): value is string {
   return Number.isFinite(h) && Number.isFinite(m) && h >= 0 && h <= 23 && m >= 0 && m <= 59;
 }
 
-function normalizeHoursByDay(input: any): Record<DayKey, DayHours> {
+export function normalizeHoursByDay(input: any): Record<DayKey, DayHours> {
   const next: Record<DayKey, DayHours> = { ...DEFAULT_SETTINGS.hoursByDay };
   DAY_KEYS.forEach((day) => {
     const candidate = input?.[day];
@@ -23,7 +23,7 @@ function normalizeHoursByDay(input: any): Record<DayKey, DayHours> {
   return next;
 }
 
-function normalizeUpcomingDays(input: unknown): number {
+export function normalizeUpcomingDays(input: unknown): number {
   const numeric = Number(input);
   if (!Number.isFinite(numeric)) return DEFAULT_SETTINGS.upcomingDays;
   const rounded = Math.floor(numeric);
@@ -45,7 +45,7 @@ function rowsToHoursByDay(
   return normalizeHoursByDay(hoursByDay);
 }
 
-function toDayHourRows(hoursByDay: Record<DayKey, DayHours>) {
+export function toDayHourRows(hoursByDay: Record<DayKey, DayHours>) {
   return DAY_KEYS.map((day) => ({
     dayOfWeek: day,
     start: hoursByDay[day].start,
@@ -53,7 +53,7 @@ function toDayHourRows(hoursByDay: Record<DayKey, DayHours>) {
   }));
 }
 
-async function loadSettings(): Promise<AppSettings> {
+export async function loadSettings(): Promise<AppSettings> {
   await ensureAppPersistenceSeeded();
 
   const record = await prisma.appSettings.findUnique({ where: { id: "default" } });

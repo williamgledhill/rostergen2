@@ -499,4 +499,88 @@ describe("generateAutofillRoster", () => {
       expect(Math.max(...perPerson) - Math.min(...perPerson)).toBeLessThanOrEqual(1);
     }
   });
+
+  it("only gives a task to the people who can do it", () => {
+    const people = [person("1"), person("2"), person("3")];
+    const tour = { mustManned: true, overwriteExistingTasks: true, durationMinutes: 45, waitingMinutes: 15, category: "Tours" };
+    for (const variant of [0, 1, 2]) {
+      const { tasks } = run({
+        people,
+        variant,
+        templates: [
+          template({ id: "public", ...tour, regularTimes: ["10:00", "11:00", "14:00"], qualifiedPersonIds: ["2", "3"] }),
+          template({ id: "desk", mustManned: true, qualifiedPersonIds: ["1"] }),
+          template({ id: "gallery", qualifiedPersonIds: ["2", "3"] }),
+        ],
+      });
+      const owners = (type: string) => new Set(tasks.filter((t) => t.type === type).map((t) => String(t.employeeId)));
+      expect(owners("public").size).toBeGreaterThan(0);
+      expect(owners("public").has("1")).toBe(false);
+      expect([...owners("desk")]).toEqual(["1"]);
+      expect(owners("gallery").has("1")).toBe(false);
+      expect(overlapsInSameColumn(tasks)).toBe(false);
+    }
+  });
+
+  it("reports a minimum it can't meet only for the people who can do the task", () => {
+    const { notice } = run({
+      templates: [template({ id: "break", minPerEmployeePerDay: 1, durationMinutes: 30, qualifiedPersonIds: ["1"] })],
+    });
+    expect(notice).toBeNull();
+  });
+
+  it("keeps locked blocks exactly where they are and plans around them", () => {
+    const people = [person("1"), person("2")];
+    const locked: GridTask = {
+      id: "locked-1",
+      type: "gallery",
+      label: "gallery",
+      col: 2,
+      startRow: 6,
+      span: 8,
+      color: "#cccccc",
+      employeeId: "1",
+      locked: true,
+    };
+    for (const variant of [0, 1, 2]) {
+      const { tasks } = run({
+        people,
+        variant,
+        lockedTasks: [locked],
+        templates: [
+          template({ id: "desk", mustManned: true, overwriteExistingTasks: true }),
+          template({ id: "gallery" }),
+        ],
+      });
+      expect(tasks.filter((t) => t.id === "locked-1")).toEqual([locked]);
+      expect(overlapsInSameColumn(tasks)).toBe(false);
+    }
+  });
+
+  it("returns locked blocks even when there is nothing else to schedule", () => {
+    const locked: GridTask = { id: "keep", type: "custom", label: "Custom", col: 3, startRow: 4, span: 2, employeeId: "2", locked: true };
+    const { tasks } = run({ lockedTasks: [locked] });
+    expect(tasks).toEqual([locked]);
+  });
+
+  it("doesn't place a locked school tour a second time", () => {
+    const tour = { mustManned: true, overwriteExistingTasks: true, durationMinutes: 60, waitingMinutes: 15, category: "Tours" };
+    const lockedTour: GridTask = {
+      id: "locked-tour",
+      type: "school",
+      label: "School Tour 1",
+      col: 4,
+      startRow: 6,
+      span: 5,
+      employeeId: "3",
+      waitingMinutes: 15,
+      locked: true,
+    };
+    const { tasks } = run({
+      lockedTasks: [lockedTour],
+      templates: [template({ id: "school", ...tour, schoolTourImportTarget: true, enabled: false }), template({ id: "gallery" })],
+      schoolTours: [{ id: "s1", rosterDateId: "2026-09-30", startTime: "10:00", schoolName: "A", studentCount: 20 }],
+    });
+    expect(tasks.filter((t) => t.type === "school")).toEqual([lockedTour]);
+  });
 });

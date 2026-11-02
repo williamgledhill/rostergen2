@@ -241,3 +241,40 @@ export function mergeAdjacentTasks(tasks: GridTask[], canMerge: (task: GridTask)
   }
   return merged;
 }
+
+/**
+ * How far a task in the column can stretch from the given rows before it runs
+ * into a locked block. Locked blocks are never trimmed by moving or resizing others.
+ */
+export function lockedBoundsAround(tasks: GridTask[], col: number, startRow: number, endRow: number, ignoreId?: GridTask["id"]) {
+  let min = Number.NEGATIVE_INFINITY;
+  let max = Number.POSITIVE_INFINITY;
+  for (const task of tasks) {
+    if (task.col !== col || task.id === ignoreId || !isTaskLocked(task)) continue;
+    const taskEnd = task.startRow + task.span;
+    if (taskEnd <= startRow) min = Math.max(min, taskEnd);
+    else if (task.startRow >= endRow) max = Math.min(max, task.startRow);
+  }
+  return { min, max };
+}
+
+/** The task would sit on top of a locked block in its column. */
+export function overlapsLockedTask(tasks: GridTask[], candidate: GridTask) {
+  return tasks.some(
+    (task) =>
+      task.id !== candidate.id &&
+      task.col === candidate.col &&
+      isTaskLocked(task) &&
+      task.startRow < candidate.startRow + candidate.span &&
+      candidate.startRow < task.startRow + task.span
+  );
+}
+
+/** Locks an unlocked block, or unlocks a locked one. */
+export function toggleTaskLock(tasks: GridTask[], id: GridTask["id"]) {
+  return tasks.map((task) => {
+    if (task.id !== id) return task;
+    const { isLocked: _isLocked, readOnly: _readOnly, ...rest } = task;
+    return isTaskLocked(task) ? { ...rest, locked: false } : { ...rest, locked: true };
+  });
+}

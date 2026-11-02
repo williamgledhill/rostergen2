@@ -25,11 +25,14 @@ import {
   encodeSchoolToursAsTasks,
   isSameEmployee,
   isMergeableTask,
+  lockedBoundsAround,
   mergeAdjacentTasks,
   mergeMissingEmployees,
   schoolTourLabel,
   sortSchoolTours,
   splitGridTasksAndSchoolTours,
+  toggleTaskLock,
+  overlapsLockedTask,
   type RosterDraftValue,
 } from "@/lib/rosterGrid";
 import {
@@ -155,6 +158,9 @@ const Grid = forwardRef<GridHandle, GridProps>(function Grid(
     y0: number;
     start0: number;
     span0: number;
+    /** Locked blocks above and below that the edge can't be dragged past. */
+    minRow: number;
+    maxRow: number;
   }>(null);
   const [moveDrag, setMoveDrag] = useState<null | { id: string | number; col: number; startRow: number }>(null);
   const [taskPickerSlot, setTaskPickerSlot] = useState<null | { col: number; row: number }>(null);
@@ -635,6 +641,7 @@ const Grid = forwardRef<GridHandle, GridProps>(function Grid(
       rosterDate,
       timeline,
       variant,
+      lockedTasks: tasksRef.current.filter(isTaskLocked),
     });
     applyRosterState(employees, result.tasks);
     if (result.notice !== undefined) onAutofillNoticeChange?.(result.notice);
@@ -756,11 +763,23 @@ const Grid = forwardRef<GridHandle, GridProps>(function Grid(
   const deleteSelectedTask = useCallback(() => {
     if (selected === undefined) return;
     const target = tasksRef.current.find((task) => task.id === selected);
-    if (!target || isTaskLocked(target)) return;
+    if (!target) return;
+    if (isTaskLocked(target)) {
+      notify({ title: `${target.label} is locked`, message: "Double-click it to unlock it first." });
+      return;
+    }
     if (applyRosterState(employeesRef.current, tasksRef.current.filter((task) => task.id !== selected))) {
       setSelected(undefined);
     }
-  }, [selected, applyRosterState]);
+  }, [selected, applyRosterState, notify]);
+
+  const toggleLock = useCallback(
+    (id: string | number) => {
+      applyRosterState(employeesRef.current, toggleTaskLock(tasksRef.current, id));
+      setSelected(id);
+    },
+    [applyRosterState]
+  );
 
   useEffect(() => {
     const onOutside = (e: MouseEvent) => {
@@ -847,9 +866,10 @@ const Grid = forwardRef<GridHandle, GridProps>(function Grid(
     // Tasks with a set length (and every tour) go in at full length; others fill one slot to start.
     const fullMinutes = (template.durationMinutes || 60) + waitingMinutes + packingMinutes;
     const hasSetLength = (template.durationMinutes ?? 0) > 0 || isTourTemplate(template);
+    const { max: nextLockedRow } = lockedBoundsAround(tasksRef.current, taskPickerSlot.col, taskPickerSlot.row, taskPickerSlot.row + 1);
     const span = Math.max(
       1,
-      Math.min(hasSetLength ? Math.ceil(fullMinutes / 15) : 1, maxRowEx - taskPickerSlot.row)
+      Math.min(hasSetLength ? Math.ceil(fullMinutes / 15) : 1, Math.min(maxRowEx, nextLockedRow) - taskPickerSlot.row)
     );
     const employee = employeesRef.current[taskPickerSlot.col - FIRST_EMPLOYEE_COL];
     const nextTasks = [
@@ -878,9 +898,18 @@ const Grid = forwardRef<GridHandle, GridProps>(function Grid(
     e.preventDefault();
     e.stopPropagation();
     const task = tasksRef.current.find((x) => x.id === id);
-    if (!task) return;
+    if (!task || isTaskLocked(task)) return;
+    const bounds = lockedBoundsAround(tasksRef.current, task.col, task.startRow, task.startRow + task.span, task.id);
     pushHistorySnapshot(employeesRef.current, tasksRef.current);
-    setDrag({ id, which, y0: e.clientY, start0: task.startRow, span0: task.span });
+    setDrag({
+      id,
+      which,
+      y0: e.clientY,
+      start0: task.startRow,
+      span0: task.span,
+      minRow: Math.max(MIN_ROW, bounds.min),
+      maxRow: Math.min(maxRowEx, bounds.max),
+    });
   }
 
   useEffect(() => {
@@ -891,10 +920,10 @@ const Grid = forwardRef<GridHandle, GridProps>(function Grid(
       let newStart = drag.start0;
       let newSpan = drag.span0;
       if (drag.which === "top") {
-        newStart = Math.max(MIN_ROW, Math.min(drag.start0 + dRows, drag.start0 + drag.span0 - 1));
+        newStart = Math.max(drag.minRow, Math.min(drag.start0 + dRows, drag.start0 + drag.span0 - 1));
         newSpan = drag.start0 + drag.span0 - newStart;
       } else {
-        const newEnd = Math.min(maxRowEx, Math.max(drag.start0 + drag.span0 + dRows, drag.start0 + 1));
+        const newEnd = Math.min(drag.maxRow, Math.max(drag.start0 + drag.span0 + dRows, drag.start0 + 1));
         newSpan = newEnd - drag.start0;
       }
       setTasks((prev) => prev.map((x) => (x.id === drag.id ? { ...x, startRow: newStart, span: newSpan } : x)));
@@ -960,6 +989,10 @@ const Grid = forwardRef<GridHandle, GridProps>(function Grid(
       const movedTasks = tasksRef.current.map((x) =>
         x.id === id ? { ...x, ...target, employeeId: employee?.id ?? x.employeeId } : x
       );
+      if (overlapsLockedTask(movedTasks, movedTasks.find((x) => x.id === id)!)) {
+        notify({ title: "That spot has a locked block", message: "Double-click it to unlock it, or drop this somewhere else." });
+        return;
+      }
       applyRosterState(employeesRef.current, mergeTasks(consumeOverlappedTasks(movedTasks, id, createId)));
       setSelected(id);
     };
@@ -1159,12 +1192,14 @@ const Grid = forwardRef<GridHandle, GridProps>(function Grid(
                 color={colorForTask(task)}
                 segments={segmentsForTask(task)}
                 selected={task.id === selected}
+                locked={isTaskLocked(task)}
                 dragging={!!preview}
                 waitingLabel={waitingLabelForTask(task)}
                 // Neighbouring blocks share one line rather than doubling up.
                 drawTop={!occupied.has(`${col}:${startRow - 1}`)}
                 drawLeft={col === FIRST_EMPLOYEE_COL || !occupied.has(`${col - 1}:${startRow}`)}
                 onSelect={() => setSelected(task.id)}
+                onToggleLock={() => toggleLock(task.id)}
                 onStartMove={(e) => onStartMove(task.id, e)}
                 onStartResize={(which, e) => onStartResize(which, task.id, e)}
               />

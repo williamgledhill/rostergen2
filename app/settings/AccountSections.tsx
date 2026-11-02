@@ -688,6 +688,9 @@ const AUDIT_ACTION_LABELS: Record<string, string> = {
   "user.password_reset_requested": "asked for a password reset email:",
   "user.password_reset_completed": "reset their password using a link:",
   "user.password_changed": "changed their password:",
+  "backup.created": "took a backup",
+  "backup.restored": "restored a backup",
+  "backup.deleted": "deleted a backup",
 };
 
 function describeAudit(entry: AuditEntry) {

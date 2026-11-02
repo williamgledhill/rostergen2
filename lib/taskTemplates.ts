@@ -31,6 +31,8 @@ export type TaskTemplate = {
   limitPerDay?: number;
   maxConcurrentPerTimeslot?: number;
   schoolTourImportTarget?: boolean;
+  /** People autofill may give this to. Empty means anyone can do it. */
+  qualifiedPersonIds?: string[];
   enabled?: boolean;
 };
 
@@ -61,6 +63,12 @@ export function isFloorTemplate(template: TaskTemplate) {
     !((template.minPerEmployeePerDay ?? 0) > 0) &&
     !hasSetTimes
   );
+}
+
+/** Whether autofill may give this task to the person. */
+export function isQualifiedFor(template: Pick<TaskTemplate, "qualifiedPersonIds">, personId: string | number) {
+  const ids = template.qualifiedPersonIds ?? [];
+  return ids.length === 0 || ids.includes(String(personId));
 }
 
 export const TASK_TEMPLATE_REFRESH_EVENT = "task-templates-updated";

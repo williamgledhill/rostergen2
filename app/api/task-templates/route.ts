@@ -56,6 +56,7 @@ const updateTemplateSchema = z.object({
   waitingCanBeCovered: z.boolean().optional(),
   pairedWithTaskId: z.string().max(200).optional(),
   pairedPosition: z.enum(["before", "after"]).optional(),
+  qualifiedPersonIds: z.array(z.string().trim().min(1).max(120)).max(500).optional(),
   enabled: z.boolean().optional(),
 });
 

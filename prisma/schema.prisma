@@ -108,6 +108,8 @@ model AppTaskTemplate {
   waitingCanBeCovered    Boolean  @default(false)
   pairedWithTaskId       String?
   pairedPosition         String?
+  /// Ids of the people who can do this task; empty or null means anyone.
+  qualifiedPersonIds     Json?
   enabled                Boolean  @default(true)
   createdAt              DateTime @default(now())
   updatedAt              DateTime @updatedAt
@@ -352,4 +354,22 @@ model AppMfaSetup {
   user             AppUser  @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([expiresAt])
+}
+
+/// A copy of the roster data (people, tasks, settings and rosters) that can be
+/// restored. Accounts are deliberately left out.
+model AppBackup {
+  id          String   @id @default(cuid())
+  /// "manual", "automatic" or "pre-restore".
+  kind        String
+  createdById String?
+  createdByEmail String?
+  summary     Json
+  /// The backup as gzipped JSON.
+  data        Bytes
+  sizeBytes   Int
+  createdAt   DateTime @default(now())
+
+  @@index([createdAt])
+  @@index([kind, createdAt])
 }

@@ -45,7 +45,7 @@ function mapRowsToWeeklySchedule(
   return schedule;
 }
 
-function mapLegacyPerson(record: {
+export function mapLegacyPerson(record: {
   id: string;
   name: string;
   email: string | null;
@@ -111,7 +111,7 @@ function mapPerson(record: {
   };
 }
 
-function scheduleRowsForPerson(person: Person) {
+export function scheduleRowsForPerson(person: Person) {
   const rows: Array<{
     weekType: AppScheduleWeekType;
     dayOfWeek: AppDayOfWeek;
@@ -157,7 +157,7 @@ function scheduleRowsForPerson(person: Person) {
   return rows;
 }
 
-async function loadPeople(): Promise<Person[]> {
+export async function loadPeople(): Promise<Person[]> {
   await ensureAppPersistenceSeeded();
   const people = await prisma.appPerson.findMany({
     orderBy: { name: "asc" },

@@ -129,7 +129,7 @@ function mapLegacyRosterRecord(record: any): RosterFile {
   );
 }
 
-function mapRosterRecord(record: any): RosterFile {
+export function mapRosterRecord(record: any): RosterFile {
   const date = toLocalStartDate(record.date) ?? parseLocalId(record.id) ?? new Date();
   if (!record.rosterEmployees && !record.rosterTasks) {
     return mapLegacyRosterRecord(record);
@@ -194,7 +194,7 @@ function mapRosterRecord(record: any): RosterFile {
   );
 }
 
-function toRosterEmployeeRows(rosterId: string, employees: any[]) {
+export function toRosterEmployeeRows(rosterId: string, employees: any[]) {
   return employees.map((employee, index) => ({
     rosterId,
     externalId: String(employee?.id ?? index + 1),
@@ -205,7 +205,7 @@ function toRosterEmployeeRows(rosterId: string, employees: any[]) {
   }));
 }
 
-function toRosterTaskRows(rosterId: string, tasks: any[]) {
+export function toRosterTaskRows(rosterId: string, tasks: any[]) {
   return tasks.map((task, index) => ({
     rosterId,
     externalId: String(task?.id ?? `task-${index + 1}`),

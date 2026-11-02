@@ -54,6 +54,9 @@ function applyDefaults(t: TaskTemplate): TaskTemplate {
       ? t.schoolTourImportTarget
       : false;
   const waitingCanBeCovered = typeof t.waitingCanBeCovered === "boolean" ? t.waitingCanBeCovered : false;
+  const qualifiedPersonIds = Array.isArray(t.qualifiedPersonIds)
+    ? Array.from(new Set(t.qualifiedPersonIds.filter((id): id is string => typeof id === "string" && id.length > 0)))
+    : [];
   return {
     ...t,
     color: t.color || "#e2e8f0",
@@ -85,11 +88,12 @@ function applyDefaults(t: TaskTemplate): TaskTemplate {
     waitingCanBeCovered,
     pairedWithTaskId: typeof t.pairedWithTaskId === "string" && t.pairedWithTaskId ? t.pairedWithTaskId : "",
     pairedPosition: t.pairedPosition === "before" ? "before" : "after",
+    qualifiedPersonIds,
     enabled,
   };
 }
 
-function toTemplateCreateInput(template: TaskTemplate) {
+export function toTemplateCreateInput(template: TaskTemplate) {
   return {
     id: template.id,
     name: template.name,
@@ -126,11 +130,12 @@ function toTemplateCreateInput(template: TaskTemplate) {
     waitingCanBeCovered: Boolean(template.waitingCanBeCovered),
     pairedWithTaskId: template.pairedWithTaskId || null,
     pairedPosition: template.pairedPosition || null,
+    qualifiedPersonIds: template.qualifiedPersonIds || [],
     enabled: template.enabled !== false,
   };
 }
 
-function toRelationRows(templateId: string, template: Partial<TaskTemplate>) {
+export function toRelationRows(templateId: string, template: Partial<TaskTemplate>) {
   const regularDays = Array.isArray(template.regularDays) ? template.regularDays : [];
   const regularTimes = Array.isArray(template.regularTimes) ? template.regularTimes : [];
   const regularTimesByDay =
@@ -209,7 +214,7 @@ async function ensureDefaultTaskTemplatesSynced() {
   return defaultTemplateSyncPromise;
 }
 
-function mapLegacyTemplate(record: any): TaskTemplate {
+export function mapLegacyTemplate(record: any): TaskTemplate {
   return applyDefaults({
     id: record.id,
     name: record.name,
@@ -244,6 +249,7 @@ function mapLegacyTemplate(record: any): TaskTemplate {
     waitingCanBeCovered: record.waitingCanBeCovered,
     pairedWithTaskId: record.pairedWithTaskId || "",
     pairedPosition: record.pairedPosition || undefined,
+    qualifiedPersonIds: Array.isArray(record.qualifiedPersonIds) ? record.qualifiedPersonIds : [],
     enabled: record.enabled,
   });
 }
@@ -307,11 +313,12 @@ function mapTemplate(record: any): TaskTemplate {
     waitingCanBeCovered: record.waitingCanBeCovered,
     pairedWithTaskId: record.pairedWithTaskId || "",
     pairedPosition: record.pairedPosition || undefined,
+    qualifiedPersonIds: Array.isArray(record.qualifiedPersonIds) ? record.qualifiedPersonIds : [],
     enabled: record.enabled,
   });
 }
 
-async function loadTaskTemplates(): Promise<TaskTemplate[]> {
+export async function loadTaskTemplates(): Promise<TaskTemplate[]> {
   await ensureAppPersistenceSeeded();
   await ensureDefaultTaskTemplatesSynced();
   const templates = await prisma.appTaskTemplate.findMany({
@@ -479,6 +486,7 @@ export async function updateTaskTemplate(
           ? { pairedWithTaskId: input.pairedWithTaskId && input.pairedWithTaskId !== id ? input.pairedWithTaskId : null }
           : {}),
         ...(input.pairedPosition !== undefined ? { pairedPosition: input.pairedPosition } : {}),
+        ...(input.qualifiedPersonIds !== undefined ? { qualifiedPersonIds: input.qualifiedPersonIds } : {}),
         ...(input.enabled !== undefined ? { enabled: input.enabled } : {}),
       },
     });
@@ -515,6 +523,19 @@ export async function updateTaskTemplate(
   });
 
   return updated ? mapTemplate(updated) : null;
+}
+
+/** Takes a deleted person off every task's list of who can do it. */
+export async function removePersonFromQualifiedLists(personId: string) {
+  const templates = await prisma.appTaskTemplate.findMany({ select: { id: true, qualifiedPersonIds: true } });
+  for (const template of templates) {
+    const ids = Array.isArray(template.qualifiedPersonIds) ? (template.qualifiedPersonIds as string[]) : [];
+    if (!ids.includes(personId)) continue;
+    await prisma.appTaskTemplate.update({
+      where: { id: template.id },
+      data: { qualifiedPersonIds: ids.filter((id) => id !== personId) },
+    });
+  }
 }
 
 export async function deleteTaskTemplate(id: string): Promise<boolean> {
