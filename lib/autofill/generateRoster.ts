@@ -20,7 +20,7 @@ import {
   type SchoolTourEntry,
 } from "@/lib/rosterTypes";
 import { SLOT_MINUTES, getTaskSegmentRows } from "@/lib/taskSegments";
-import { isQualifiedFor, isTourTemplate, type TaskTemplate } from "@/lib/taskTemplates";
+import { getPairedTaskIds, isQualifiedFor, isTourTemplate, type TaskTemplate } from "@/lib/taskTemplates";
 import { PlacementBoard, rangesOverlap, type RowRange } from "./placementBoard";
 import { buildTemplateMeta, templateAppliesOnDay, windowEndAt, type RowWindow, type TemplateMeta } from "./templateMeta";
 
@@ -35,6 +35,8 @@ export type AutofillInput = {
   variant: number;
   /** Blocks the user locked: they stay exactly where they are and everything else is placed around them. */
   lockedTasks?: GridTask[];
+  /** Keeps one person's tours at least this far apart where someone else can take one. Defaults to an hour. */
+  minTourGapMinutes?: number;
   createId?: () => string;
 };
 
@@ -80,6 +82,13 @@ type PlacementOptions = {
 };
 
 const DAY_KEYS_BY_WEEKDAY = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+/** Default gap between one person's tours, when the settings don't give one. */
+export const MIN_TOUR_GAP_MINUTES = 60;
+/**
+ * How much a too-close tour counts against someone, in tours. Below one, so
+ * nobody is given an extra tour just to keep a gap.
+ */
+const TOUR_GAP_WEIGHT = 0.75;
 const DEFAULT_TASK_COLOR = "#e2e8f0";
 
 function getRotatedRank(index: number, total: number, offset: number) {
@@ -118,10 +127,13 @@ export function generateAutofillRoster(input: AutofillInput): AutofillResult {
   // ---- Paired tasks ----
   // A task that goes with another (like admin straight after a break) isn't
   // scheduled on its own: it's placed beside every block of that task instead.
+  // One that goes with any of several (admin after the morning or the afternoon
+  // break) is placed once per person, beside the first of them with room.
 
-  const isPairedTemplate = (template: TaskTemplate) =>
-    !!template.pairedWithTaskId && template.pairedWithTaskId !== template.id && templateById.has(template.pairedWithTaskId);
+  const pairedAnchorIds = (template: TaskTemplate) => getPairedTaskIds(template).filter((id) => templateById.has(id));
+  const isPairedTemplate = (template: TaskTemplate) => pairedAnchorIds(template).length > 0;
   const pairedMetasByAnchor = new Map<string, TemplateMeta[]>();
+  const eitherPairedMetas: { meta: TemplateMeta; anchorIds: string[] }[] = [];
   for (const template of templates) {
     if (template.enabled === false || !isPairedTemplate(template)) continue;
     // It runs whenever its partner does, so its own days and time range don't apply.
@@ -131,8 +143,12 @@ export function generateAutofillRoster(input: AutofillInput): AutofillResult {
       timeline
     );
     if (!meta) continue;
-    const anchorId = template.pairedWithTaskId!;
-    pairedMetasByAnchor.set(anchorId, [...(pairedMetasByAnchor.get(anchorId) ?? []), meta]);
+    const anchorIds = pairedAnchorIds(template);
+    if (anchorIds.length > 1) {
+      eitherPairedMetas.push({ meta, anchorIds });
+      continue;
+    }
+    pairedMetasByAnchor.set(anchorIds[0], [...(pairedMetasByAnchor.get(anchorIds[0]) ?? []), meta]);
   }
   /** Tasks placed alongside each anchor block, so they can be undone together. */
   const pairedTasksByAnchor = new Map<GridTask["id"], { meta: TemplateMeta; task: GridTask }[]>();
@@ -375,16 +391,68 @@ export function generateAutofillRoster(input: AutofillInput): AutofillResult {
   };
 
   // ---- Sharing tours out ----
-  // Every tour, of any kind, goes to whoever has had the fewest tours so far.
+  // Every tour, of any kind, goes to whoever has the fewest tours, counting the
+  // share they're likely to get of set-time tours still to come. That matters
+  // when only some people can do those: school tours placed first shouldn't use
+  // them up. Tours for one person are also kept apart where someone else can
+  // take one, and nobody is given a tour that leaves a set-time tour with no one.
 
   const tourTemplateIds = new Set(templates.filter(isTourTemplate).map((template) => template.id));
   const isTourMeta = (meta: TemplateMeta) => tourTemplateIds.has(meta.id);
   const tourLoad = (emp: RosterEmployee) =>
     board.column(colOf(emp)).filter((task) => tourTemplateIds.has(task.type)).length;
+  const minTourGapRows = Math.ceil(Math.max(0, input.minTourGapMinutes ?? MIN_TOUR_GAP_MINUTES) / SLOT_MINUTES);
+
+  /** 0 when the range is far enough from this person's other tours, rising to 1 when it touches one. */
+  const tourCloseness = (emp: RosterEmployee, range: RowRange) => {
+    if (minTourGapRows <= 0) return 0;
+    const endRow = range.startRow + range.span;
+    let closeness = 0;
+    for (const task of board.column(colOf(emp))) {
+      if (!tourTemplateIds.has(task.type)) continue;
+      const taskEnd = task.startRow + task.span;
+      const gap = taskEnd <= range.startRow ? range.startRow - taskEnd : task.startRow >= endRow ? task.startRow - endRow : 0;
+      if (gap < minTourGapRows) closeness = Math.max(closeness, 1 - gap / (minTourGapRows + 1));
+    }
+    return closeness;
+  };
+
+  /** How strongly the tour should go to someone else: lower is better. */
+  const tourPressure = (meta: TemplateMeta, emp: RosterEmployee, range: RowRange) => {
+    let reserved = 0;
+    let starvesTour = false;
+    for (const slot of pendingTourSlots) {
+      if (slot.meta.id === meta.id && slot.range.startRow === range.startRow) continue;
+      if (hasBlockForTime(slot.meta, slot.range.startRow)) continue;
+      if (!isQualified(slot.meta, emp.id) || !isWithinShift(emp, slot.range)) continue;
+      const others = employees.filter(
+        (other) => other.id !== emp.id && isQualified(slot.meta, other.id) && isWithinShift(other, slot.range)
+      );
+      reserved += 1 / (others.length + 1);
+      if (rangesOverlap(slot.range, range) && !others.some((other) => isFree(other, slot.range, slot.meta))) {
+        starvesTour = true;
+      }
+    }
+    return {
+      starvesTour,
+      score: tourLoad(emp) + reserved + tourCloseness(emp, range) * TOUR_GAP_WEIGHT,
+    };
+  };
+
+  const compareTourPressure = (
+    meta: TemplateMeta,
+    a: { emp: RosterEmployee; range: RowRange },
+    b: { emp: RosterEmployee; range: RowRange }
+  ) => {
+    const pa = tourPressure(meta, a.emp, a.range);
+    const pb = tourPressure(meta, b.emp, b.range);
+    if (pa.starvesTour !== pb.starvesTour) return pa.starvesTour ? 1 : -1;
+    return pa.score - pb.score;
+  };
 
   const compareByAdjacencyThenLoad = (meta: TemplateMeta, range: RowRange) => (a: RosterEmployee, b: RosterEmployee) => {
     if (isTourMeta(meta)) {
-      const tourDiff = tourLoad(a) - tourLoad(b);
+      const tourDiff = compareTourPressure(meta, { emp: a, range }, { emp: b, range });
       if (tourDiff !== 0) return tourDiff;
       return compareRotation(a, b);
     }
@@ -667,7 +735,11 @@ export function generateAutofillRoster(input: AutofillInput): AutofillResult {
 
   const comparePlacementCandidates = (a: PlacementCandidate, b: PlacementCandidate) => {
     if (isTourMeta(a.meta)) {
-      const tourDiff = tourLoad(a.emp) - tourLoad(b.emp);
+      const tourDiff = compareTourPressure(
+        a.meta,
+        { emp: a.emp, range: { startRow: a.row, span: a.span } },
+        { emp: b.emp, range: { startRow: b.row, span: b.span } }
+      );
       if (tourDiff !== 0) return tourDiff;
     }
     const coverageDiff = compareCoverageAvailability(a.coverageAvailability, b.coverageAvailability);
@@ -728,6 +800,12 @@ export function generateAutofillRoster(input: AutofillInput): AutofillResult {
   const templatesForPrimaryPass = templatesToSchedule.filter(
     (meta) => !meta.attendedByAll && !meta.overwriteExistingTasks
   );
+
+  /** Set-time tours yet to be placed, so earlier tours can leave room for them. */
+  const pendingTourSlots = templatesToSchedule
+    .filter((meta) => isTourMeta(meta) && meta.regularTimeRows.length > 0)
+    .flatMap((meta) => meta.regularTimeRows.map((row) => ({ meta, range: { startRow: row, span: spanAt(meta, row) } })))
+    .filter((slot) => slot.range.span > 0);
 
   const schoolTourTemplate = templates.find((template) => template.schoolTourImportTarget) || null;
   const schoolTourMeta = schoolTourTemplate ? buildTemplateMeta(schoolTourTemplate, dayKey, timeline) : null;
@@ -800,8 +878,8 @@ export function generateAutofillRoster(input: AutofillInput): AutofillResult {
     return getCandidateRowsForMeta(meta);
   };
 
-  const reserveFixedTimeBlocks = () => {
-    for (const meta of templatesToSchedule.filter((entry) => entry.fixedTimeBlock)) {
+  const reserveFixedTimeBlocks = (metas: TemplateMeta[]) => {
+    for (const meta of metas) {
       const candidateRows = getFixedBlockCandidateRows(meta);
       const desiredPlacements = Math.min(
         meta.hasFixedTimes || meta.mustManned ? candidateRows.length : 1,
@@ -1141,7 +1219,7 @@ export function generateAutofillRoster(input: AutofillInput): AutofillResult {
         .filter((emp) => board.getEmpCount(meta.id, emp.id) < meta.maxPerEmp)
         .sort((a, b) => {
           if (isTourMeta(meta)) {
-            const tourDiff = tourLoad(a) - tourLoad(b);
+            const tourDiff = compareTourPressure(meta, { emp: a, range }, { emp: b, range });
             if (tourDiff !== 0) return tourDiff;
           }
           const conflictDiff = board.conflictCount(colOf(a), range) - board.conflictCount(colOf(b), range);
@@ -1163,6 +1241,30 @@ export function generateAutofillRoster(input: AutofillInput): AutofillResult {
 
       if (meta.protectsTourWindow && !hasBlockForTime(meta, row)) {
         protectedTaskFailures.push(`${meta.template.name} ${timeRangeForSpan(row, span)}`);
+      }
+    }
+  };
+
+  // ---- Tasks that go with one of several others ----
+
+  /** Once per person, beside the first of its partners (in the order listed) that has room. */
+  const placeEitherPairedTasks = () => {
+    for (const { meta, anchorIds } of eitherPairedMetas) {
+      const span = pairedSpan(meta);
+      const before = meta.template.pairedPosition === "before";
+      for (const emp of employees) {
+        if (!isQualified(meta, emp.id) || board.getEmpCount(meta.id, emp.id) > 0) continue;
+        const col = colOf(emp);
+        const spot = anchorIds
+          .flatMap((anchorId) =>
+            board
+              .column(col)
+              .filter((task) => task.type === anchorId)
+              .sort((a, b) => a.startRow - b.startRow)
+              .map((task) => ({ startRow: before ? task.startRow - span : task.startRow + task.span, span }))
+          )
+          .find((range) => isWithinShift(emp, range) && board.isRangeFree(col, range));
+        if (spot) placeTask(meta, col, spot.startRow, spot.span, emp.id);
       }
     }
   };
@@ -1266,8 +1368,17 @@ export function generateAutofillRoster(input: AutofillInput): AutofillResult {
 
   // ---- Run the passes ----
 
+  // Set-time tours only some people can do go first, fewest people first, so
+  // school tours (which anyone can take) are fitted around them rather than
+  // using up the only people who can do them.
+  const fixedTimeMetas = templatesToSchedule.filter((meta) => meta.fixedTimeBlock);
+  const qualifiedCount = (meta: TemplateMeta) => employees.filter((emp) => isQualified(meta, emp.id)).length;
+  const restrictedTourMetas = fixedTimeMetas
+    .filter((meta) => isTourMeta(meta) && (meta.template.qualifiedPersonIds?.length ?? 0) > 0)
+    .sort((a, b) => qualifiedCount(a) - qualifiedCount(b));
+  reserveFixedTimeBlocks(restrictedTourMetas);
   placeImportedSchoolTours();
-  reserveFixedTimeBlocks();
+  reserveFixedTimeBlocks(fixedTimeMetas.filter((meta) => !restrictedTourMetas.includes(meta)));
 
   const minimumTemplates = templatesForPrimaryPass.filter(isMinimumMeta);
   const coverageTemplates = templatesForPrimaryPass.filter((meta) => meta.mustManned);
@@ -1277,6 +1388,8 @@ export function generateAutofillRoster(input: AutofillInput): AutofillResult {
   minimumTemplates.forEach((meta, index) =>
     schedulePrimaryMeta(meta, minimumTemplates.slice(index + 1), coverageTemplates)
   );
+  // Breaks and other per-person tasks are in, so their partners go next, before cover fills the gaps.
+  placeEitherPairedTasks();
   coverageTemplates.forEach((meta) => schedulePrimaryMeta(meta));
   otherPrimaryTemplates.forEach((meta) => schedulePrimaryMeta(meta));
 
@@ -1284,6 +1397,8 @@ export function generateAutofillRoster(input: AutofillInput): AutofillResult {
     meta.attendedByAll ? scheduleAttendedByAllMeta(meta) : scheduleOverrideMeta(meta)
   );
 
+  // Again, for partners placed since (like a task that takes priority).
+  placeEitherPairedTasks();
   spreadFloorTime();
 
   // ---- Report what couldn't be placed ----

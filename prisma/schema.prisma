@@ -107,6 +107,8 @@ model AppTaskTemplate {
   schoolTourImportTarget Boolean  @default(false)
   waitingCanBeCovered    Boolean  @default(false)
   pairedWithTaskId       String?
+  /// Every task it can go with, in order of preference (see TaskTemplate.pairedWithTaskIds).
+  pairedWithTaskIds      Json?
   pairedPosition         String?
   /// Ids of the people who can do this task; empty or null means anyone.
   qualifiedPersonIds     Json?
@@ -122,6 +124,7 @@ model AppSettings {
   id          String   @id
   hoursByDay  Json
   upcomingDays Int     @default(7)
+  minTourGapMinutes Int @default(60)
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
   dayHours    AppSettingsDayHours[]

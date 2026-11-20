@@ -250,6 +250,7 @@ export default function EditorClient({
           onRestoreDraftHours={handleRestoreDraftHours}
           people={people}
           templates={templates}
+          minTourGapMinutes={settings.minTourGapMinutes}
         />
       </div>
     </div>

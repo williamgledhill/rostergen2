@@ -13,6 +13,7 @@ import {
   TASK_TEMPLATE_REFRESH_STORAGE_KEY,
   TOUR_CATEGORY,
   TOUR_WAITING_MINUTES,
+  getPairedTaskIds,
   isFloorTemplate,
   isTourTemplate,
   type TaskTemplate,
@@ -42,7 +43,10 @@ function describeDays(days: string[] = []) {
 /** A few words on the rules that matter most when scanning the list. */
 function describeTask(task: TaskTemplate, nameById: Map<string, string>) {
   const parts: string[] = [];
-  const pairedName = task.pairedWithTaskId ? nameById.get(task.pairedWithTaskId) : undefined;
+  const pairedNames = getPairedTaskIds(task)
+    .map((id) => nameById.get(id))
+    .filter((name): name is string => !!name);
+  const pairedName = pairedNames.length ? pairedNames.join(" or ") : undefined;
   if (pairedName) parts.push(`${task.pairedPosition === "before" ? "Before" : "After"} ${pairedName}`);
   if (task.attendedByAll) parts.push("Everyone attends");
   else if (task.mustManned) parts.push("Must be manned");

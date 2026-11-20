@@ -40,6 +40,7 @@ describe("workspaceData person cache updates", () => {
           Sun: { start: "09:00", end: "17:00" },
         },
         upcomingDays: 7,
+        minTourGapMinutes: 60,
       },
       templates: [],
       savedRoster: null,

@@ -208,6 +208,7 @@ async function seedTaskTemplatesIfNeeded() {
       schoolTourImportTarget: Boolean(template.schoolTourImportTarget),
       waitingCanBeCovered: Boolean(template.waitingCanBeCovered),
       pairedWithTaskId: template.pairedWithTaskId || null,
+      pairedWithTaskIds: toInputJson(template.pairedWithTaskIds || []),
       pairedPosition: template.pairedPosition || null,
       qualifiedPersonIds: toInputJson(template.qualifiedPersonIds || []),
       enabled: template.enabled !== false,

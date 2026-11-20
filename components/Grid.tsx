@@ -120,6 +120,8 @@ type GridProps = {
   initialSavedAt?: string;
   people: Person[];
   templates: TaskTemplate[];
+  /** From settings: autofill keeps one person's tours at least this far apart. */
+  minTourGapMinutes?: number;
   onSaveStateChange?: (state: RosterSaveState) => void;
   onAutofillNoticeChange?: (notice: AutofillNotice | null) => void;
   onRestoreDraftHours?: (hours: { start: string; end: string }) => void;
@@ -138,6 +140,7 @@ const Grid = forwardRef<GridHandle, GridProps>(function Grid(
     initialSavedAt,
     people,
     templates: initialTemplates,
+    minTourGapMinutes,
     onSaveStateChange,
     onAutofillNoticeChange,
     onRestoreDraftHours,
@@ -642,10 +645,21 @@ const Grid = forwardRef<GridHandle, GridProps>(function Grid(
       timeline,
       variant,
       lockedTasks: tasksRef.current.filter(isTaskLocked),
+      minTourGapMinutes,
     });
     applyRosterState(employees, result.tasks);
     if (result.notice !== undefined) onAutofillNoticeChange?.(result.notice);
-  }, [employees, people, templates, schoolTours, rosterDate, timeline, applyRosterState, onAutofillNoticeChange]);
+  }, [
+    employees,
+    people,
+    templates,
+    schoolTours,
+    rosterDate,
+    timeline,
+    minTourGapMinutes,
+    applyRosterState,
+    onAutofillNoticeChange,
+  ]);
 
   // ---- Saving ----
 

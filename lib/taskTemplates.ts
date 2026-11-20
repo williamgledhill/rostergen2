@@ -26,6 +26,12 @@ export type TaskTemplate = {
   waitingCanBeCovered?: boolean;
   /** Autofill places this straight before or after every block of that task, for the same person. */
   pairedWithTaskId?: string;
+  /**
+   * Every task it can go with, in order of preference; the first is also kept in
+   * pairedWithTaskId. With more than one, autofill places it once a day per
+   * person, beside the first of them that has room.
+   */
+  pairedWithTaskIds?: string[];
   pairedPosition?: PairedPosition;
   packingMinutes?: number;
   limitPerDay?: number;
@@ -69,6 +75,16 @@ export function isFloorTemplate(template: TaskTemplate) {
 export function isQualifiedFor(template: Pick<TaskTemplate, "qualifiedPersonIds">, personId: string | number) {
   const ids = template.qualifiedPersonIds ?? [];
   return ids.length === 0 || ids.includes(String(personId));
+}
+
+/** The tasks this one goes with, in order of preference. */
+export function getPairedTaskIds(template: Pick<TaskTemplate, "id" | "pairedWithTaskId" | "pairedWithTaskIds">) {
+  const ids = template.pairedWithTaskIds?.length
+    ? template.pairedWithTaskIds
+    : template.pairedWithTaskId
+      ? [template.pairedWithTaskId]
+      : [];
+  return Array.from(new Set(ids.filter((id) => typeof id === "string" && id && id !== template.id)));
 }
 
 export const TASK_TEMPLATE_REFRESH_EVENT = "task-templates-updated";

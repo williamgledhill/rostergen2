@@ -5,7 +5,7 @@ import { parseJsonBody, serverError, timeSchema } from "@/lib/apiHelpers";
 import { enforceSameOrigin, requireSession } from "@/lib/apiAuth";
 import { CACHE_TAGS } from "@/lib/cacheTags";
 import { getSettings, saveSettings } from "@/lib/settings";
-import { DAY_KEYS } from "@/lib/settingsDefaults";
+import { DAY_KEYS, DEFAULT_SETTINGS, MAX_TOUR_GAP_MINUTES } from "@/lib/settingsDefaults";
 
 const dayHoursSchema = z.object({ start: timeSchema, end: timeSchema });
 const settingsSchema = z.object({
@@ -16,6 +16,7 @@ const settingsSchema = z.object({
     >
   ),
   upcomingDays: z.coerce.number().int().min(1).max(90),
+  minTourGapMinutes: z.coerce.number().int().min(0).max(MAX_TOUR_GAP_MINUTES).default(DEFAULT_SETTINGS.minTourGapMinutes),
 });
 
 export async function GET() {

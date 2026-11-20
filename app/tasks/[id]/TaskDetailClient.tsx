@@ -17,6 +17,7 @@ import {
   TASK_TEMPLATE_REFRESH_STORAGE_KEY,
   TOUR_CATEGORY,
   TOUR_WAITING_MINUTES,
+  getPairedTaskIds,
   isFloorTemplate,
   isTourTemplate,
   type TaskTemplate,
@@ -214,6 +215,11 @@ export default function TaskDetailClient({ id, initialTask }: { id: string; init
     );
   }
 
+  /** The tasks it goes with, in order of preference; the first is also kept as pairedWithTaskId. */
+  function updatePairedIds(ids: string[], patch: Partial<TaskTemplate> = {}) {
+    updateTask({ ...patch, pairedWithTaskIds: ids, pairedWithTaskId: ids[0] ?? "" });
+  }
+
   function updateTask(patch: Partial<TaskTemplate>) {
     setTask((current) => (current ? { ...current, ...patch } : current));
   }
@@ -367,6 +373,7 @@ export default function TaskDetailClient({ id, initialTask }: { id: string; init
   const isTour = isTourTemplate(task);
   const timesByDay: TimesByDay = asRecord(task.regularTimesByDay);
   const kindLabel = isTour ? "tour" : "task";
+  const pairedIds = getPairedTaskIds(task);
   const qualifiedIds = task.qualifiedPersonIds ?? [];
   const restricted = qualifiedIds.length > 0;
   const peopleById = new Map((people ?? []).map((person) => [person.id, person]));
@@ -534,16 +541,15 @@ export default function TaskDetailClient({ id, initialTask }: { id: string; init
             <SettingRow
               id="paired-with"
               label="Goes with another task"
-              description="Autofill places this straight before or after every block of that task, for the same person, instead of on its own."
-              checked={!!task.pairedWithTaskId}
+              description="Autofill places this straight before or after that task, for the same person, instead of on its own."
+              checked={pairedIds.length > 0}
               onChange={(checked) =>
-                updateTask({
-                  pairedWithTaskId: checked ? task.pairedWithTaskId || otherTasks[0]?.id || "" : "",
+                updatePairedIds(checked ? [pairedIds[0] || otherTasks[0]?.id || ""].filter(Boolean) : [], {
                   pairedPosition: task.pairedPosition || "after",
                 })
               }
             >
-              <div className="flex flex-wrap gap-2">
+              <div className="flex flex-col gap-2">
                 <select
                   id="paired-position"
                   aria-label="Before or after"
@@ -554,24 +560,58 @@ export default function TaskDetailClient({ id, initialTask }: { id: string; init
                   <option value="after">Straight after</option>
                   <option value="before">Straight before</option>
                 </select>
-                <select
-                  id="paired-task"
-                  aria-label="Task it goes with"
-                  className="input min-w-[200px] flex-1"
-                  value={task.pairedWithTaskId || ""}
-                  onChange={(event) => updateTask({ pairedWithTaskId: event.target.value })}
-                >
-                  {!otherTasks.some((entry) => entry.id === task.pairedWithTaskId) && (
-                    <option value={task.pairedWithTaskId || ""}>{task.pairedWithTaskId ? "Loading…" : "Choose a task"}</option>
-                  )}
-                  {otherTasks.map((entry) => (
-                    <option key={entry.id} value={entry.id}>
-                      {entry.name}
-                    </option>
-                  ))}
-                </select>
+                {pairedIds.map((pairedId, index) => (
+                  <div key={index} className="flex items-center gap-2">
+                    <span className="w-6 shrink-0 text-right text-[13px] text-[var(--text-muted)]">{index > 0 ? "or" : ""}</span>
+                    <select
+                      id={index === 0 ? "paired-task" : undefined}
+                      aria-label={index === 0 ? "Task it goes with" : `Otherwise, task ${index + 1} it goes with`}
+                      className="input min-w-[200px] flex-1"
+                      value={pairedId}
+                      onChange={(event) =>
+                        updatePairedIds(pairedIds.map((entry, i) => (i === index ? event.target.value : entry)))
+                      }
+                    >
+                      {!otherTasks.some((entry) => entry.id === pairedId) && (
+                        <option value={pairedId}>{pairedId ? "Loading…" : "Choose a task"}</option>
+                      )}
+                      {otherTasks
+                        .filter((entry) => entry.id === pairedId || !pairedIds.includes(entry.id))
+                        .map((entry) => (
+                          <option key={entry.id} value={entry.id}>
+                            {entry.name}
+                          </option>
+                        ))}
+                    </select>
+                    {pairedIds.length > 1 && (
+                      <button
+                        type="button"
+                        className="grid h-8 w-8 shrink-0 place-items-center rounded text-[var(--text-muted)] hover:bg-[var(--surface-subtle)] hover:text-[var(--text)]"
+                        onClick={() => updatePairedIds(pairedIds.filter((_, i) => i !== index))}
+                        aria-label={`Remove ${otherTasks.find((entry) => entry.id === pairedId)?.name ?? "this task"}`}
+                      >
+                        <X className="h-3.5 w-3.5" />
+                      </button>
+                    )}
+                  </div>
+                ))}
+                {otherTasks.some((entry) => !pairedIds.includes(entry.id)) && (
+                  <button
+                    type="button"
+                    className="btn btn-sm ml-8 w-fit"
+                    onClick={() =>
+                      updatePairedIds([...pairedIds, otherTasks.find((entry) => !pairedIds.includes(entry.id))!.id])
+                    }
+                  >
+                    <Plus />
+                    Or another task
+                  </button>
+                )}
               </div>
               <p className="mt-2 text-[13px] text-[var(--text-muted)]">
+                {pairedIds.length > 1
+                  ? "Each person gets it once a day, beside the first of these with room: if there's no room by the first, it goes by the next."
+                  : "It goes beside every block of that task."}{" "}
                 It lasts its fixed time, or its ideal time in one go if it has no fixed time.
               </p>
             </SettingRow>

@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useEffect, useMemo, useRef, useState } from "react";
-import { AlertTriangle, Plus } from "lucide-react";
+import { AlertTriangle, ChevronLeft, ChevronRight, History, Plus } from "lucide-react";
 import EditorClient from "@/app/editor/EditorClient";
 import PeopleClient from "@/app/people/PeopleClient";
 import PersonDetailClient from "@/app/people/[id]/PersonDetailClient";
@@ -17,7 +17,7 @@ import { buildEditorHref } from "@/lib/editorPersistence";
 import { getDayScheduleForDate, type Person } from "@/lib/people";
 import type { RosterFile } from "@/lib/rosters";
 import type { GridTask, RosterEmployee } from "@/lib/rosterTypes";
-import { useSpaLocation } from "@/lib/spaNavigation";
+import { navigateWithinSpa, useSpaLocation } from "@/lib/spaNavigation";
 import type { TaskTemplate } from "@/lib/taskTemplates";
 import {
   editorDataKey,
@@ -173,6 +173,25 @@ function PlaceholderPage({ title, description }: { title: string; description: s
   );
 }
 
+function monthHref(month: string) {
+  return `/rosters/months/${month}`;
+}
+
+function currentMonth() {
+  return formatLocalId(new Date()).slice(0, 7);
+}
+
+/** The month before (-1) or after (+1), as YYYY-MM. */
+function shiftMonth(month: string, offset: number) {
+  const [year, monthNumber] = month.split("-").map(Number);
+  const date = new Date(year, monthNumber - 1 + offset, 1);
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}`;
+}
+
+function goTo(href: string) {
+  if (!navigateWithinSpa(href)) window.location.href = href;
+}
+
 function monthLabel(month: string) {
   if (!/^\d{4}-\d{2}$/.test(month)) return month || "this month";
   const [year, monthNumber] = month.split("-").map(Number);
@@ -202,10 +221,16 @@ function RostersView() {
         title="Rosters"
         description={`The next ${settings.upcomingDays} day${settings.upcomingDays === 1 ? "" : "s"}. Open a day to plan or edit it.`}
         actions={
-          <SpaLink href={buildEditorHref(formatLocalId(new Date()))} className="btn btn-primary">
-            <Plus />
-            Open today
-          </SpaLink>
+          <>
+            <SpaLink href={monthHref(currentMonth())} className="btn">
+              <History />
+              Past rosters
+            </SpaLink>
+            <SpaLink href={buildEditorHref(formatLocalId(new Date()))} className="btn btn-primary">
+              <Plus />
+              Open today
+            </SpaLink>
+          </>
         }
       />
       <RosterTable
@@ -215,6 +240,10 @@ function RostersView() {
             Showing {settings.upcomingDays} upcoming day{settings.upcomingDays === 1 ? "" : "s"}.{" "}
             <SpaLink href="/settings" className="font-medium text-[var(--accent)] hover:underline">
               Change in Settings
+            </SpaLink>
+            {" · "}
+            <SpaLink href={monthHref(currentMonth())} className="font-medium text-[var(--accent)] hover:underline">
+              Look back at past rosters
             </SpaLink>
           </>
         }
@@ -230,17 +259,70 @@ function MonthRostersView({ month }: { month: string }) {
     () => refreshMonthRostersData(month)
   );
 
-  if (state.status === "loading") return <LoadingState label="Loading month" />;
+  const thisMonth = currentMonth();
+  const header = (
+    <PageHeader
+      title={`Rosters for ${monthLabel(month)}`}
+      description="Every saved day in this month, newest first."
+      breadcrumb={{ label: "Rosters", href: "/rosters" }}
+      actions={
+        <>
+          <div className="flex items-center">
+            <SpaLink href={monthHref(shiftMonth(month, -1))} className="btn btn-icon rounded-r-none" aria-label="Previous month">
+              <ChevronLeft />
+            </SpaLink>
+            <SpaLink
+              href={monthHref(thisMonth)}
+              className={`btn -ml-px rounded-none ${month === thisMonth ? "pointer-events-none opacity-50" : ""}`}
+              aria-disabled={month === thisMonth}
+            >
+              This month
+            </SpaLink>
+            <SpaLink href={monthHref(shiftMonth(month, 1))} className="btn btn-icon -ml-px rounded-l-none" aria-label="Next month">
+              <ChevronRight />
+            </SpaLink>
+          </div>
+          <input
+            type="month"
+            className="input"
+            value={month}
+            max={shiftMonth(thisMonth, 12)}
+            onChange={(event) => {
+              if (/^\d{4}-\d{2}$/.test(event.target.value)) goTo(monthHref(event.target.value));
+            }}
+            aria-label="Go to month"
+          />
+        </>
+      }
+    />
+  );
+
+  if (state.status === "loading") {
+    return (
+      <div className="mx-auto max-w-6xl">
+        {header}
+        <LoadingState label="Loading month" />
+      </div>
+    );
+  }
   if (state.status === "error") return <ErrorState message={state.error} />;
 
+  const newestFirst = [...state.data].sort((a, b) => b.id.localeCompare(a.id));
   return (
     <div className="mx-auto max-w-6xl">
-      <PageHeader
-        title={`Rosters for ${monthLabel(month)}`}
-        description="Every saved day in this month."
-        breadcrumb={{ label: "Rosters", href: "/rosters" }}
+      {header}
+      <RosterTable
+        rosters={newestFirst}
+        emptyMessage={`Nothing was saved in ${monthLabel(month)}.`}
+        footer={
+          <>
+            {newestFirst.length} saved day{newestFirst.length === 1 ? "" : "s"}.{" "}
+            <SpaLink href={monthHref(shiftMonth(month, -1))} className="font-medium text-[var(--accent)] hover:underline">
+              Earlier: {monthLabel(shiftMonth(month, -1))}
+            </SpaLink>
+          </>
+        }
       />
-      <RosterTable rosters={state.data} />
     </div>
   );
 }
@@ -371,7 +453,7 @@ export default function WorkspaceRouter({ user }: { user: AuthUser }) {
   if (pathname === "/tasks") return <TasksView kind="task" />;
   if (pathname === "/tours") return <TasksView kind="tour" />;
   if (pathname === "/settings") return <SettingsView user={user} />;
-  if (pathname === "/rosters/old") return <PlaceholderPage title="Old rosters" description="No past rosters to show yet." />;
+  if (pathname === "/rosters/old") return <MonthRostersView month={currentMonth()} />;
   if (pathname === "/rosters/archive") {
     return <PlaceholderPage title="Archive" description="Archived rosters will appear here." />;
   }

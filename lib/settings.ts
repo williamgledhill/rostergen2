@@ -1,7 +1,14 @@
 import { AppDayOfWeek } from "@prisma/client";
 import { prisma } from "./prisma";
 import { ensureAppPersistenceSeeded } from "./appPersistenceSeed";
-import { DAY_KEYS, DEFAULT_SETTINGS, AppSettings, DayKey, DayHours } from "./settingsDefaults";
+import {
+  DAY_KEYS,
+  DEFAULT_SETTINGS,
+  AppSettings,
+  DayKey,
+  DayHours,
+  normalizeMinTourGapMinutes,
+} from "./settingsDefaults";
 import { unstable_cache } from "next/cache";
 import { CACHE_TAGS } from "./cacheTags";
 
@@ -60,6 +67,7 @@ export async function loadSettings(): Promise<AppSettings> {
   return {
     hoursByDay: normalizeHoursByDay(record?.hoursByDay),
     upcomingDays: normalizeUpcomingDays(record?.upcomingDays),
+    minTourGapMinutes: normalizeMinTourGapMinutes(record?.minTourGapMinutes),
   };
 }
 
@@ -77,6 +85,7 @@ export async function saveSettings(input: AppSettings): Promise<AppSettings> {
   const normalized = {
     hoursByDay: normalizeHoursByDay(input?.hoursByDay),
     upcomingDays: normalizeUpcomingDays(input?.upcomingDays),
+    minTourGapMinutes: normalizeMinTourGapMinutes(input?.minTourGapMinutes),
   };
 
   await prisma.$transaction(async (tx) => {
@@ -85,11 +94,13 @@ export async function saveSettings(input: AppSettings): Promise<AppSettings> {
       update: {
         hoursByDay: normalized.hoursByDay as never,
         upcomingDays: normalized.upcomingDays,
+        minTourGapMinutes: normalized.minTourGapMinutes,
       },
       create: {
         id: "default",
         hoursByDay: normalized.hoursByDay as never,
         upcomingDays: normalized.upcomingDays,
+        minTourGapMinutes: normalized.minTourGapMinutes,
       },
     });
 

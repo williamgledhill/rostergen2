@@ -1,7 +1,7 @@
 import { AppDayOfWeek } from "@prisma/client";
 import { prisma } from "./prisma";
 import { ensureAppPersistenceSeeded } from "./appPersistenceSeed";
-import { defaultTaskTemplates, isTourTemplate, TaskTemplate, slugifyName, TOUR_WAITING_MINUTES } from "./taskTemplates";
+import { defaultTaskTemplates, getPairedTaskIds, isTourTemplate, TaskTemplate, slugifyName, TOUR_WAITING_MINUTES } from "./taskTemplates";
 import { unstable_cache } from "next/cache";
 import { CACHE_TAGS } from "./cacheTags";
 import { runtimeSeedEnabled } from "./runtimeSeed";
@@ -54,6 +54,11 @@ function applyDefaults(t: TaskTemplate): TaskTemplate {
       ? t.schoolTourImportTarget
       : false;
   const waitingCanBeCovered = typeof t.waitingCanBeCovered === "boolean" ? t.waitingCanBeCovered : false;
+  const pairedWithTaskIds = getPairedTaskIds({
+    id: t.id,
+    pairedWithTaskId: typeof t.pairedWithTaskId === "string" ? t.pairedWithTaskId : "",
+    pairedWithTaskIds: Array.isArray(t.pairedWithTaskIds) ? t.pairedWithTaskIds : [],
+  });
   const qualifiedPersonIds = Array.isArray(t.qualifiedPersonIds)
     ? Array.from(new Set(t.qualifiedPersonIds.filter((id): id is string => typeof id === "string" && id.length > 0)))
     : [];
@@ -86,7 +91,8 @@ function applyDefaults(t: TaskTemplate): TaskTemplate {
     maxConcurrentPerTimeslot,
     schoolTourImportTarget,
     waitingCanBeCovered,
-    pairedWithTaskId: typeof t.pairedWithTaskId === "string" && t.pairedWithTaskId ? t.pairedWithTaskId : "",
+    pairedWithTaskId: pairedWithTaskIds[0] ?? "",
+    pairedWithTaskIds,
     pairedPosition: t.pairedPosition === "before" ? "before" : "after",
     qualifiedPersonIds,
     enabled,
@@ -128,7 +134,8 @@ export function toTemplateCreateInput(template: TaskTemplate) {
       : 0,
     schoolTourImportTarget: Boolean(template.schoolTourImportTarget),
     waitingCanBeCovered: Boolean(template.waitingCanBeCovered),
-    pairedWithTaskId: template.pairedWithTaskId || null,
+    pairedWithTaskId: getPairedTaskIds(template)[0] ?? null,
+    pairedWithTaskIds: getPairedTaskIds(template),
     pairedPosition: template.pairedPosition || null,
     qualifiedPersonIds: template.qualifiedPersonIds || [],
     enabled: template.enabled !== false,
@@ -248,6 +255,7 @@ export function mapLegacyTemplate(record: any): TaskTemplate {
     schoolTourImportTarget: record.schoolTourImportTarget,
     waitingCanBeCovered: record.waitingCanBeCovered,
     pairedWithTaskId: record.pairedWithTaskId || "",
+    pairedWithTaskIds: Array.isArray(record.pairedWithTaskIds) ? record.pairedWithTaskIds : [],
     pairedPosition: record.pairedPosition || undefined,
     qualifiedPersonIds: Array.isArray(record.qualifiedPersonIds) ? record.qualifiedPersonIds : [],
     enabled: record.enabled,
@@ -312,6 +320,7 @@ function mapTemplate(record: any): TaskTemplate {
     schoolTourImportTarget: record.schoolTourImportTarget,
     waitingCanBeCovered: record.waitingCanBeCovered,
     pairedWithTaskId: record.pairedWithTaskId || "",
+    pairedWithTaskIds: Array.isArray(record.pairedWithTaskIds) ? record.pairedWithTaskIds : [],
     pairedPosition: record.pairedPosition || undefined,
     qualifiedPersonIds: Array.isArray(record.qualifiedPersonIds) ? record.qualifiedPersonIds : [],
     enabled: record.enabled,
@@ -482,8 +491,15 @@ export async function updateTaskTemplate(
           ? { schoolTourImportTarget: input.schoolTourImportTarget }
           : {}),
         ...(input.waitingCanBeCovered !== undefined ? { waitingCanBeCovered: input.waitingCanBeCovered } : {}),
-        ...(input.pairedWithTaskId !== undefined
-          ? { pairedWithTaskId: input.pairedWithTaskId && input.pairedWithTaskId !== id ? input.pairedWithTaskId : null }
+        ...(input.pairedWithTaskId !== undefined || input.pairedWithTaskIds !== undefined
+          ? (() => {
+              const pairedIds = getPairedTaskIds({
+                id,
+                pairedWithTaskId: input.pairedWithTaskId,
+                pairedWithTaskIds: input.pairedWithTaskIds,
+              });
+              return { pairedWithTaskId: pairedIds[0] ?? null, pairedWithTaskIds: pairedIds };
+            })()
           : {}),
         ...(input.pairedPosition !== undefined ? { pairedPosition: input.pairedPosition } : {}),
         ...(input.qualifiedPersonIds !== undefined ? { qualifiedPersonIds: input.qualifiedPersonIds } : {}),

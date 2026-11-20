@@ -6,7 +6,7 @@ import type { Person } from "./people";
 import { loadPeople, mapLegacyPerson, scheduleRowsForPerson } from "./peopleStore";
 import { mapRosterRecord, toRosterEmployeeRows, toRosterTaskRows } from "./rosters";
 import { loadSettings, normalizeHoursByDay, normalizeUpcomingDays, toDayHourRows } from "./settings";
-import type { AppSettings } from "./settingsDefaults";
+import { normalizeMinTourGapMinutes, type AppSettings } from "./settingsDefaults";
 import type { TaskTemplate } from "./taskTemplates";
 import { loadTaskTemplates, mapLegacyTemplate, toRelationRows, toTemplateCreateInput } from "./taskTemplatesStore";
 import { recordAudit, UserAdminError, type Actor } from "./userAdmin";
@@ -107,6 +107,7 @@ export function parseBackupData(input: unknown): BackupData {
     settings: {
       hoursByDay: normalizeHoursByDay(settings.hoursByDay),
       upcomingDays: normalizeUpcomingDays(settings.upcomingDays),
+      minTourGapMinutes: normalizeMinTourGapMinutes(settings.minTourGapMinutes),
     },
     rosters: data.rosters.map((roster: any) => {
       const date = parseLocalId(roster.id)!;
@@ -295,7 +296,9 @@ export async function restoreBackup(actor: Actor, data: BackupData, source: { ba
       }
 
       await tx.appSettings.create({
-        data: { id: "default", hoursByDay: data.settings.hoursByDay as never, upcomingDays: data.settings.upcomingDays },
+        data: { id: "default", hoursByDay: data.settings.hoursByDay as never, upcomingDays: data.settings.upcomingDays,
+          minTourGapMinutes: data.settings.minTourGapMinutes,
+        },
       });
       await tx.appSettingsDayHours.createMany({
         data: toDayHourRows(data.settings.hoursByDay).map((row) => ({ settingsId: "default", ...row })),

@@ -55,6 +55,7 @@ const updateTemplateSchema = z.object({
   schoolTourImportTarget: z.boolean().optional(),
   waitingCanBeCovered: z.boolean().optional(),
   pairedWithTaskId: z.string().max(200).optional(),
+  pairedWithTaskIds: z.array(z.string().trim().min(1).max(200)).max(20).optional(),
   pairedPosition: z.enum(["before", "after"]).optional(),
   qualifiedPersonIds: z.array(z.string().trim().min(1).max(120)).max(500).optional(),
   enabled: z.boolean().optional(),

@@ -16,7 +16,15 @@ function isBlank(roster: RosterFile) {
 
 const countOrDash = (count: number) => (count > 0 ? count : <span className="text-[var(--text-faint)]">—</span>);
 
-export default function RosterTable({ rosters, footer }: { rosters: RosterFile[]; footer?: React.ReactNode }) {
+export default function RosterTable({
+  rosters,
+  footer,
+  emptyMessage = "No rosters yet.",
+}: {
+  rosters: RosterFile[];
+  footer?: React.ReactNode;
+  emptyMessage?: string;
+}) {
   const router = useRouter();
   const todayId = useMemo(() => formatLocalId(new Date()), []);
 
@@ -81,7 +89,7 @@ export default function RosterTable({ rosters, footer }: { rosters: RosterFile[]
             {rosters.length === 0 && (
               <tr>
                 <td colSpan={6} className="py-10 text-center text-[var(--text-muted)]">
-                  No rosters yet.
+                  {emptyMessage}
                 </td>
               </tr>
             )}

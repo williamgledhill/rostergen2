@@ -137,6 +137,65 @@ describe("generateAutofillRoster", () => {
       expect(overlapsInSameColumn(result.tasks)).toBe(false);
     });
 
+    describe("with a choice of partners", () => {
+      const morningBreak = template({
+        id: "morning",
+        durationMinutes: 15,
+        minPerEmployeePerDay: 1,
+        maxPerEmployeePerDay: 1,
+        autogenStart: "10:00",
+        autogenEnd: "11:00",
+      });
+      const afternoonBreak = template({
+        id: "afternoon",
+        durationMinutes: 15,
+        minPerEmployeePerDay: 1,
+        maxPerEmployeePerDay: 1,
+        autogenStart: "14:30",
+        autogenEnd: "15:30",
+      });
+      const emails = template({
+        id: "emails",
+        durationMinutes: 30,
+        pairedWithTaskId: "morning",
+        pairedWithTaskIds: ["morning", "afternoon"],
+        pairedPosition: "after",
+      });
+
+      it("places it once per person, after the first partner in the list", () => {
+        for (const variant of [0, 1, 2]) {
+          const result = run({ variant, templates: [afternoonBreak, morningBreak, emails, template({ id: "gallery" })] });
+          const emailBlocks = result.tasks.filter((t) => t.type === "emails");
+          expect(emailBlocks).toHaveLength(3);
+          for (const block of emailBlocks) {
+            const morning = result.tasks.find((t) => t.type === "morning" && t.employeeId === block.employeeId)!;
+            expect(block.startRow).toBe(morning.startRow + morning.span);
+          }
+          expect(overlapsInSameColumn(result.tasks)).toBe(false);
+        }
+      });
+
+      it("uses the next partner when there's no room after the first", () => {
+        const people = [person("1")];
+        // A set-time tour fills the time straight after the only morning break slot.
+        const result = run({
+          people,
+          templates: [
+            template({ ...morningBreak, autogenStart: "10:00", autogenEnd: "10:15" }),
+            afternoonBreak,
+            emails,
+            template({ id: "talk", durationMinutes: 60, regularTimes: ["10:15"], mustManned: true }),
+            template({ id: "gallery" }),
+          ],
+        });
+        const emailBlocks = result.tasks.filter((t) => t.type === "emails");
+        expect(emailBlocks).toHaveLength(1);
+        const afternoon = result.tasks.find((t) => t.type === "afternoon")!;
+        expect(emailBlocks[0].startRow).toBe(afternoon.startRow + afternoon.span);
+        expect(overlapsInSameColumn(result.tasks)).toBe(false);
+      });
+    });
+
     it("can go straight before its partner instead", () => {
       const result = run({
         templates: [
@@ -582,5 +641,134 @@ describe("generateAutofillRoster", () => {
       schoolTours: [{ id: "s1", rosterDateId: "2026-09-30", startTime: "10:00", schoolName: "A", studentCount: 20 }],
     });
     expect(tasks.filter((t) => t.type === "school")).toEqual([lockedTour]);
+  });
+
+  it("leaves the only people who can do a tour free for it, and still shares tours out evenly", () => {
+    const people = [person("1"), person("2"), person("3"), person("4"), person("5")];
+    const tour = { mustManned: true, overwriteExistingTasks: true, durationMinutes: 45, waitingMinutes: 15, category: "Tours" };
+    for (const variant of [0, 1, 2, 3, 4]) {
+      const { tasks, notice } = run({
+        people,
+        variant,
+        templates: [
+          template({ id: "songlines", ...tour, mustManned: true, overwriteExistingTasks: false, regularTimes: ["11:00"], qualifiedPersonIds: ["1"] }),
+          template({ id: "public", ...tour, regularTimes: ["10:30", "13:00"], qualifiedPersonIds: ["1", "2"] }),
+          template({ id: "school", ...tour, durationMinutes: 60, schoolTourImportTarget: true, enabled: false }),
+          template({ id: "gallery" }),
+        ],
+        schoolTours: ["09:30", "10:30", "11:00", "13:30"].map((startTime, i) => ({
+          id: `s${i}`,
+          rosterDateId: "2026-09-30",
+          startTime,
+          schoolName: `School ${i}`,
+          studentCount: 20,
+        })),
+      });
+      const tourTypes = ["songlines", "public", "school"];
+      expect(tasks.filter((t) => t.type === "songlines").map((t) => t.employeeId)).toEqual(["1"]);
+      expect(tasks.filter((t) => t.type === "public")).toHaveLength(2);
+      expect(tasks.filter((t) => t.type === "school")).toHaveLength(4);
+      const perPerson = people.map((p) => tasks.filter((t) => t.employeeId === p.id && tourTypes.includes(t.type)).length);
+      expect(Math.max(...perPerson)).toBeLessThanOrEqual(2);
+      expect(notice?.messages.join(" ") ?? "").not.toMatch(/songlines|public|school/i);
+    }
+  });
+
+  it("keeps one person's tours at least an hour apart when someone else can take one", () => {
+    const people = [person("1"), person("2")];
+    const tour = { mustManned: true, overwriteExistingTasks: true, durationMinutes: 45, waitingMinutes: 15, category: "Tours" };
+    for (const variant of [0, 1, 2, 3]) {
+      const { tasks } = run({
+        people,
+        variant,
+        templates: [
+          template({ id: "public", ...tour, regularTimes: ["11:00"] }),
+          template({ id: "school", ...tour, durationMinutes: 60, schoolTourImportTarget: true, enabled: false }),
+          template({ id: "gallery" }),
+        ],
+        schoolTours: ["09:30", "14:00"].map((startTime, i) => ({
+          id: `s${i}`,
+          rosterDateId: "2026-09-30",
+          startTime,
+          schoolName: `School ${i}`,
+          studentCount: 20,
+        })),
+      });
+      for (const p of people) {
+        const mine = tasks
+          .filter((t) => t.employeeId === p.id && ["public", "school"].includes(t.type))
+          .sort((a, b) => a.startRow - b.startRow);
+        for (let i = 1; i < mine.length; i += 1) {
+          expect(mine[i].startRow - (mine[i - 1].startRow + mine[i - 1].span)).toBeGreaterThanOrEqual(4);
+        }
+      }
+    }
+  });
+
+  it("uses the tour gap from settings, and keeps tours as far apart as it can when the gap can't be met", () => {
+    const people = [person("1"), person("2")];
+    const tour = { mustManned: true, overwriteExistingTasks: true, durationMinutes: 45, waitingMinutes: 15, category: "Tours" };
+    const shortestGap = (minTourGapMinutes: number, variant: number) => {
+      const { tasks } = run({
+        people,
+        variant,
+        minTourGapMinutes,
+        templates: [
+          template({ id: "public", ...tour, regularTimes: ["11:00"] }),
+          template({ id: "school", ...tour, durationMinutes: 60, schoolTourImportTarget: true, enabled: false }),
+          template({ id: "gallery" }),
+        ],
+        schoolTours: ["09:30", "14:00"].map((startTime, i) => ({
+          id: `s${i}`,
+          rosterDateId: "2026-09-30",
+          startTime,
+          schoolName: `School ${i}`,
+          studentCount: 20,
+        })),
+      });
+      let shortest = Infinity;
+      for (const p of people) {
+        const mine = tasks
+          .filter((t) => t.employeeId === p.id && ["public", "school"].includes(t.type))
+          .sort((a, b) => a.startRow - b.startRow);
+        for (let i = 1; i < mine.length; i += 1) {
+          shortest = Math.min(shortest, mine[i].startRow - (mine[i - 1].startRow + mine[i - 1].span));
+        }
+      }
+      return shortest;
+    };
+    for (const variant of [0, 1, 2, 3]) {
+      // Off: back-to-back tours are allowed.
+      expect(shortestGap(0, variant)).toBeLessThan(4);
+      // Three hours can't be met here, so the wider of the two pairs (two hours) is used.
+      expect(shortestGap(180, variant)).toBeGreaterThanOrEqual(8);
+    }
+  });
+
+  it("uses the tour gap from settings", () => {
+    const people = [person("1"), person("2")];
+    const tour = { mustManned: true, overwriteExistingTasks: true, durationMinutes: 45, category: "Tours" };
+    const shortestGaps = (minTourGapMinutes: number) =>
+      [0, 1, 2, 3, 4, 5].map((variant) => {
+        const { tasks } = run({
+          people,
+          variant,
+          minTourGapMinutes,
+          templates: [
+            template({ id: "public", ...tour, regularTimes: ["10:00", "11:00", "13:30"] }),
+            template({ id: "gallery" }),
+          ],
+        });
+        let shortest = Infinity;
+        for (const p of people) {
+          const mine = tasks.filter((t) => t.employeeId === p.id && t.type === "public").sort((a, b) => a.startRow - b.startRow);
+          for (let i = 1; i < mine.length; i += 1) {
+            shortest = Math.min(shortest, mine[i].startRow - (mine[i - 1].startRow + mine[i - 1].span));
+          }
+        }
+        return shortest;
+      });
+    // Two hours apart: whoever takes two tours gets the 10:00 and the 14:00.
+    for (const gap of shortestGaps(120)) expect(gap).toBeGreaterThanOrEqual(8);
   });
 });

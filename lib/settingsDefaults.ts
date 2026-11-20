@@ -15,6 +15,8 @@ export type DayHours = { start: string; end: string };
 export type AppSettings = {
   hoursByDay: Record<DayKey, DayHours>;
   upcomingDays: number;
+  /** Autofill keeps one person's tours at least this many minutes apart where someone else can take one. */
+  minTourGapMinutes: number;
 };
 
 export const DEFAULT_SETTINGS: AppSettings = {
@@ -28,4 +30,15 @@ export const DEFAULT_SETTINGS: AppSettings = {
     Sun: { start: "09:30", end: "16:00" },
   },
   upcomingDays: 7,
+  minTourGapMinutes: 60,
 };
+
+export const MAX_TOUR_GAP_MINUTES = 240;
+
+export function normalizeMinTourGapMinutes(input: unknown): number {
+  const numeric = Number(input);
+  if (input === null || input === undefined || input === "" || !Number.isFinite(numeric)) {
+    return DEFAULT_SETTINGS.minTourGapMinutes;
+  }
+  return Math.min(MAX_TOUR_GAP_MINUTES, Math.max(0, Math.round(numeric)));
+}

@@ -15,7 +15,15 @@ import PageHeader from "@/components/ui/PageHeader";
 import SaveStatus from "@/components/ui/SaveStatus";
 import type { AuthUser } from "@/lib/auth";
 import { buildDraftStorageKey } from "@/lib/clientDrafts";
-import { AppSettings, DAY_KEYS, DAY_LABELS, DEFAULT_SETTINGS, type DayKey } from "@/lib/settingsDefaults";
+import {
+  AppSettings,
+  DAY_KEYS,
+  DAY_LABELS,
+  DEFAULT_SETTINGS,
+  MAX_TOUR_GAP_MINUTES,
+  normalizeMinTourGapMinutes,
+  type DayKey,
+} from "@/lib/settingsDefaults";
 import { usePersistedAutosave } from "@/lib/usePersistedAutosave";
 import { invalidateWorkspaceResource, settingsDataKey, writeCachedResource, type MfaStatus } from "@/lib/workspaceData";
 
@@ -258,6 +266,10 @@ export default function SettingsClient({
     }));
   }
 
+  function updateMinTourGap(value: string) {
+    setSettings((prev) => ({ ...prev, minTourGapMinutes: value.trim() === "" ? 0 : normalizeMinTourGapMinutes(value) }));
+  }
+
   function updateUpcomingDays(value: string) {
     const numeric = Math.floor(Number(value));
     setSettings((prev) => ({
@@ -311,6 +323,30 @@ export default function SettingsClient({
               onChange={(e) => updateUpcomingDays(e.target.value)}
               disabled={!isAdmin}
             />
+          </div>
+          <div className="border-b border-[var(--border)] p-5">
+            <label className="field-label" htmlFor="min-tour-gap">
+              Minimum gap between one person&apos;s tours
+            </label>
+            <div className="flex items-center gap-2">
+              <input
+                id="min-tour-gap"
+                type="number"
+                min={0}
+                max={MAX_TOUR_GAP_MINUTES}
+                step={15}
+                className="input w-[100px]"
+                value={settings.minTourGapMinutes}
+                onChange={(e) => updateMinTourGap(e.target.value)}
+                disabled={!isAdmin}
+                aria-describedby="min-tour-gap-hint"
+              />
+              <span className="text-[14px] text-[var(--text-muted)]">minutes</span>
+            </div>
+            <p id="min-tour-gap-hint" className="mt-1.5 text-[13px] text-[var(--text-muted)]">
+              Autofill keeps tours at least this far apart for each person, when someone else is free to take one.
+              Set 0 to turn this off.
+            </p>
           </div>
           <div className="px-5 pb-2 pt-4">
             <p className="field-label">Opening hours</p>
