@@ -9,6 +9,7 @@ import SettingsClient from "@/app/settings/SettingsClient";
 import TaskDetailClient from "@/app/tasks/[id]/TaskDetailClient";
 import TasksClient from "@/app/tasks/TasksClient";
 import RosterTable from "@/components/RosterTable";
+import HelpClient from "@/app/help/HelpClient";
 import PageHeader from "@/components/ui/PageHeader";
 import SpaLink from "@/components/ui/SpaLink";
 import type { AuthUser } from "@/lib/auth";
@@ -453,6 +454,7 @@ export default function WorkspaceRouter({ user }: { user: AuthUser }) {
   if (pathname === "/tasks") return <TasksView kind="task" />;
   if (pathname === "/tours") return <TasksView kind="tour" />;
   if (pathname === "/settings") return <SettingsView user={user} />;
+  if (pathname === "/help") return <HelpClient />;
   if (pathname === "/rosters/old") return <MonthRostersView month={currentMonth()} />;
   if (pathname === "/rosters/archive") {
     return <PlaceholderPage title="Archive" description="Archived rosters will appear here." />;

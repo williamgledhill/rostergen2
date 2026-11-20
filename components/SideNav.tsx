@@ -1,7 +1,7 @@
 "use client";
 import React from "react";
 import { useRouter } from "next/navigation";
-import { CalendarDays, FolderOpen, Map as MapIcon, Pencil, Settings, Users, type LucideIcon } from "lucide-react";
+import { CalendarDays, CircleHelp, FolderOpen, Map as MapIcon, Pencil, Settings, Users, type LucideIcon } from "lucide-react";
 import SpaLink from "@/components/ui/SpaLink";
 import { buildEditorHref, LAST_EDITOR_DATE_EVENT, LAST_EDITOR_DATE_STORAGE_KEY, isLocalDateId } from "@/lib/editorPersistence";
 import { useSpaLocation } from "@/lib/spaNavigation";
@@ -89,6 +89,7 @@ export default function SideNav({
     { icon: FolderOpen, label: "Tasks", href: "/tasks", matchPrefix: "/tasks" },
     { icon: MapIcon, label: "Tours", href: "/tours", matchPrefix: "/tours" },
     { icon: Settings, label: "Settings", href: "/settings", matchPrefix: "/settings" },
+    { icon: CircleHelp, label: "Help", href: "/help", matchPrefix: "/help" },
   ];
 
   const nav = (
