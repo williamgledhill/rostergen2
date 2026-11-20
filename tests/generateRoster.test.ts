@@ -194,6 +194,53 @@ describe("generateAutofillRoster", () => {
         expect(emailBlocks[0].startRow).toBe(afternoon.startRow + afternoon.span);
         expect(overlapsInSameColumn(result.tasks)).toBe(false);
       });
+
+      it("keeps room by the first partner that runs that day, so other tasks don't take it", () => {
+        // Like admin before "afternoon break (weekdays) or weekend break" on a weekend,
+        // with surveys and tours that would otherwise land straight before the break.
+        const tour = { durationMinutes: 45, waitingMinutes: 15, category: "Tours", mustManned: true, overwriteExistingTasks: true };
+        const templates = [
+          template({ id: "weekday-break", durationMinutes: 15, minPerEmployeePerDay: 1, regularDays: ["Mon"] }),
+          template({
+            id: "break",
+            durationMinutes: 15,
+            minPerEmployeePerDay: 1,
+            maxPerEmployeePerDay: 1,
+            regularDayWindows: { Wed: { start: "11:00", end: "11:45" } },
+            extraDayWindows: { Wed: [{ start: "13:45", end: "15:00" }] },
+          }),
+          template({
+            id: "admin",
+            durationMinutes: 15,
+            pairedWithTaskId: "weekday-break",
+            pairedWithTaskIds: ["weekday-break", "break"],
+            pairedPosition: "before",
+          }),
+          template({
+            id: "survey",
+            durationMinutes: 30,
+            minPerEmployeePerDay: 1,
+            maxPerEmployeePerDay: 1,
+            autogenStart: "11:00",
+            autogenEnd: "16:00",
+          }),
+          template({ id: "tour", ...tour, regularTimes: ["13:00", "14:00"] }),
+          template({ id: "desk", mustManned: true }),
+          template({ id: "gallery" }),
+        ];
+        const people = [person("1"), person("2"), person("3"), person("4")];
+        for (const variant of [0, 1, 2, 3, 4, 5]) {
+          const { tasks } = run({ people, variant, templates });
+          for (const p of people) {
+            const brk = tasks.find((t) => t.type === "break" && t.employeeId === p.id);
+            const admin = tasks.filter((t) => t.type === "admin" && t.employeeId === p.id);
+            expect(brk, `variant ${variant}, person ${p.id}: break`).toBeDefined();
+            expect(admin, `variant ${variant}, person ${p.id}: admin`).toHaveLength(1);
+            expect(admin[0].startRow + admin[0].span).toBe(brk!.startRow);
+          }
+          expect(overlapsInSameColumn(tasks)).toBe(false);
+        }
+      });
     });
 
     it("can go straight before its partner instead", () => {

@@ -115,9 +115,40 @@ function rowsBetween(startRow: number, endRow: number) {
  * whatever gaps remain.
  */
 export function generateAutofillRoster(input: AutofillInput): AutofillResult {
+  // A task with a choice of partners (admin after the morning or the afternoon
+  // break) does best with room kept beside the first partner, or with a partner
+  // moved to make room. Neither is worth a missed break or less cover, so the day
+  // is also built without them, and the version with the fewest problems is used
+  // (then the one with fewest tours too close together, then the first).
+  let best: ReturnType<typeof buildRoster> | null = null;
+  for (const options of CHOICE_PAIRING_OPTIONS) {
+    const attempt = buildRoster(input, options);
+    if (
+      !best ||
+      attempt.problems < best.problems ||
+      (attempt.problems === best.problems && attempt.closeTours < best.closeTours)
+    ) {
+      best = attempt;
+    }
+    if (!attempt.hasChoicePairs || (best.problems === 0 && best.closeTours === 0)) break;
+  }
+  return best!.result;
+}
+
+type ChoicePairingOptions = { keepRoom: boolean; moveToMakeRoom: boolean };
+const CHOICE_PAIRING_OPTIONS: ChoicePairingOptions[] = [
+  { keepRoom: true, moveToMakeRoom: true },
+  { keepRoom: false, moveToMakeRoom: true },
+  { keepRoom: false, moveToMakeRoom: false },
+];
+
+function buildRoster(
+  input: AutofillInput,
+  { keepRoom: keepChoiceRoom, moveToMakeRoom }: ChoicePairingOptions
+): { result: AutofillResult; problems: number; closeTours: number; hasChoicePairs: boolean } {
   const { employees, people, templates, schoolTours, rosterDate, timeline, variant } = input;
   const { maxRowEx, rowFromTime, timeRangeForSpan } = timeline;
-  if (!employees.length) return { tasks: [] };
+  if (!employees.length) return { result: { tasks: [] }, problems: 0, closeTours: 0, hasChoicePairs: false };
 
   const dayKey = DAY_KEYS_BY_WEEKDAY[rosterDate.getDay()];
   const board = new PlacementBoard(input.createId ?? defaultCreateId);
@@ -145,7 +176,12 @@ export function generateAutofillRoster(input: AutofillInput): AutofillResult {
     if (!meta) continue;
     const anchorIds = pairedAnchorIds(template);
     if (anchorIds.length > 1) {
-      eitherPairedMetas.push({ meta, anchorIds });
+      const runsToday = anchorIds.filter((id) => {
+        const anchor = templateById.get(id);
+        return !!anchor && anchor.enabled !== false && templateAppliesOnDay(anchor, dayKey);
+      });
+      if (runsToday.length === 0) continue;
+      eitherPairedMetas.push({ meta, anchorIds: runsToday });
       continue;
     }
     pairedMetasByAnchor.set(anchorIds[0], [...(pairedMetasByAnchor.get(anchorIds[0]) ?? []), meta]);
@@ -155,11 +191,24 @@ export function generateAutofillRoster(input: AutofillInput): AutofillResult {
 
   const pairedSpan = (meta: TemplateMeta) => (meta.allowShrink && meta.maxConsecutiveSpan > 0 ? meta.maxConsecutiveSpan : meta.span);
 
+  /**
+   * Tasks that go beside a block of this one. For a task with a choice of
+   * partners, room is kept beside the first partner that runs today, for each
+   * person who doesn't have it yet; later partners are a fallback.
+   */
+  const pairedMetasFor = (meta: TemplateMeta, empId?: EmployeeId) => [
+    ...(pairedMetasByAnchor.get(meta.id) ?? []),
+    ...eitherPairedMetas
+      .filter((entry) => keepChoiceRoom && entry.anchorIds[0] === meta.id)
+      .filter((entry) => empId === undefined || board.getEmpCount(entry.meta.id, empId) === 0)
+      .map((entry) => entry.meta),
+  ];
+
   /** Where the tasks that go with this one sit around a block of it. */
-  const getPairedRanges = (meta: TemplateMeta, range: RowRange) => {
+  const getPairedRanges = (meta: TemplateMeta, range: RowRange, empId?: EmployeeId) => {
     let before = range.startRow;
     let after = range.startRow + range.span;
-    return (pairedMetasByAnchor.get(meta.id) ?? []).map((paired) => {
+    return pairedMetasFor(meta, empId).map((paired) => {
       const span = pairedSpan(paired);
       if (paired.template.pairedPosition === "before") {
         before -= span;
@@ -171,8 +220,8 @@ export function generateAutofillRoster(input: AutofillInput): AutofillResult {
     });
   };
 
-  const pairedRowsAfter = (meta: TemplateMeta) =>
-    (pairedMetasByAnchor.get(meta.id) ?? [])
+  const pairedRowsAfter = (meta: TemplateMeta, empId?: EmployeeId) =>
+    pairedMetasFor(meta, empId)
       .filter((paired) => paired.template.pairedPosition !== "before")
       .reduce((sum, paired) => sum + pairedSpan(paired), 0);
 
@@ -247,7 +296,7 @@ export function generateAutofillRoster(input: AutofillInput): AutofillResult {
     isWithinShift(emp, range) &&
     board.isRangeFree(colOf(emp), range) &&
     (!meta ||
-      getPairedRanges(meta, range)
+      getPairedRanges(meta, range, emp.id)
         .filter((paired) => isQualified(paired.meta, emp.id))
         .every((paired) => isFree(emp, paired.range)));
 
@@ -491,7 +540,7 @@ export function generateAutofillRoster(input: AutofillInput): AutofillResult {
       { templateId: meta.id, empId }
     );
 
-    const paired = getPairedRanges(meta, { startRow, span })
+    const paired = getPairedRanges(meta, { startRow, span }, empId)
       .filter(({ range }) => range.startRow >= MIN_ROW && range.startRow + range.span <= maxRowEx)
       .filter(({ meta: pairedMeta, range }) => isQualified(pairedMeta, empId) && board.isRangeFree(col, range))
       .map(({ meta: pairedMeta, range }) => ({
@@ -821,7 +870,7 @@ export function generateAutofillRoster(input: AutofillInput): AutofillResult {
     board.addExisting({ ...task, employeeId: emp.id }, { templateId: task.type, empId: emp.id });
   }
 
-  if (!templatesToSchedule.length) return { tasks: [...board.generated] };
+  if (!templatesToSchedule.length) return { result: { tasks: [...board.generated] }, problems: 0, closeTours: 0, hasChoicePairs: false };
 
   const unmetMinimums: string[] = [];
   const protectedTaskFailures: string[] = [];
@@ -1265,6 +1314,62 @@ export function generateAutofillRoster(input: AutofillInput): AutofillResult {
           )
           .find((range) => isWithinShift(emp, range) && board.isRangeFree(col, range));
         if (spot) placeTask(meta, col, spot.startRow, spot.span, emp.id);
+        else if (moveToMakeRoom) moveAnchorToMakeRoom(meta, anchorIds, emp, span, before);
+      }
+    }
+  };
+
+  /**
+   * When there's no room beside any of a person's partner blocks, moves one of
+   * them (within its own time range, into free time only) to where there is.
+   * Blocks at set times, locked blocks and ones with their own paired tasks stay put.
+   */
+  const moveAnchorToMakeRoom = (
+    meta: TemplateMeta,
+    anchorIds: string[],
+    emp: RosterEmployee,
+    span: number,
+    before: boolean
+  ) => {
+    const col = colOf(emp);
+    for (const anchorId of anchorIds) {
+      const anchorMeta = templatesToSchedule.find((entry) => entry.id === anchorId);
+      if (!anchorMeta || anchorMeta.hasFixedTimes) continue;
+      const anchorTasks = board
+        .column(col)
+        .filter((task) => task.type === anchorId && !isTaskLocked(task) && !pairedTasksByAnchor.get(task.id)?.length);
+      for (const task of anchorTasks) {
+        const countAs = { templateId: anchorId, empId: emp.id };
+        board.remove(task, countAs);
+        const candidates = anchorMeta.windows
+          .flatMap((window) => rowsBetween(window.startRow, window.endRow - task.span + 1))
+          .map((row) => ({
+            anchor: { startRow: row, span: task.span },
+            both: { startRow: before ? row - span : row, span: task.span + span },
+          }))
+          .filter(
+            ({ anchor, both }) =>
+              both.startRow >= MIN_ROW &&
+              isWithinShift(emp, both) &&
+              board.isRangeFree(col, both) &&
+              !board.exceedsConcurrentLimit(anchorId, anchor, anchorMeta.maxConcurrentPerTimeslot)
+          )
+          .sort(
+            (a, b) =>
+              Math.abs(a.anchor.startRow - task.startRow) - Math.abs(b.anchor.startRow - task.startRow) ||
+              a.anchor.startRow - b.anchor.startRow
+          );
+        const best = candidates[0];
+        if (!best) {
+          board.addExisting(task, countAs);
+          continue;
+        }
+        placeTask(anchorMeta, col, best.anchor.startRow, best.anchor.span, emp.id);
+        if (board.getEmpCount(meta.id, emp.id) === 0) {
+          const pairedStart = before ? best.anchor.startRow - span : best.anchor.startRow + best.anchor.span;
+          placeTask(meta, col, pairedStart, span, emp.id);
+        }
+        return;
       }
     }
   };
@@ -1296,7 +1401,7 @@ export function generateAutofillRoster(input: AutofillInput): AutofillResult {
       if (!ignoreEmpLimit && board.getEmpCount(meta.id, emp.id) >= meta.maxPerEmp) return [];
       const span = resolveAutofillPlacementSpan({
         baseSpan: meta.allowShrink ? meta.maxConsecutiveSpan : meta.span,
-        availableSpan: Math.min(freeUntil - pairedRowsAfter(meta), rangeEnd) - row,
+        availableSpan: Math.min(freeUntil - pairedRowsAfter(meta, emp.id), rangeEnd) - row,
         allowShrink: meta.allowShrink,
         minSpan: meta.minSpan,
         maxConsecutiveSpan: meta.maxConsecutiveSpan,
@@ -1305,7 +1410,7 @@ export function generateAutofillRoster(input: AutofillInput): AutofillResult {
       const range = { startRow: row, span };
       if (board.exceedsConcurrentLimit(meta.id, range, meta.maxConcurrentPerTimeslot)) return [];
       if (!ignoreConsecutiveLimit && exceedsConsecutiveLimit(meta, col, range)) return [];
-      if (!getPairedRanges(meta, range).every((paired) => isFree(emp, paired.range))) return [];
+      if (!getPairedRanges(meta, range, emp.id).every((paired) => isFree(emp, paired.range))) return [];
       const capped = Number.isFinite(meta.maxConcurrentPerTimeslot);
       return [
         {
@@ -1416,13 +1521,16 @@ export function generateAutofillRoster(input: AutofillInput): AutofillResult {
     );
   };
 
+  /** 15-minute slots of must-be-manned cover nobody is on. */
+  let uncoveredRows = 0;
   const unmetCoverage = templatesForPrimaryPass
     .filter((meta) => meta.mustManned && meta.window)
     .flatMap((meta) => {
       const window = meta.window!;
       if (meta.hasFixedTimes) {
-        return meta.regularTimeRows
-          .filter((row) => !hasBlockForTime(meta, row))
+        const missed = meta.regularTimeRows.filter((row) => !hasBlockForTime(meta, row));
+        uncoveredRows += 4 * missed.length;
+        return missed
           .map((row) => `${meta.template.name} ${timeRangeForSpan(row, spanAt(meta, row, window.endRow) || 1)}`);
       }
       const gaps: string[] = [];
@@ -1431,6 +1539,7 @@ export function generateAutofillRoster(input: AutofillInput): AutofillResult {
         // Gaps between the task's time ranges don't need cover.
         const covered =
           windowEndAt(meta, row) === null || board.isTypeCoveredAt(meta.id, row) || everyoneAtAllHands(row);
+        if (!covered) uncoveredRows += 1;
         if (!covered && gapStart === null) {
           gapStart = row;
         } else if (covered && gapStart !== null) {
@@ -1457,7 +1566,20 @@ export function generateAutofillRoster(input: AutofillInput): AutofillResult {
   }
 
   return {
-    tasks: mergeAdjacentTasks(board.generated, (task) => isMergeableTask(task, templateById.get(task.type))),
-    notice: messages.length ? { title: "Autofill note", messages } : null,
+    result: {
+      tasks: mergeAdjacentTasks(board.generated, (task) => isMergeableTask(task, templateById.get(task.type))),
+      notice: messages.length ? { title: "Autofill note", messages } : null,
+    },
+    // Anything left out counts as much as an hour without cover.
+    problems:
+      uncoveredRows + 4 * (unmetMinimums.length + protectedTaskFailures.length + importedSchoolTourFailures.length),
+    closeTours: employees.reduce((sum, emp) => {
+      const tours = board
+        .column(colOf(emp))
+        .filter((task) => tourTemplateIds.has(task.type))
+        .sort((a, b) => a.startRow - b.startRow);
+      return sum + tours.slice(1).filter((task, i) => task.startRow - (tours[i].startRow + tours[i].span) < minTourGapRows).length;
+    }, 0),
+    hasChoicePairs: eitherPairedMetas.length > 0,
   };
 }

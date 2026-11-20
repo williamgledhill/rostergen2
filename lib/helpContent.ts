@@ -379,7 +379,8 @@ export const HELP_SECTIONS: HelpSection[] = [
           ),
           list(
             "With one task chosen, it goes beside every block of that task.",
-            "With more than one, each person gets it once a day, beside the first one in the list that has room. If there's no room by the first, it goes by the next."
+            "With more than one, each person gets it once a day. Autofill keeps room beside the first one in the list that runs that day, moving it within its own time range if it needs to. Tasks that don't run that day, such as a weekday-only break on a Sunday, are skipped.",
+            "Room is never kept at the cost of someone's break or a gap in must-be-manned cover. If it would be, it goes beside the next one with room, or is left out that day."
           ),
         ],
       },

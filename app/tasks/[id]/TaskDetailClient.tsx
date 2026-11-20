@@ -610,7 +610,7 @@ export default function TaskDetailClient({ id, initialTask }: { id: string; init
               </div>
               <p className="mt-2 text-[13px] text-[var(--text-muted)]">
                 {pairedIds.length > 1
-                  ? "Each person gets it once a day, beside the first of these with room: if there's no room by the first, it goes by the next."
+                  ? "Each person gets it once a day. Autofill keeps room by the first of these that runs that day, moving it within its time range if needed. If that would cost a break or a gap in cover, it goes by the next one with room."
                   : "It goes beside every block of that task."}{" "}
                 It lasts its fixed time, or its ideal time in one go if it has no fixed time.
               </p>
